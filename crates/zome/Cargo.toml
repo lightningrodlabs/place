@@ -1,0 +1,16 @@
+[package]
+name = "zome_place"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+name = "zome_place"
+crate-type = [ "cdylib", "rlib" ]
+
+[dependencies]
+serde = { version = "1.0", default-features = false }
+bincode = "1.3"
+
+hdk = { version = "0.0.122", default-features = false }
+
+zome_utils = { git = "https://github.com/ddd-mtl/zome-utils", branch = "122" }

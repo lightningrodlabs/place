@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+  #"crates/types",
+  "crates/zome",
+  #"sweettest",
+]
+
+[profile.dev]
+lto = false
+opt-level = 0
+overflow-checks = false
+
+[profile.release.package.delivery_sweettest]
+opt-level = 0
+overflow-checks = false
+
+[profile.release]
+opt-level = "z"
+lto = true # link time optimization
+
+[profile.release.build-override]
+opt-level = "z"
