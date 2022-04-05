@@ -27,8 +27,8 @@ impl Placement {
       assert!(y < 1000);
       assert!(color < 16);
 
-      let x_32: u32 = (x as u32) << 16;
-      let y_32: u32 = (x as u32) << 4;
+      let x_32: u32 = (x as u32) << 20;
+      let y_32: u32 = (y as u32) << 4;
 
       Self {
          pixel:  x_32 + y_32 + color as u32,
@@ -40,7 +40,7 @@ impl Placement {
    }
 
    pub fn x(&self) -> u16 {
-      let x = (self.pixel >> 16) as u16;
+      let x = (self.pixel >> 20) as u16;
       assert!(x < 1000);
       x
    }

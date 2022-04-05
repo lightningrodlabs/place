@@ -6,6 +6,7 @@ use crate::double_pixel::DoublePixel;
 /// A Public Entry representing the whole canvas for a specific time bucket
 #[hdk_entry(id = "Snapshot")]
 #[derive(Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct Snapshot {
    pub image_data: Vec<DoublePixel>, // 2 x 4-bit pixels per u8
    pub time_bucket_index: u32,
