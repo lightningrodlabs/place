@@ -1,0 +1,14 @@
+---
+manifest_version: "1"
+name: place
+description: ~
+roles:
+  - id: place
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "../place.dna"
+      uid: ~
+      properties: ~
+      clone_limit: 0
