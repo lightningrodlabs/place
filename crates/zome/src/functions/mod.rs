@@ -1,8 +1,9 @@
 mod place_pixel;
-mod get_rendering;
-mod get_placements;
+mod get_snapshot;
+mod get_placements_at;
+mod publish_latest_snapshot;
 
 
 pub use place_pixel::*;
-pub use get_placements::*;
-pub use get_rendering::*;
+pub use get_placements_at::*;
+pub use get_snapshot::*;

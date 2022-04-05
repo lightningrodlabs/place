@@ -1,5 +1,5 @@
 mod placement;
-mod rendering;
+mod snapshot;
 
 pub use placement::*;
-pub use rendering::*;
+pub use snapshot::*;

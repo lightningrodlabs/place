@@ -2,7 +2,7 @@ use hdk::prelude::*;
 
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PlacePixelInput {
+pub struct DestructuredPlacement {
    x: u16,
    y: u16,
    color: u8,
@@ -17,7 +17,7 @@ pub struct Placement {
 
 impl Placement {
 
-   pub fn from_input(input: PlacePixelInput) -> Self {
+   pub fn from_destructured(input: DestructuredPlacement) -> Self {
       Self::new(input.x, input.y, input.color)
    }
 

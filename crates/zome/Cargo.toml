@@ -9,6 +9,9 @@ crate-type = [ "cdylib", "rlib" ]
 
 [dependencies]
 serde = { version = "1.0", default-features = false }
+strum = "0.24"
+strum_macros = "0.24"
+enum-ordinalize =  "3.1"
 bincode = "1.3"
 
 hdk = { version = "0.0.122", default-features = false }
