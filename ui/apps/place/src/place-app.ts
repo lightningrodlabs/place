@@ -29,7 +29,7 @@ if (IS_ELECTRON) {
 console.log("HC_PORT = " + HC_PORT + " || " + process.env.HC_PORT);
 
 
-export class WhereApp extends ScopedElementsMixin(LitElement) {
+export class placeApp extends ScopedElementsMixin(LitElement) {
 
   @state() loaded = false;
 

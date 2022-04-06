@@ -5,25 +5,10 @@ import {contextProvided} from "@holochain-open-dev/context";
 import {StoreSubscriber} from "lit-svelte-stores";
 
 import {sharedStyles} from "../sharedStyles";
-import {Dictionary, PieceType, Play, whereContext} from "../types";
+import {Dictionary,  placeContext} from "../types";
 import {PlaceStore} from "../place.store";
-import {SlAvatar, SlBadge, SlColorPicker, SlTooltip} from '@scoped-elements/shoelace';
+import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
-import {
-  Button,
-  Drawer,
-  Formfield,
-  Icon,
-  IconButton, IconButtonToggle,
-  List,
-  ListItem,
-  Menu,
-  Select,
-  Slider,
-  Switch,
-  TextField,
-  TopAppBar,
-} from "@scoped-elements/material-web";
 import {AgentPubKeyB64, EntryHashB64} from "@holochain-open-dev/core-types";
 import {CellId} from "@holochain/client/lib/types/common";
 
@@ -39,7 +24,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Dependencies */
 
-  @contextProvided({ context: whereContext })
+  @contextProvided({ context: placeContext })
   _store!: PlaceStore;
 
   _snapshots = new StoreSubscriber(this, () => this._store.snapshots);
