@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# assumes that dna/workdir/dna/where.dna
+# assumes that workdir/place.dna
 # is already pre-compiled and up to date
 # In CI this is handled via .github/workflows/release.yml
 # where it calls install-hc-tools and and dna-pack

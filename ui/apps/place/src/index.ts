@@ -1,1 +1,1 @@
-export * from './where-app';
+export * from './place-app';
