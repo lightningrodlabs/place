@@ -14,6 +14,7 @@ import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
 import {AgentPubKeyB64, EntryHashB64} from "@holochain-open-dev/core-types";
 import {CellId} from "@holochain/client/lib/types/common";
+import {Texture} from "pixi.js";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
@@ -59,15 +60,15 @@ function rand(n: number) {
 // }
 
 
-function initPixiApp(container: HTMLCanvasElement) {
-  console.log(container.id + ": " + container.offsetWidth + "x" + container.offsetHeight)
+function initPixiApp(canvas: HTMLCanvasElement) {
+  console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
   /** Setup PIXI app */
   const app = new PIXI.Application({
     //antialias: true,
-    view: container,
+    view: canvas,
     backgroundColor: 0x111111,
-    width: container.offsetWidth,
-    height: container.offsetHeight,
+    width: canvas.offsetWidth,
+    height: canvas.offsetHeight,
     resolution: devicePixelRatio
   })
   app.view.style.textAlign = 'center'
@@ -78,8 +79,8 @@ function initPixiApp(container: HTMLCanvasElement) {
 
   const viewport = new Viewport({
     passiveWheel: false,                            // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
-    screenWidth: container.offsetWidth,              // screen width used by viewport (eg, size of canvas)
-    screenHeight: container.offsetHeight,            // screen height used by viewport (eg, size of canvas)
+    screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
+    screenHeight: canvas.offsetHeight,            // screen height used by viewport (eg, size of canvas)
     //screenWidth: app.view.offsetWidth,
     //screenHeight: app.view.offsetHeight
     //interaction: app.renderer.plugins.interaction // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
@@ -107,33 +108,29 @@ function initPixiApp(container: HTMLCanvasElement) {
 
   /** DRAW STUFF */
   // Borders
-  const graphics = viewport.addChild(new PIXI.Graphics())
-  graphics
-    .lineStyle(10, 0xff0000)
-    .drawRect(0, 0, viewport.worldWidth, viewport.worldHeight)
-    .lineStyle(0, 0x00FF00)
-  // stars
-  for (let i = 0; i < WORLD_HEIGHT / 10; i++) {
-    for (let j = 0; j < WORLD_WIDTH / 10; j++) {
-      graphics
-        .beginFill(rand(0xffffff))
-        .drawRect(i * 10, j * 10, 10, 10)
-        .endFill()
+  const border = viewport.addChild(new PIXI.Graphics())
+  border
+    .lineStyle(1, 0xff0000)
+    .drawRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
+
+  // const toto = PIXI.GLTexture.fromSource()
+  //
+  // let colorz = new Uint32Array(4*WORLD_WIDTH*WORLD_HEIGHT);
+  // const texture = Texture.from(colorz, {width: WORLD_WIDTH,  height: WORLD_HEIGHT});
+
+  // Draw a million pixels
+  let container = viewport.addChild(new PIXI.ParticleContainer(WORLD_HEIGHT * WORLD_WIDTH));
+  for (let i = 0; i < WORLD_HEIGHT; i++) {
+    for (let j = 0; j < WORLD_WIDTH; j++) {
+      //const graphics = PIXI.Sprite.from(PIXI.Texture.WHITE);
+      const graphics = PIXI.Sprite.from('one_pixel.png');
+      graphics.tint = rand(0xffffff)
+      graphics.x = i// * 16;
+      graphics.y = j// * 16;
+      graphics.on('click', () => console.log("pixel: " + i + "x" + j))
+      container.addChild(graphics)
     }
   }
-
-  // // Quadrillage
-  // graphics.lineStyle(1, 0x4E565F)
-  // for (let i = 0; i < WORLD_HEIGHT; i += 100) {
-  //   graphics
-  //     .moveTo(0, i)
-  //     .lineTo(WORLD_WIDTH, i)
-  // }
-  // for (let i = 0; i < WORLD_WIDTH; i += 100) {
-  //   graphics
-  //     .moveTo(i, 0)
-  //     .lineTo(i, WORLD_HEIGHT)
-  // }
 }
 
 
@@ -193,12 +190,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     if (this._canPostInit) {
       this.postInit();
     }
-    initPixiApp(this.playfieldElem)
-    // look for canvas in plays and render them
-    // for (let spaceEh in this._plays.value) {
-    //   let play: Play = this._plays.value[spaceEh];
-    //   if (play.space.surface.canvas && play.visible) {
-    //     const id = play.space.name + '-canvas'
+    if (this._initialized) {
+      initPixiApp(this.playfieldElem)
+    }
+
+    //     const id = "playfield"
     //     const canvas = this.shadowRoot!.getElementById(id) as HTMLCanvasElement;
     //     if (!canvas) {
     //       console.debug("CANVAS not found for " + id);
@@ -217,8 +213,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     //       var renderCanvas = new Function(canvas_code);
     //       renderCanvas.apply(this);
     //     } catch (e) {}
-    //   }
-    // }
   }
 
 
@@ -283,7 +277,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     if (!this._initialized) {
       return html`
         <span>Loading...</span>
-        <canvas id="playfield" class="appBody"></canvas>
       `;
     }
 
