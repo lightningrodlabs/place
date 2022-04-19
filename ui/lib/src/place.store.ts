@@ -131,10 +131,13 @@ export class PlaceStore {
   /** Get latest entries of each type and update local store accordingly */
   async pullDht()  {
     console.log("pullDht()")
-    const snapshot = await this.service.getLatestSnapshot();
-    const placements = await this.service.getPlacementsAt(snapshot.timeBucketIndex);
-    console.log(`Entries found for bucket ${snapshot.timeBucketIndex}: ${Object.keys(placements).length}`)
-    //console.log({plays})
+    try {
+      const snapshot = await this.service.getLatestSnapshot();
+      const placements = await this.service.getPlacementsAt(snapshot.timeBucketIndex);
+      console.log(`Entries found for bucket ${snapshot.timeBucketIndex}: ${Object.keys(placements).length}`)
+    } catch (e) {
+      console.log("No snapshot found")
+    }
   }
 
   getLatestSnapshot(): [EntryHashB64, SnapshotEntry] {

@@ -17,8 +17,8 @@ import {CellId} from "@holochain/client/lib/types/common";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
-export const WORLD_WIDTH = 5000
-export const WORLD_HEIGHT = 5000
+export const WORLD_WIDTH = 1000
+export const WORLD_HEIGHT = 1000
 
 
 function rand(n: number) {
@@ -26,32 +26,63 @@ function rand(n: number) {
 }
 
 
-function initPixiApp(container: HTMLElement) {
+// function initPixiApp(container: HTMLCanvasElement) {
+//   console.log(container.id + ": " + container.offsetWidth + "x" + container.offsetHeight)
+//
+//   // let ctx = container.getContext("2d");
+//   // for (var v=0; v < container.offsetHeight; v += 5) {
+//   //   for (var h=0; h < container.offsetWidth; h += 5) {
+//   //     const lum = Math.floor( Math.random() * 50 );
+//   //     ctx!.fillStyle = "hsl(0, 0%," + lum + "%)";
+//   //     ctx!.fillRect(h,v, 5, 5);
+//   //   }
+//   // }
+//
+//   /** Setup PIXI app */
+//
+//   const app = new PIXI.Application({
+//     //antialias: true,
+//     view: container,
+//     backgroundColor: 0x262A2D,
+//     width: container.offsetWidth,
+//     height: container.offsetHeight,
+//     resolution: devicePixelRatio
+//   })
+//   app.view.style.textAlign = 'center'
+//
+//   // add a red box
+//   var sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
+//   sprite.tint = 0xff0000;
+//   sprite.width = sprite.height = 100
+//   sprite.position.set(100, 100);
+//   app.stage.addChild(sprite)
+// }
 
+
+function initPixiApp(container: HTMLCanvasElement) {
+  console.log(container.id + ": " + container.offsetWidth + "x" + container.offsetHeight)
   /** Setup PIXI app */
-
-  console.log(container.id + ": " + container.offsetWidth)
-
   const app = new PIXI.Application({
     //antialias: true,
-    backgroundColor: 0x262A2D,
+    view: container,
+    backgroundColor: 0x111111,
     width: container.offsetWidth,
     height: container.offsetHeight,
     resolution: devicePixelRatio
   })
   app.view.style.textAlign = 'center'
-  container.appendChild(app.view)
-
+  //container.appendChild(app.view)
 
 
   /** Setup viewport */
 
   const viewport = new Viewport({
     passiveWheel: false,                            // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
-    //screenWidth: window.innerWidth,              // screen width used by viewport (eg, size of canvas)
-    //screenHeight: window.innerHeight,            // screen height used by viewport (eg, size of canvas)
+    screenWidth: container.offsetWidth,              // screen width used by viewport (eg, size of canvas)
+    screenHeight: container.offsetHeight,            // screen height used by viewport (eg, size of canvas)
     //screenWidth: app.view.offsetWidth,
     //screenHeight: app.view.offsetHeight
+    //interaction: app.renderer.plugins.interaction // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
   })
 
   app.stage.addChild(viewport)
@@ -65,14 +96,14 @@ function initPixiApp(container: HTMLElement) {
 
   //viewport.bounce({})
 
-  viewport.clamp({direction: 'all'})
-
-  viewport.clampZoom({
-    minWidth: container.offsetWidth / 10,
-    minHeight: container.offsetHeight / 10,
-    maxWidth: WORLD_WIDTH,
-    maxHeight: WORLD_HEIGHT,
-  })
+  // viewport.clamp({direction: 'all'})
+  //
+  // viewport.clampZoom({
+  //   minWidth: container.offsetWidth / 10,
+  //   minHeight: container.offsetHeight / 10,
+  //   maxWidth: WORLD_WIDTH,
+  //   maxHeight: WORLD_HEIGHT,
+  // })
 
   /** DRAW STUFF */
   // Borders
@@ -82,29 +113,27 @@ function initPixiApp(container: HTMLElement) {
     .drawRect(0, 0, viewport.worldWidth, viewport.worldHeight)
     .lineStyle(0, 0x00FF00)
   // stars
-  for (let i = 0; i < 200; i++) {
-    //const sprite = new PIXI.Sprite(PIXI.Texture.WHITE)
-    //viewport.addChild(sprite)
-    //sprite.tint = rand(0xffffff)
-    //sprite.position.set(rand(WORLD_WIDTH), rand(WORLD_HEIGHT))
-    graphics
-      .beginFill(rand(0xffffff))
-      .drawCircle(rand(WORLD_WIDTH), rand(WORLD_HEIGHT), 10)
-      .endFill()
+  for (let i = 0; i < WORLD_HEIGHT / 10; i++) {
+    for (let j = 0; j < WORLD_WIDTH / 10; j++) {
+      graphics
+        .beginFill(rand(0xffffff))
+        .drawRect(i * 10, j * 10, 10, 10)
+        .endFill()
+    }
+  }
 
-  }
-  // Quadrillage
-  graphics.lineStyle(1, 0x4E565F)
-  for (let i = 0; i < WORLD_HEIGHT; i += 500) {
-    graphics
-      .moveTo(0, i)
-      .lineTo(WORLD_WIDTH, i)
-  }
-  for (let i = 0; i < WORLD_WIDTH; i += 500) {
-    graphics
-      .moveTo(i, 0)
-      .lineTo(i, WORLD_HEIGHT)
-  }
+  // // Quadrillage
+  // graphics.lineStyle(1, 0x4E565F)
+  // for (let i = 0; i < WORLD_HEIGHT; i += 100) {
+  //   graphics
+  //     .moveTo(0, i)
+  //     .lineTo(WORLD_WIDTH, i)
+  // }
+  // for (let i = 0; i < WORLD_WIDTH; i += 100) {
+  //   graphics
+  //     .moveTo(i, 0)
+  //     .lineTo(i, WORLD_HEIGHT)
+  // }
 }
 
 
@@ -114,7 +143,6 @@ function initPixiApp(container: HTMLElement) {
 export class PlaceController extends ScopedElementsMixin(LitElement) {
   constructor() {
     super();
-    initPixiApp(this.playfieldElem)
   }
 
   /** Dependencies */
@@ -122,7 +150,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   @contextProvided({ context: placeContext })
   _store!: PlaceStore;
 
-  _snapshots = new StoreSubscriber(this, () => this._store.snapshots);
+  _snapshots = new StoreSubscriber(this, () => this._store?.snapshots);
 
 
   /** Private properties */
@@ -134,12 +162,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   private _canPostInit: boolean = false;
 
 
-  // get snapshotElem(): WhereSpace {
-  //   return this.shadowRoot!.getElementById("where-space") as WhereSpace;
-  // }
-
-  get playfieldElem() : HTMLDivElement {
-    return this.shadowRoot!.getElementById("playfield") as HTMLDivElement;
+  get playfieldElem() : HTMLCanvasElement {
+    return this.shadowRoot!.getElementById("playfield") as HTMLCanvasElement;
   }
 
 
@@ -154,6 +178,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           console.log("starting Snapshot: " + latestSnapshot.timeBucketIndex + " | " + latestEh);
         }
       }
+      await this.init();
     });
   }
 
@@ -168,6 +193,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     if (this._canPostInit) {
       this.postInit();
     }
+    initPixiApp(this.playfieldElem)
     // look for canvas in plays and render them
     // for (let spaceEh in this._plays.value) {
     //   let play: Play = this._plays.value[spaceEh];
@@ -210,6 +236,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     this._initialized = true
     this._initializing = false
     this._canPostInit = true;
+
+    //initPixiApp(this.playfieldElem)
+
     this.requestUpdate();
     console.log("place-controller.init() - DONE");
   }
@@ -252,12 +281,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   render() {
     console.log("place-controller render() - " + this._currentSnapshotEh);
     if (!this._initialized) {
-      return html`<span>Loading...</span>`;
+      return html`
+        <span>Loading...</span>
+        <canvas id="playfield" class="appBody"></canvas>
+      `;
     }
 
     return html`
       <div>Playfield:</div>
-      <div id="playfield" class="appBody"></div>
+      <canvas id="playfield" class="appBody"></canvas>
     `;
   }
 
