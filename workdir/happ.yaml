@@ -8,7 +8,7 @@ roles:
       strategy: create
       deferred: false
     dna:
-      bundled: "../place.dna"
+      bundled: "place.dna"
       uid: ~
       properties: ~
       clone_limit: 0

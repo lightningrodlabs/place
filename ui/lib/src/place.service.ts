@@ -45,6 +45,13 @@ export class PlaceService {
     return this.callPlaceZome('get_snapshot', time);
   }
 
+  async getLatestSnapshot(): Promise<SnapshotEntry> {
+    return this.callPlaceZome('get_latest_snapshot', null);
+  }
+
+  async getPlacementsAt(bucketIndex: number): Promise<PlacementEntry[]> {
+    return this.callPlaceZome('get_placements_at', bucketIndex);
+  }
 
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
     return this.callPlaceZome('place_pixel', destructured);

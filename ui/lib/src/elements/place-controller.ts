@@ -1,6 +1,9 @@
 import {css, html, LitElement} from "lit";
 import {property, state} from "lit/decorators.js";
 
+import * as PIXI from 'pixi.js'
+import { Viewport } from 'pixi-viewport'
+
 import {contextProvided} from "@holochain-open-dev/context";
 import {StoreSubscriber} from "lit-svelte-stores";
 
@@ -14,12 +17,104 @@ import {CellId} from "@holochain/client/lib/types/common";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
+export const WORLD_WIDTH = 5000
+export const WORLD_HEIGHT = 5000
+
+
+function rand(n: number) {
+  return Math.round(Math.random() * n)
+}
+
+
+function initPixiApp(container: HTMLElement) {
+
+  /** Setup PIXI app */
+
+  console.log(container.id + ": " + container.offsetWidth)
+
+  const app = new PIXI.Application({
+    //antialias: true,
+    backgroundColor: 0x262A2D,
+    width: container.offsetWidth,
+    height: container.offsetHeight,
+    resolution: devicePixelRatio
+  })
+  app.view.style.textAlign = 'center'
+  container.appendChild(app.view)
+
+
+
+  /** Setup viewport */
+
+  const viewport = new Viewport({
+    passiveWheel: false,                            // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
+    //screenWidth: window.innerWidth,              // screen width used by viewport (eg, size of canvas)
+    //screenHeight: window.innerHeight,            // screen height used by viewport (eg, size of canvas)
+    //screenWidth: app.view.offsetWidth,
+    //screenHeight: app.view.offsetHeight
+  })
+
+  app.stage.addChild(viewport)
+
+  viewport
+    .moveCenter(WORLD_WIDTH / 2, WORLD_HEIGHT / 2)
+    .drag()
+    .pinch()
+    .decelerate()
+    .wheel({})
+
+  //viewport.bounce({})
+
+  viewport.clamp({direction: 'all'})
+
+  viewport.clampZoom({
+    minWidth: container.offsetWidth / 10,
+    minHeight: container.offsetHeight / 10,
+    maxWidth: WORLD_WIDTH,
+    maxHeight: WORLD_HEIGHT,
+  })
+
+  /** DRAW STUFF */
+  // Borders
+  const graphics = viewport.addChild(new PIXI.Graphics())
+  graphics
+    .lineStyle(10, 0xff0000)
+    .drawRect(0, 0, viewport.worldWidth, viewport.worldHeight)
+    .lineStyle(0, 0x00FF00)
+  // stars
+  for (let i = 0; i < 200; i++) {
+    //const sprite = new PIXI.Sprite(PIXI.Texture.WHITE)
+    //viewport.addChild(sprite)
+    //sprite.tint = rand(0xffffff)
+    //sprite.position.set(rand(WORLD_WIDTH), rand(WORLD_HEIGHT))
+    graphics
+      .beginFill(rand(0xffffff))
+      .drawCircle(rand(WORLD_WIDTH), rand(WORLD_HEIGHT), 10)
+      .endFill()
+
+  }
+  // Quadrillage
+  graphics.lineStyle(1, 0x4E565F)
+  for (let i = 0; i < WORLD_HEIGHT; i += 500) {
+    graphics
+      .moveTo(0, i)
+      .lineTo(WORLD_WIDTH, i)
+  }
+  for (let i = 0; i < WORLD_WIDTH; i += 500) {
+    graphics
+      .moveTo(i, 0)
+      .lineTo(i, WORLD_HEIGHT)
+  }
+}
+
+
 /**
  * @element place-controller
  */
 export class PlaceController extends ScopedElementsMixin(LitElement) {
   constructor() {
     super();
+    initPixiApp(this.playfieldElem)
   }
 
   /** Dependencies */
@@ -43,19 +138,20 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   //   return this.shadowRoot!.getElementById("where-space") as WhereSpace;
   // }
 
+  get playfieldElem() : HTMLDivElement {
+    return this.shadowRoot!.getElementById("playfield") as HTMLDivElement;
+  }
 
 
   /** Launch init when myProfile has been set */
-  private subscribePlay() {
-    this._store.plays.subscribe(async (plays) => {
-      if (!this._currentSpaceEh) {
+  private subscribeSnapshots() {
+    this._store.snapshots.subscribe(async (snapshots) => {
+      if (!this._currentSnapshotEh) {
         /** Select first play */
-        const firstSpaceEh = this.getFirstVisiblePlay(plays);
-        if (firstSpaceEh) {
-          await this.selectPlay(firstSpaceEh);
-          console.log("starting Template: ", /*templates[this._currentTemplateEh!].name,*/ this._currentTemplateEh);
-          console.log("    starting Play: ", plays[firstSpaceEh].space.name, this._currentSpaceEh);
-          //console.log(" starting Session: ", plays[firstSpaceEh].name, this._currentSpaceEh);
+        const [latestEh, latestSnapshot] = this._store.getLatestSnapshot();
+        if (latestEh != '') {
+          this._currentSnapshotEh = latestEh
+          console.log("starting Snapshot: " + latestSnapshot.timeBucketIndex + " | " + latestEh);
         }
       }
     });
@@ -64,7 +160,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** After first render only */
   async firstUpdated() {
     console.log("place-controller first updated!")
-    this.subscribePlay();
+    this.subscribeSnapshots();
   }
 
   /** After each render */
@@ -73,44 +169,30 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       this.postInit();
     }
     // look for canvas in plays and render them
-    for (let spaceEh in this._plays.value) {
-      let play: Play = this._plays.value[spaceEh];
-      if (play.space.surface.canvas && play.visible) {
-        const id = play.space.name + '-canvas'
-        const canvas = this.shadowRoot!.getElementById(id) as HTMLCanvasElement;
-        if (!canvas) {
-          console.debug("CANVAS not found for " + id);
-          continue;
-        }
-        //console.log({canvas})
-        var ctx = canvas.getContext("2d");
-        if (!ctx) {
-          console.log("CONTEXT not found for " + id);
-          continue;
-        }
-        //console.log({ctx})
-        //console.log("Rendering CANVAS for " + id)
-        try {
-          let canvas_code = prefix_canvas(id) + play.space.surface.canvas;
-          var renderCanvas = new Function(canvas_code);
-          renderCanvas.apply(this);
-        } catch (e) {}
-      }
-    }
-  }
-
-
-  private getFirstVisiblePlay(plays: Dictionary<Play>): null| EntryHashB64 {
-    if (Object.keys(plays).length == 0) {
-      return null;
-    }
-    for (let spaceEh in plays) {
-      const play = plays[spaceEh]
-      if (play.visible) {
-        return spaceEh
-      }
-    }
-    return null;
+    // for (let spaceEh in this._plays.value) {
+    //   let play: Play = this._plays.value[spaceEh];
+    //   if (play.space.surface.canvas && play.visible) {
+    //     const id = play.space.name + '-canvas'
+    //     const canvas = this.shadowRoot!.getElementById(id) as HTMLCanvasElement;
+    //     if (!canvas) {
+    //       console.debug("CANVAS not found for " + id);
+    //       continue;
+    //     }
+    //     //console.log({canvas})
+    //     var ctx = canvas.getContext("2d");
+    //     if (!ctx) {
+    //       console.log("CONTEXT not found for " + id);
+    //       continue;
+    //     }
+    //     //console.log({ctx})
+    //     //console.log("Rendering CANVAS for " + id)
+    //     try {
+    //       let canvas_code = prefix_canvas(id) + play.space.surface.canvas;
+    //       var renderCanvas = new Function(canvas_code);
+    //       renderCanvas.apply(this);
+    //     } catch (e) {}
+    //   }
+    // }
   }
 
 
@@ -122,7 +204,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     console.log("place-controller.init() - START");
     /** Get latest public entries from DHT */
     await this._store.pullDht();
-    const snapshots = this._plays.value;
+    const snapshots = this._snapshots.value;
     console.log({snapshots})
     /** Done */
     this._initialized = true
@@ -139,9 +221,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
 
   async pingOthers() {
-    if (this._currentSpaceEh) {
+    if (this._currentSnapshotEh) {
       // console.log("Pinging All")
-      await this._store.pingOthers(this._currentSpaceEh, this._profiles.myAgentPubKey)
+      //await this._store.pingOthers(this._currentSnapshotEh, this._profiles.myAgentPubKey)
     }
   }
 
@@ -174,17 +256,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
 
     return html`
-  <div>
-    <!-- APP BODY -->
-    <div class="appBody">
-    </div>
-  </div>
-`;
+      <div>Playfield:</div>
+      <div id="playfield" class="appBody"></div>
+    `;
   }
 
   static get scopedElements() {
     return {
-      "place-snapshot": PlaceSnapshot,
+      //"place-snapshot": PlaceSnapshot,
       'sl-tooltip': SlTooltip,
       'sl-badge': SlBadge,
     };
@@ -200,6 +279,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
         .appBody {
           width: 100%;
+          min-height: 400px;
           margin-top: 2px;
           margin-bottom: 0px;
           display:flex;

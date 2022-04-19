@@ -4,4 +4,4 @@ name: place
 ui:
   bundled: "../ui/apps/place/ui.zip"
 happ_manifest:
-  bundled: "./place.happ"
+  bundled: "place.happ"

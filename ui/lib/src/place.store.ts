@@ -51,7 +51,8 @@ export class PlaceStore {
           from: this.myAgentPubKey,
           message: {type: 'Pong', content: this.myAgentPubKey}
         };
-        this.service.notify(pong, [signal.from])
+        // FIXME
+        // this.service.notify(pong, [signal.from])
       }
       // Handle signal
       switch(signal.message.type) {
@@ -59,22 +60,22 @@ export class PlaceStore {
         case "Pong":
           break;
         case "NewSnapshot":
-          const svgEh = signal.message.content
-          this.service.getSvgMarker(svgEh).then(svg => {
-            this.svgMarkerStore.update(store => {
-              store[svgEh] = svg
+          const snapEh = signal.message.content
+          this.service.getSnapshot(snapEh).then(snapshot => {
+            this.snapshotStore.update(store => {
+              store[snapEh] = snapshot
               return store
             })
           })
           break;
         case "NewPlacement":
-          const groupEh = signal.message.content
-          this.service.getEmojiGroup(groupEh).then(group => {
-            this.emojiGroupStore.update(emojiGroups => {
-              emojiGroups[groupEh] = group
-              return emojiGroups
-            })
-          })
+          // const eh = signal.message.content
+          // this.service.getPlacement(eh).then(placement => {
+          //   this.placementStore.update(store => {
+          //     store[eh] = placement
+          //     return store
+          //   })
+          // })
           break;
       }
     })
@@ -84,7 +85,8 @@ export class PlaceStore {
   pingOthers(spaceHash: EntryHashB64, myKey: AgentPubKeyB64) {
     const ping: Signal = {maybeSpaceHash: spaceHash, from: this.myAgentPubKey, message: {type: 'Ping', content: myKey}};
     // console.log({signal})
-    this.service.notify(ping, this.others());
+    // FIXME
+    //this.service.notify(ping, this.others());
   }
 
   //
@@ -127,15 +129,31 @@ export class PlaceStore {
 
 
   /** Get latest entries of each type and update local store accordingly */
-  async pullDht() {
+  async pullDht()  {
     console.log("pullDht()")
-    const {snapshots, placements} = await this.getLatestSnapshot();
-    console.log(`Entries found: ${Object.keys(snapshots).length} | ${Object.keys(placements).length}`)
+    const snapshot = await this.service.getLatestSnapshot();
+    const placements = await this.service.getPlacementsAt(snapshot.timeBucketIndex);
+    console.log(`Entries found for bucket ${snapshot.timeBucketIndex}: ${Object.keys(placements).length}`)
     //console.log({plays})
+  }
+
+  getLatestSnapshot(): [EntryHashB64, SnapshotEntry] {
+    let snapshot = {
+      imageData: [],
+      timeBucketIndex: 0,
+    }
+    let eh = '';
+    for(const [curEh, current] of Object.entries(this.snapshots)) {
+      if (current.timeBucketIndex > snapshot.timeBucketIndex){
+        snapshot = current;
+        eh = curEh
+      }
+    }
+    return [eh, snapshot];
   }
 
 
   snapshot(eh: EntryHashB64): SnapshotEntry {
-    return get(this.snapshotStore)[eh].space;
+    return get(this.snapshotStore)[eh];
   }
 }

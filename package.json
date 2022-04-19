@@ -26,7 +26,7 @@
     "build"                 : "bash scripts/build.sh",
     "build:ui"              : "npm run build -w @place/elements && npm run package -w place-ui",
     "build:webapp"          : "hc web-app pack workdir",
-    "build:happ"            : "npm run build:dna && hc app pack workdir/happ-place",
+    "build:happ"            : "npm run build:dna && hc app pack workdir",
     "build:dna"             : "npm run build:zome && hc dna pack workdir",
     "build:zome"            : "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
     "clean"                 : "bash scripts/clean.sh",
