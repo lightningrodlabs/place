@@ -86,32 +86,46 @@ function initPixiApp(canvas: HTMLCanvasElement) {
     //interaction: app.renderer.plugins.interaction // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
   })
 
+  viewport.trackedPointers = []
+
   app.stage.addChild(viewport)
 
   viewport
     .moveCenter(WORLD_WIDTH / 2, WORLD_HEIGHT / 2)
     .drag()
-    .pinch()
+    //.pinch()
     .decelerate()
     .wheel({})
+
+  viewport.interactive = true;
+  viewport.interactiveChildren = true;
 
   //viewport.bounce({})
 
   // viewport.clamp({direction: 'all'})
-  //
-  // viewport.clampZoom({
-  //   minWidth: container.offsetWidth / 10,
-  //   minHeight: container.offsetHeight / 10,
-  //   maxWidth: WORLD_WIDTH,
-  //   maxHeight: WORLD_HEIGHT,
-  // })
+
+  viewport.clampZoom({
+    minWidth: canvas.offsetWidth / 50,
+    minHeight: canvas.offsetHeight / 50,
+    maxWidth: WORLD_WIDTH * 10,
+    maxHeight: WORLD_HEIGHT * 10,
+  })
 
   /** DRAW STUFF */
-  // Borders
+  //Borders
   const border = viewport.addChild(new PIXI.Graphics())
   border
     .lineStyle(1, 0xff0000)
     .drawRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
+
+
+  // // add a red box
+  // var sprite = viewport.addChild(new PIXI.Sprite(PIXI.Texture.WHITE));
+  // sprite.tint = 0xff0000;
+  // sprite.width = sprite.height = 100
+  // sprite.position.set(100, 100);
+  // sprite.interactive = true;
+  // sprite.on('pointerdown', () => console.log("square clicked"))
 
   // const toto = PIXI.GLTexture.fromSource()
   //
@@ -119,18 +133,22 @@ function initPixiApp(canvas: HTMLCanvasElement) {
   // const texture = Texture.from(colorz, {width: WORLD_WIDTH,  height: WORLD_HEIGHT});
 
   // Draw a million pixels
-  let container = viewport.addChild(new PIXI.ParticleContainer(WORLD_HEIGHT * WORLD_WIDTH));
-  for (let i = 0; i < WORLD_HEIGHT; i++) {
-    for (let j = 0; j < WORLD_WIDTH; j++) {
+  //let container = new PIXI.ParticleContainer(WORLD_HEIGHT * WORLD_WIDTH)
+  //container.interactive = true;
+
+  for (let i = 0; i < WORLD_HEIGHT / 1; i++) {
+    for (let j = 0; j < WORLD_WIDTH / 1; j++) {
       //const graphics = PIXI.Sprite.from(PIXI.Texture.WHITE);
       const graphics = PIXI.Sprite.from('one_pixel.png');
       graphics.tint = rand(0xffffff)
       graphics.x = i// * 16;
       graphics.y = j// * 16;
-      graphics.on('click', () => console.log("pixel: " + i + "x" + j))
-      container.addChild(graphics)
+      graphics.interactive = true;
+      graphics.on('pointerdown', () => console.log("pixel: " + i + "x" + j))
+      viewport.addChild(graphics)
     }
   }
+  //viewport.addChild(container)
 }
 
 
