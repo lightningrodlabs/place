@@ -1,63 +1,23 @@
 import {css, html, LitElement} from "lit";
-import {property, state} from "lit/decorators.js";
+import {state} from "lit/decorators.js";
 
 import * as PIXI from 'pixi.js'
-import { Viewport } from 'pixi-viewport'
+import {SCALE_MODES} from 'pixi.js'
+import {Viewport} from 'pixi-viewport'
 
 import {contextProvided} from "@holochain-open-dev/context";
 import {StoreSubscriber} from "lit-svelte-stores";
 
 import {sharedStyles} from "../sharedStyles";
-import {Dictionary,  placeContext} from "../types";
+import {placeContext} from "../types";
 import {PlaceStore} from "../place.store";
 import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
-import {AgentPubKeyB64, EntryHashB64} from "@holochain-open-dev/core-types";
-import {CellId} from "@holochain/client/lib/types/common";
-import {Texture} from "pixi.js";
+import {EntryHashB64} from "@holochain-open-dev/core-types";
+import {WORLD_SIZE, IMAGE_SCALE} from "../constants";
+import {buffer2Texture, getPixel, rand, randomBuffer, setPixel} from "../imageBuffer";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
-
-export const WORLD_WIDTH = 1000
-export const WORLD_HEIGHT = 1000
-
-
-function rand(n: number) {
-  return Math.round(Math.random() * n)
-}
-
-
-// function initPixiApp(container: HTMLCanvasElement) {
-//   console.log(container.id + ": " + container.offsetWidth + "x" + container.offsetHeight)
-//
-//   // let ctx = container.getContext("2d");
-//   // for (var v=0; v < container.offsetHeight; v += 5) {
-//   //   for (var h=0; h < container.offsetWidth; h += 5) {
-//   //     const lum = Math.floor( Math.random() * 50 );
-//   //     ctx!.fillStyle = "hsl(0, 0%," + lum + "%)";
-//   //     ctx!.fillRect(h,v, 5, 5);
-//   //   }
-//   // }
-//
-//   /** Setup PIXI app */
-//
-//   const app = new PIXI.Application({
-//     //antialias: true,
-//     view: container,
-//     backgroundColor: 0x262A2D,
-//     width: container.offsetWidth,
-//     height: container.offsetHeight,
-//     resolution: devicePixelRatio
-//   })
-//   app.view.style.textAlign = 'center'
-//
-//   // add a red box
-//   var sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-//   sprite.tint = 0xff0000;
-//   sprite.width = sprite.height = 100
-//   sprite.position.set(100, 100);
-//   app.stage.addChild(sprite)
-// }
 
 
 function initPixiApp(canvas: HTMLCanvasElement) {
@@ -78,20 +38,16 @@ function initPixiApp(canvas: HTMLCanvasElement) {
   /** Setup viewport */
 
   const viewport = new Viewport({
-    passiveWheel: false,                            // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
-    screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
-    screenHeight: canvas.offsetHeight,            // screen height used by viewport (eg, size of canvas)
-    //screenWidth: app.view.offsetWidth,
-    //screenHeight: app.view.offsetHeight
-    //interaction: app.renderer.plugins.interaction // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
+    passiveWheel: false,                // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
+    //screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
+    //screenHeight: canvas.offsetHeight            // screen height used by viewport (eg, size of canvas)
   })
 
+  // TODO: remove this workaround (otherwise we get an error on undefined object)
   viewport.trackedPointers = []
 
-  app.stage.addChild(viewport)
-
   viewport
-    .moveCenter(WORLD_WIDTH / 2, WORLD_HEIGHT / 2)
+    .moveCenter(WORLD_SIZE / 2, WORLD_SIZE / 2)
     .drag()
     //.pinch()
     .decelerate()
@@ -107,17 +63,17 @@ function initPixiApp(canvas: HTMLCanvasElement) {
   viewport.clampZoom({
     minWidth: canvas.offsetWidth / 50,
     minHeight: canvas.offsetHeight / 50,
-    maxWidth: WORLD_WIDTH * 10,
-    maxHeight: WORLD_HEIGHT * 10,
+    maxWidth: WORLD_SIZE * 20,
+    maxHeight: WORLD_SIZE * 20,
   })
 
   /** DRAW STUFF */
-  //Borders
-  const border = viewport.addChild(new PIXI.Graphics())
-  border
-    .lineStyle(1, 0xff0000)
-    .drawRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT)
 
+  //Borders
+  // const border = viewport.addChild(new PIXI.Graphics())
+  // border
+  //   .lineStyle(1, 0xff0000)
+  //   .drawRect(0, 0, WORLD_SIZE, WORLD_SIZE)
 
   // // add a red box
   // var sprite = viewport.addChild(new PIXI.Sprite(PIXI.Texture.WHITE));
@@ -127,28 +83,72 @@ function initPixiApp(canvas: HTMLCanvasElement) {
   // sprite.interactive = true;
   // sprite.on('pointerdown', () => console.log("square clicked"))
 
-  // const toto = PIXI.GLTexture.fromSource()
-  //
-  // let colorz = new Uint32Array(4*WORLD_WIDTH*WORLD_HEIGHT);
-  // const texture = Texture.from(colorz, {width: WORLD_WIDTH,  height: WORLD_HEIGHT});
+  let buffer = randomBuffer(1);
+  let texture = buffer2Texture(buffer);
+  const img = PIXI.Sprite.from(texture);
+  img.scale.x = IMAGE_SCALE
+  img.scale.y = IMAGE_SCALE
+  img.interactive = true;
 
-  // Draw a million pixels
-  //let container = new PIXI.ParticleContainer(WORLD_HEIGHT * WORLD_WIDTH)
-  //container.interactive = true;
+  img.on('pointerdown', (e) => {
+    //console.log({e})
+    let customPos;
+    let custom = new PIXI.Point(e.data.global.x, e.data.global.y)
+    custom.x -= canvas.offsetLeft
+    custom.y -= canvas.offsetTop
+    customPos = e.data.getLocalPosition(img, customPos, custom)
+    logText.text = ""
+      + "global:" + e.data.global
+      + "\n" + "custom:" + customPos
+      + "\n" + canvas.offsetLeft + " ; " + canvas.offsetTop
 
-  for (let i = 0; i < WORLD_HEIGHT / 1; i++) {
-    for (let j = 0; j < WORLD_WIDTH / 1; j++) {
-      //const graphics = PIXI.Sprite.from(PIXI.Texture.WHITE);
-      const graphics = PIXI.Sprite.from('one_pixel.png');
-      graphics.tint = rand(0xffffff)
-      graphics.x = i// * 16;
-      graphics.y = j// * 16;
-      graphics.interactive = true;
-      graphics.on('pointerdown', () => console.log("pixel: " + i + "x" + j))
-      viewport.addChild(graphics)
-    }
+    sel.x = Math.floor(customPos.x) * IMAGE_SCALE
+    sel.y = Math.floor(customPos.y) * IMAGE_SCALE
+    setPixel(buffer, 0x00FF00, customPos);
+    let newText = PIXI.Texture.fromBuffer(buffer, WORLD_SIZE, WORLD_SIZE, {scaleMode: SCALE_MODES.NEAREST})
+    img.texture = newText
+  })
+
+
+
+  // Quadrillage pixel
+  const grid = new PIXI.Graphics()
+  grid.lineStyle(1, 0x222222)
+  for (let i = 0; i < WORLD_SIZE * IMAGE_SCALE; i += IMAGE_SCALE) {
+    grid
+      .moveTo(0, i)
+      .lineTo(WORLD_SIZE * IMAGE_SCALE, i)
   }
-  //viewport.addChild(container)
+  for (let i = 0; i < WORLD_SIZE * IMAGE_SCALE; i += IMAGE_SCALE) {
+    grid
+      .moveTo(i, 0)
+      .lineTo(i, WORLD_SIZE * IMAGE_SCALE)
+  }
+
+  let logText = new PIXI.Text(
+    `logtext`, {
+      fontSize: 16,
+    },
+  );
+
+  let sel = new PIXI.Graphics();
+  sel.lineStyle(1, 0xFF0000)
+    .drawRect(0,0, IMAGE_SCALE, IMAGE_SCALE)
+
+  app.stage.addChild(viewport)
+  viewport.addChild(img)
+  viewport.addChild(grid)
+  viewport.addChild(sel)
+  //viewport.addChild(logText)
+
+  //app.stage.addChild(img)
+  ////app.stage.addChild(grid)
+  //app.stage.addChild(sel)
+  //app.stage.addChild(logText)
+
+  //console.log(app.stage)
+  //console.log(img)
+  //console.log("canvas: " + canvas.offsetLeft + " | " +  canvas.offsetTop)
 }
 
 
@@ -300,7 +300,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     return html`
       <div>Playfield:</div>
-      <canvas id="playfield" class="appBody"></canvas>
+      <canvas id="playfield" class="appCanvas"></canvas>
     `;
   }
 
@@ -316,16 +316,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return [
       sharedStyles,
       css`
-        :host {
-          margin: 10px;
-        }
-
-        .appBody {
+        .appCanvas {
+          /*position: relative;*/
+          cursor: inherit;
           width: 100%;
           min-height: 400px;
-          margin-top: 2px;
+          margin-top: 0px;
           margin-bottom: 0px;
-          display:flex;
+          /*display:block;*/
         }
 
         @media (min-width: 640px) {
