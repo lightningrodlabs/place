@@ -14,11 +14,13 @@ import {PlaceStore} from "../place.store";
 import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
 import {EntryHashB64} from "@holochain-open-dev/core-types";
-import {WORLD_SIZE, IMAGE_SCALE} from "../constants";
+import {WORLD_SIZE, IMAGE_SCALE, COLOR_PALETTE} from "../constants";
 import {buffer2Texture, getPixel, rand, randomBuffer, setPixel} from "../imageBuffer";
+import tinycolor from "tinycolor2";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
+let g_selectedColor = COLOR_PALETTE[0];
 
 function initPixiApp(canvas: HTMLCanvasElement) {
   console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
@@ -94,7 +96,7 @@ function initPixiApp(canvas: HTMLCanvasElement) {
     //console.log({e})
     let customPos;
     let custom = new PIXI.Point(e.data.global.x, e.data.global.y)
-    custom.x -= canvas.offsetLeft
+    //custom.x -= canvas.offsetLeft
     custom.y -= canvas.offsetTop
     customPos = e.data.getLocalPosition(img, customPos, custom)
     logText.text = ""
@@ -104,12 +106,12 @@ function initPixiApp(canvas: HTMLCanvasElement) {
 
     sel.x = Math.floor(customPos.x) * IMAGE_SCALE
     sel.y = Math.floor(customPos.y) * IMAGE_SCALE
-    setPixel(buffer, 0x00FF00, customPos);
+    const tiny = new tinycolor(g_selectedColor)
+    const colorNum = parseInt(tiny.toHex(), 16);
+    setPixel(buffer, colorNum, customPos);
     let newText = PIXI.Texture.fromBuffer(buffer, WORLD_SIZE, WORLD_SIZE, {scaleMode: SCALE_MODES.NEAREST})
     img.texture = newText
   })
-
-
 
   // Quadrillage pixel
   const grid = new PIXI.Graphics()
@@ -135,11 +137,15 @@ function initPixiApp(canvas: HTMLCanvasElement) {
   sel.lineStyle(1, 0xFF0000)
     .drawRect(0,0, IMAGE_SCALE, IMAGE_SCALE)
 
+  /** Add all elements to stage */
+
   app.stage.addChild(viewport)
   viewport.addChild(img)
   viewport.addChild(grid)
   viewport.addChild(sel)
   //viewport.addChild(logText)
+
+  /** DEBUG ; without viewport **/
 
   //app.stage.addChild(img)
   ////app.stage.addChild(grid)
@@ -166,7 +172,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   _store!: PlaceStore;
 
   _snapshots = new StoreSubscriber(this, () => this._store?.snapshots);
-
 
   /** Private properties */
 
@@ -207,9 +212,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async updated(changedProperties: any) {
     if (this._canPostInit) {
       this.postInit();
-    }
-    if (this._initialized) {
-      initPixiApp(this.playfieldElem)
     }
 
     //     const id = "playfield"
@@ -257,6 +259,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   private postInit() {
     this._canPostInit = false;
+    initPixiApp(this.playfieldElem)
   }
 
 
@@ -298,9 +301,21 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       `;
     }
 
+    /** Build palette button list */
+    //let palette = html``
+    let palette = COLOR_PALETTE.map((color)=> {
+      const extraClass = g_selectedColor == color? "selected" : "colorButton"
+      return html`<button class=" ${extraClass}" style="background-color: ${color}"
+                          @click=${() => {g_selectedColor = color; this.requestUpdate()}}></button>`
+    })
+
     return html`
-      <div>Playfield:</div>
-      <canvas id="playfield" class="appCanvas"></canvas>
+      <div style="display: flex;flex-direction: row">
+        <div style="width:80px;display: flex;flex-direction: column">
+          ${palette}
+        </div>
+        <canvas id="playfield" class="appCanvas"></canvas>
+      </div>
     `;
   }
 
@@ -320,10 +335,32 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           /*position: relative;*/
           cursor: inherit;
           width: 100%;
+          height: 100%;
           min-height: 400px;
           margin-top: 0px;
           margin-bottom: 0px;
           /*display:block;*/
+        }
+
+        .selected {
+          /*border: 3px dotted blue;*/
+          border-radius: 15px;
+          border-style: outset;
+          border-width: 4px;
+          border-color: coral;
+          min-height: 30px;
+          max-width:  50px;
+          margin-top:  5px;
+          margin-left:15px;
+        }
+
+        .colorButton {
+          min-height: 30px;
+          max-width:  50px;
+          margin-top:  5px;
+          margin-left:15px;
+          border-radius: 15px;
+          border: 3px solid gray;
         }
 
         @media (min-width: 640px) {
