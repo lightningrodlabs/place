@@ -10,8 +10,8 @@ export function randomBuffer(pct:number): Uint8Array {
   let buff = new Uint8Array(1000 * 1000 * 4);
   for (let i = 0; i < 1000 * 1000; i++) {
     buff[i * 4] = Math.floor(255 * pct);  // R
-    buff[i * 4 + 1] = 0;  // G
-    buff[i * 4 + 2] = 0;  // B
+    buff[i * 4 + 1] = Math.floor(255 * pct);  // G
+    buff[i * 4 + 2] = Math.floor(255 * pct);  // B
     buff[i * 4 + 3] = 255;  // A
   }
   return buff;

@@ -117,7 +117,7 @@ function initPixiApp(canvas: HTMLCanvasElement, self:any) {
 
   // Quadrillage pixel
   grid = new PIXI.Graphics()
-  grid.lineStyle(1, 0x222222)
+  grid.lineStyle(1, 0x333333)
   for (let i = 0; i < WORLD_SIZE * IMAGE_SCALE; i += IMAGE_SCALE) {
     grid
       .moveTo(0, i)
