@@ -21,8 +21,10 @@ import tinycolor from "tinycolor2";
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
 let g_selectedColor = COLOR_PALETTE[0];
+let viewport: any = undefined;
+let grid: any = undefined;
 
-function initPixiApp(canvas: HTMLCanvasElement) {
+function initPixiApp(canvas: HTMLCanvasElement, self:any) {
   console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
   /** Setup PIXI app */
   const app = new PIXI.Application({
@@ -39,7 +41,7 @@ function initPixiApp(canvas: HTMLCanvasElement) {
 
   /** Setup viewport */
 
-  const viewport = new Viewport({
+  viewport = new Viewport({
     passiveWheel: false,                // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
     //screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
     //screenHeight: canvas.offsetHeight            // screen height used by viewport (eg, size of canvas)
@@ -114,7 +116,7 @@ function initPixiApp(canvas: HTMLCanvasElement) {
   })
 
   // Quadrillage pixel
-  const grid = new PIXI.Graphics()
+  grid = new PIXI.Graphics()
   grid.lineStyle(1, 0x222222)
   for (let i = 0; i < WORLD_SIZE * IMAGE_SCALE; i += IMAGE_SCALE) {
     grid
@@ -126,6 +128,7 @@ function initPixiApp(canvas: HTMLCanvasElement) {
       .moveTo(i, 0)
       .lineTo(i, WORLD_SIZE * IMAGE_SCALE)
   }
+  grid.visible = false;
 
   let logText = new PIXI.Text(
     `logtext`, {
@@ -144,6 +147,14 @@ function initPixiApp(canvas: HTMLCanvasElement) {
   viewport.addChild(grid)
   viewport.addChild(sel)
   //viewport.addChild(logText)
+
+  viewport.on("zoomed", (e:any) => {
+    console.log("zoomed event fired: " + viewport.scale.x)
+    //console.log({e})
+    grid.visible = viewport.scale.x > 2;
+    self.requestUpdate()
+  })
+  viewport.fitWorld(true)
 
   /** DEBUG ; without viewport **/
 
@@ -259,7 +270,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   private postInit() {
     this._canPostInit = false;
-    initPixiApp(this.playfieldElem)
+    initPixiApp(this.playfieldElem, this)
   }
 
 
@@ -309,10 +320,16 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
                           @click=${() => {g_selectedColor = color; this.requestUpdate()}}></button>`
     })
 
+    console.log({viewport})
+
     return html`
       <div style="display: flex;flex-direction: row">
         <div style="width:80px;display: flex;flex-direction: column">
           ${palette}
+          <br/>
+          <div>Zoom:</div>
+          <div>${Math.round(viewport?.scale.x * 100)}%</div>
+          <button style="margin:5px;" @click=${() => {viewport?.fitWorld(true); this.requestUpdate()}}>Fit</button>
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>
