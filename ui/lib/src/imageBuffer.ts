@@ -23,8 +23,8 @@ export function randomBuffer(pct:number): Uint8Array {
 export function randomSnapshotData(): Uint8Array {
   let buff = new Uint8Array(1000 * 1000 / 2);
   for (let i = 0; i < 1000 * 1000 / 2; i += 1) {
-    const index = i % 16
-    buff[i] = index * 16 + index;
+    const index = i * 2 % 16
+    buff[i] = index * 16 + ((index + 1) % 16);
   }
   return buff;
 }

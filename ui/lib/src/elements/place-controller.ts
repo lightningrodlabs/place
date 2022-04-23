@@ -14,7 +14,7 @@ import {PlaceStore} from "../place.store";
 import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
 import {EntryHashB64} from "@holochain-open-dev/core-types";
-import {WORLD_SIZE, IMAGE_SCALE, COLOR_PALETTE} from "../constants";
+import {WORLD_SIZE, IMAGE_SCALE, COLOR_PALETTE, color2index} from "../constants";
 import {
   buffer2Texture,
   getPixel,
@@ -31,156 +31,8 @@ export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 let g_selectedColor = COLOR_PALETTE[0];
 let viewport: any = undefined;
 let grid: any = undefined;
-
-function initPixiApp(canvas: HTMLCanvasElement, self:any) {
-  console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
-  /** Setup PIXI app */
-  const app = new PIXI.Application({
-    //antialias: true,
-    view: canvas,
-    backgroundColor: 0x111111,
-    width: canvas.offsetWidth,
-    height: canvas.offsetHeight,
-    resolution: devicePixelRatio
-  })
-  app.view.style.textAlign = 'center'
-  //container.appendChild(app.view)
-
-
-  /** Setup viewport */
-
-  viewport = new Viewport({
-    passiveWheel: false,                // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
-    //screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
-    //screenHeight: canvas.offsetHeight            // screen height used by viewport (eg, size of canvas)
-  })
-
-  // TODO: remove this workaround (otherwise we get an error on undefined object)
-  viewport.trackedPointers = []
-
-  viewport
-    .moveCenter(WORLD_SIZE / 2, WORLD_SIZE / 2)
-    .drag()
-    //.pinch()
-    .decelerate()
-    .wheel({})
-
-  viewport.interactive = true;
-  viewport.interactiveChildren = true;
-
-  //viewport.bounce({})
-
-  // viewport.clamp({direction: 'all'})
-
-  viewport.clampZoom({
-    minWidth: canvas.offsetWidth / 50,
-    minHeight: canvas.offsetHeight / 50,
-    maxWidth: WORLD_SIZE * 20,
-    maxHeight: WORLD_SIZE * 20,
-  })
-
-  /** DRAW STUFF */
-
-  //Borders
-  // const border = viewport.addChild(new PIXI.Graphics())
-  // border
-  //   .lineStyle(1, 0xff0000)
-  //   .drawRect(0, 0, WORLD_SIZE, WORLD_SIZE)
-
-  // // add a red box
-  // var sprite = viewport.addChild(new PIXI.Sprite(PIXI.Texture.WHITE));
-  // sprite.tint = 0xff0000;
-  // sprite.width = sprite.height = 100
-  // sprite.position.set(100, 100);
-  // sprite.interactive = true;
-  // sprite.on('pointerdown', () => console.log("square clicked"))
-
-
-  //let buffer = randomBuffer(1);
-
-  let buf = randomSnapshotData();
-  let buffer = snapshotIntoFrame(buf);
-
-  let texture = buffer2Texture(buffer);
-  const img = PIXI.Sprite.from(texture);
-  img.scale.x = IMAGE_SCALE
-  img.scale.y = IMAGE_SCALE
-  img.interactive = true;
-
-  img.on('pointerdown', (e) => {
-    //console.log({e})
-    let customPos;
-    let custom = new PIXI.Point(e.data.global.x, e.data.global.y)
-    //custom.x -= canvas.offsetLeft
-    custom.y -= canvas.offsetTop
-    customPos = e.data.getLocalPosition(img, customPos, custom)
-    logText.text = ""
-      + "global:" + e.data.global
-      + "\n" + "custom:" + customPos
-      + "\n" + canvas.offsetLeft + " ; " + canvas.offsetTop
-
-    sel.x = Math.floor(customPos.x) * IMAGE_SCALE
-    sel.y = Math.floor(customPos.y) * IMAGE_SCALE
-    const tiny = new tinycolor(g_selectedColor)
-    const colorNum = parseInt(tiny.toHex(), 16);
-    setPixel(buffer, colorNum, customPos);
-    let newText = PIXI.Texture.fromBuffer(buffer, WORLD_SIZE, WORLD_SIZE, {scaleMode: SCALE_MODES.NEAREST})
-    img.texture = newText
-  })
-
-  // Quadrillage pixel
-  grid = new PIXI.Graphics()
-  grid.lineStyle(1, 0x333333)
-  for (let i = 0; i < WORLD_SIZE * IMAGE_SCALE; i += IMAGE_SCALE) {
-    grid
-      .moveTo(0, i)
-      .lineTo(WORLD_SIZE * IMAGE_SCALE, i)
-  }
-  for (let i = 0; i < WORLD_SIZE * IMAGE_SCALE; i += IMAGE_SCALE) {
-    grid
-      .moveTo(i, 0)
-      .lineTo(i, WORLD_SIZE * IMAGE_SCALE)
-  }
-  grid.visible = false;
-
-  let logText = new PIXI.Text(
-    `logtext`, {
-      fontSize: 16,
-    },
-  );
-
-  let sel = new PIXI.Graphics();
-  sel.lineStyle(1, 0xFF0000)
-    .drawRect(0,0, IMAGE_SCALE, IMAGE_SCALE)
-
-  /** Add all elements to stage */
-
-  app.stage.addChild(viewport)
-  viewport.addChild(img)
-  viewport.addChild(grid)
-  viewport.addChild(sel)
-  //viewport.addChild(logText)
-
-  viewport.on("zoomed", (e:any) => {
-    console.log("zoomed event fired: " + viewport.scale.x)
-    //console.log({e})
-    grid.visible = viewport.scale.x > 2;
-    self.requestUpdate()
-  })
-  viewport.fitWorld(true)
-
-  /** DEBUG ; without viewport **/
-
-  //app.stage.addChild(img)
-  ////app.stage.addChild(grid)
-  //app.stage.addChild(sel)
-  //app.stage.addChild(logText)
-
-  //console.log(app.stage)
-  //console.log(img)
-  //console.log("canvas: " + canvas.offsetLeft + " | " +  canvas.offsetTop)
-}
-
+let frameSprite: any = undefined;
+let startTime: number = Date.now();
 
 /**
  * @element place-controller
@@ -188,6 +40,8 @@ function initPixiApp(canvas: HTMLCanvasElement, self:any) {
 export class PlaceController extends ScopedElementsMixin(LitElement) {
   constructor() {
     super();
+    startTime = Date.now();
+    setInterval(async () => await this.publishLatest(), 120 * 1000)
   }
 
   /** Dependencies */
@@ -210,6 +64,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return this.shadowRoot!.getElementById("playfield") as HTMLCanvasElement;
   }
 
+  private async publishLatest() {
+    console.log("Calling publishLatest()...")
+    let res = await this._store.publishLatestSnapshot();
+    console.log("Calling publishLatest() result length: " + res.length)
+  }
 
   /** Launch init when myProfile has been set */
   private subscribeSnapshots() {
@@ -237,26 +96,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     if (this._canPostInit) {
       this.postInit();
     }
-
-    //     const id = "playfield"
-    //     const canvas = this.shadowRoot!.getElementById(id) as HTMLCanvasElement;
-    //     if (!canvas) {
-    //       console.debug("CANVAS not found for " + id);
-    //       continue;
-    //     }
-    //     //console.log({canvas})
-    //     var ctx = canvas.getContext("2d");
-    //     if (!ctx) {
-    //       console.log("CONTEXT not found for " + id);
-    //       continue;
-    //     }
-    //     //console.log({ctx})
-    //     //console.log("Rendering CANVAS for " + id)
-    //     try {
-    //       let canvas_code = prefix_canvas(id) + play.space.surface.canvas;
-    //       var renderCanvas = new Function(canvas_code);
-    //       renderCanvas.apply(this);
-    //     } catch (e) {}
   }
 
 
@@ -283,11 +122,163 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   private postInit() {
     this._canPostInit = false;
-    initPixiApp(this.playfieldElem, this)
+    this.initPixiApp(this.playfieldElem)
   }
 
 
+  initPixiApp(canvas: HTMLCanvasElement) {
+    console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
+    /** Setup PIXI app */
+    const app = new PIXI.Application({
+      //antialias: true,
+      view: canvas,
+      backgroundColor: 0x111111,
+      width: canvas.offsetWidth,
+      height: canvas.offsetHeight,
+      resolution: devicePixelRatio
+    })
+    app.view.style.textAlign = 'center'
+    //container.appendChild(app.view)
 
+
+    /** Setup viewport */
+
+    viewport = new Viewport({
+      passiveWheel: false,                // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
+      //screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
+      //screenHeight: canvas.offsetHeight            // screen height used by viewport (eg, size of canvas)
+    })
+
+    // TODO: remove this workaround (otherwise we get an error on undefined object)
+    viewport.trackedPointers = []
+
+    viewport
+      .moveCenter(WORLD_SIZE / 2, WORLD_SIZE / 2)
+      .drag()
+      //.pinch()
+      .decelerate()
+      .wheel({})
+
+    viewport.interactive = true;
+    viewport.interactiveChildren = true;
+
+    //viewport.bounce({})
+
+    // viewport.clamp({direction: 'all'})
+
+    viewport.clampZoom({
+      minWidth: canvas.offsetWidth / 50,
+      minHeight: canvas.offsetHeight / 50,
+      maxWidth: WORLD_SIZE * 20,
+      maxHeight: WORLD_SIZE * 20,
+    })
+
+    /** DRAW STUFF */
+
+      //Borders
+      // const border = viewport.addChild(new PIXI.Graphics())
+      // border
+      //   .lineStyle(1, 0xff0000)
+      //   .drawRect(0, 0, WORLD_SIZE, WORLD_SIZE)
+
+    let buffer: Uint8Array;
+    if (this._currentSnapshotEh != null) {
+      const snapshots = this._snapshots.value;
+      const snapshot = snapshots[this._currentSnapshotEh];
+      buffer = snapshotIntoFrame(snapshot.imageData);
+    } else {
+      //let buffer = randomBuffer(1);
+      let buf = randomSnapshotData();
+      buffer = snapshotIntoFrame(buf);
+    }
+
+    let texture = buffer2Texture(buffer);
+    frameSprite = PIXI.Sprite.from(texture);
+    frameSprite.scale.x = IMAGE_SCALE
+    frameSprite.scale.y = IMAGE_SCALE
+    frameSprite.interactive = true;
+
+    frameSprite.on('pointerdown', (e:any) => {
+      //console.log({e})
+      let customPos;
+      let custom = new PIXI.Point(e.data.global.x, e.data.global.y)
+      //custom.x -= canvas.offsetLeft
+      custom.y -= canvas.offsetTop
+      customPos = e.data.getLocalPosition(frameSprite, customPos, custom)
+      logText.text = ""
+        + "global:" + e.data.global
+        + "\n" + "custom:" + customPos
+        + "\n" + canvas.offsetLeft + " ; " + canvas.offsetTop
+
+      // Store placement
+      this._store.placePixel({
+        x: Math.floor(customPos.x),
+        y: Math.floor(customPos.y),
+        color: color2index(g_selectedColor),
+      })
+
+      sel.x = Math.floor(customPos.x) * IMAGE_SCALE
+      sel.y = Math.floor(customPos.y) * IMAGE_SCALE
+      const tiny = new tinycolor(g_selectedColor)
+      const colorNum = parseInt(tiny.toHex(), 16);
+      setPixel(buffer, colorNum, customPos);
+      let newText = PIXI.Texture.fromBuffer(buffer, WORLD_SIZE, WORLD_SIZE, {scaleMode: SCALE_MODES.NEAREST})
+      frameSprite.texture = newText
+    })
+
+    // Quadrillage pixel
+    grid = new PIXI.Graphics()
+    grid.lineStyle(1, 0x333333)
+    for (let i = 0; i < WORLD_SIZE * IMAGE_SCALE; i += IMAGE_SCALE) {
+      grid
+        .moveTo(0, i)
+        .lineTo(WORLD_SIZE * IMAGE_SCALE, i)
+    }
+    for (let i = 0; i < WORLD_SIZE * IMAGE_SCALE; i += IMAGE_SCALE) {
+      grid
+        .moveTo(i, 0)
+        .lineTo(i, WORLD_SIZE * IMAGE_SCALE)
+    }
+    grid.visible = false;
+
+    let logText = new PIXI.Text(
+      `logtext`, {
+        fontSize: 16,
+      },
+    );
+
+    let sel = new PIXI.Graphics();
+    sel.lineStyle(1, 0xFF0000)
+      .drawRect(0,0, IMAGE_SCALE, IMAGE_SCALE)
+
+    /** Add all elements to stage */
+
+    app.stage.addChild(viewport)
+    viewport.addChild(frameSprite)
+    viewport.addChild(grid)
+    viewport.addChild(sel)
+    //viewport.addChild(logText)
+
+    viewport.on("zoomed", (e:any) => {
+      console.log("zoomed event fired: " + viewport.scale.x)
+      //console.log({e})
+      grid.visible = viewport.scale.x > 2;
+      this.requestUpdate()
+    })
+    viewport.fitWorld(true)
+
+    /** DEBUG ; without viewport **/
+
+    //app.stage.addChild(img)
+    ////app.stage.addChild(grid)
+    //app.stage.addChild(sel)
+    //app.stage.addChild(logText)
+  }
+
+
+  /**
+   *
+   */
   async pingOthers() {
     if (this._currentSnapshotEh) {
       // console.log("Pinging All")
@@ -333,7 +324,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
                           @click=${() => {g_selectedColor = color; this.requestUpdate()}}></button>`
     })
 
-    console.log({viewport})
+    //console.log({viewport})
+    let sinceLastPublish = Date.now() - startTime;
+    sinceLastPublish = (sinceLastPublish / 1000) % 120
+
 
     return html`
       <div style="display: flex;flex-direction: row">
@@ -343,6 +337,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           <div>Zoom:</div>
           <div>${Math.round(viewport?.scale.x * 100)}%</div>
           <button style="margin:5px;" @click=${() => {viewport?.fitWorld(true); this.requestUpdate()}}>Fit</button>
+          <div>Time:</div>
+          <div>${sinceLastPublish} sec</div>
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>

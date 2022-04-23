@@ -3,6 +3,7 @@ import {BaseClient, CellClient} from '@holochain-open-dev/cell-client';
 import { writable, Writable, derived, Readable, get } from 'svelte/store';
 import { PlaceService } from './place.service';
 import {
+  DestructuredPlacement,
   Dictionary, PlacementEntry,
   Signal, SnapshotEntry,
 } from './types';
@@ -138,6 +139,14 @@ export class PlaceStore {
     } catch (e) {
       console.log("No snapshot found")
     }
+  }
+
+  async publishLatestSnapshot(): Promise<HeaderHashB64[]> {
+    return this.service.publishLatestSnapshot();
+  }
+
+  async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
+    return this.service.placePixel(destructured);
   }
 
   getLatestSnapshot(): [EntryHashB64, SnapshotEntry] {
