@@ -15,7 +15,15 @@ import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
 import {EntryHashB64} from "@holochain-open-dev/core-types";
 import {WORLD_SIZE, IMAGE_SCALE, COLOR_PALETTE} from "../constants";
-import {buffer2Texture, getPixel, rand, randomBuffer, setPixel} from "../imageBuffer";
+import {
+  buffer2Texture,
+  getPixel,
+  rand,
+  randomBuffer,
+  randomSnapshotData,
+  setPixel,
+  snapshotIntoFrame
+} from "../imageBuffer";
 import tinycolor from "tinycolor2";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
@@ -87,7 +95,12 @@ function initPixiApp(canvas: HTMLCanvasElement, self:any) {
   // sprite.interactive = true;
   // sprite.on('pointerdown', () => console.log("square clicked"))
 
-  let buffer = randomBuffer(1);
+
+  //let buffer = randomBuffer(1);
+
+  let buf = randomSnapshotData();
+  let buffer = snapshotIntoFrame(buf);
+
   let texture = buffer2Texture(buffer);
   const img = PIXI.Sprite.from(texture);
   img.scale.x = IMAGE_SCALE

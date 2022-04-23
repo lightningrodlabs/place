@@ -142,7 +142,7 @@ export class PlaceStore {
 
   getLatestSnapshot(): [EntryHashB64, SnapshotEntry] {
     let snapshot = {
-      imageData: [],
+      imageData: new Uint8Array(),
       timeBucketIndex: 0,
     }
     let eh = '';

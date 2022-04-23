@@ -27,7 +27,7 @@ export interface PlacementEntry {
 
 
 export interface SnapshotEntry {
-  imageData: number[],
+  imageData: Uint8Array,
   timeBucketIndex: number,
 }
 
