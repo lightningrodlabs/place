@@ -25,6 +25,7 @@ export function randomSnapshotData(): Uint8Array {
   for (let i = 0; i < 1000 * 1000 / 2; i += 1) {
     const index = i * 2 % 16
     buff[i] = index * 16 + ((index + 1) % 16);
+    //buff[i] = 5 * 16 + 5;
   }
   return buff;
 }

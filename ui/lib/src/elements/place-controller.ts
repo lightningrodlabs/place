@@ -34,6 +34,10 @@ let grid: any = undefined;
 let frameSprite: any = undefined;
 let startTime: number = Date.now();
 
+let wait = false;
+let waiting = false;
+let pixiApp:any = undefined;
+
 /**
  * @element place-controller
  */
@@ -127,11 +131,23 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     this.initPixiApp(this.playfieldElem)
   }
 
+  takeScreenshot() {
+    wait = true;
+    pixiApp.renderer.extract.canvas(frameSprite).toBlob((b:any) => {
+      const a = document.createElement('a');
+      document.body.append(a);
+      a.download = 'screenshot';
+      a.href = URL.createObjectURL(b);
+      a.click();
+      a.remove();
+    }, 'image/png');
+  }
+
 
   initPixiApp(canvas: HTMLCanvasElement) {
     console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
     /** Setup PIXI app */
-    const app = new PIXI.Application({
+    pixiApp = new PIXI.Application({
       //antialias: true,
       view: canvas,
       backgroundColor: 0x111111,
@@ -139,8 +155,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       height: canvas.offsetHeight,
       resolution: devicePixelRatio
     })
-    app.view.style.textAlign = 'center'
-    //container.appendChild(app.view)
+    pixiApp.view.style.textAlign = 'center'
+    //container.appendChild(pixiApp.view)
 
 
     /** Setup viewport */
@@ -255,7 +271,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** Add all elements to stage */
 
-    app.stage.addChild(viewport)
+    pixiApp.stage.addChild(viewport)
     viewport.addChild(frameSprite)
     viewport.addChild(grid)
     viewport.addChild(sel)
@@ -271,10 +287,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** DEBUG ; without viewport **/
 
-    //app.stage.addChild(img)
-    ////app.stage.addChild(grid)
-    //app.stage.addChild(sel)
-    //app.stage.addChild(logText)
+    //pixiApp.stage.addChild(img)
+    ////pixiApp.stage.addChild(grid)
+    //pixiApp.stage.addChild(sel)
+    //pixiApp.stage.addChild(logText)
   }
 
 
@@ -341,6 +357,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           <button style="margin:5px;" @click=${() => {viewport?.fitWorld(true); this.requestUpdate()}}>Fit</button>
           <div>Time:</div>
           <div>${sinceLastPublish} sec</div>
+          <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>
