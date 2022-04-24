@@ -3,7 +3,7 @@ manifest_version: "1"
 name: place
 uuid: 00000000-0000-0000-0000-000000000000
 properties:
-  startTime: 1650774068
+  startTime: 1650831770
   bucketSizeSec: 60
 zomes:
   - name: place
