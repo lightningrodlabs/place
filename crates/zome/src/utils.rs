@@ -27,6 +27,21 @@ pub fn get_current_bucket_path() -> Path {
    return get_bucket_path(now);
 }
 
+
+pub fn path_to_str(path: &Path) -> String {
+   let mut res = String::from("");
+   let mut maybe_path: Option<Path> = Some(path.to_owned());
+   while maybe_path.is_some() {
+      let path = maybe_path.unwrap().to_owned();
+      let comp: &Component  = path.leaf().unwrap();
+      res = format!("{}/{}", &String::from_utf8_lossy(comp.as_ref()), res);
+      maybe_path = path.parent();
+   }
+   res = format!("\"//{}\"", res);
+   res
+}
+
+
 ///
 pub fn get_bucket_path(now: u64) -> Path {
    let place_properties = get_properties(()).unwrap();
@@ -36,19 +51,22 @@ pub fn get_bucket_path(now: u64) -> Path {
    assert!(sec_since_start_of_day < 24 * 3600);
    let mut day_path = get_day_path(now); // Days::DayIndex
    let bucket_index = sec_since_start_of_day / place_properties.bucket_size_sec as u64; // 287
+   //debug!("get_bucket_path({}) ; bucket_index = {}", now, bucket_index);
    let current_path = if buckets_per_day >= 48_f32 {
       /// Create hour level, Days::DayIndex::HourIndex::BucketIndex
-      let buckets_per_hour = (24_f32 / buckets_per_day).ceil() as u64; // 12
+      let buckets_per_hour = (buckets_per_day / 24_f32).ceil() as u64; // 12
       let hour_index = bucket_index / buckets_per_hour; // 23
       let hour = Component::from(format!("{}", hour_index).as_str());
       day_path.append_component(hour);
       let bucket_since_hour = bucket_index % buckets_per_hour; // 11
       let bucket = Component::from(format!("{}", bucket_since_hour));
+      //debug!("get_bucket_path({}) ; bucket_path = {}", now, path_to_str(&bucket_path));
       day_path.append_component(bucket);
       day_path
    } else {
       /// No hour level, Path is Days::DayIndex::BucketIndex
       let bucket_path = Component::from(format!("{}", bucket_index));
+      //debug!("get_bucket_path({}) ; bucket_path = {}", now, path_to_str(&bucket_path));
       day_path.append_component(bucket_path);
       day_path
    };

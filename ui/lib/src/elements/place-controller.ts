@@ -81,6 +81,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         if (latestEh != '') {
           this._currentSnapshotEh = latestEh
           console.log("starting Snapshot: " + latestSnapshot.timeBucketIndex + " | " + latestEh);
+        } else {
+          console.warn("No starting Snapshot found");
+
         }
       }
       await this.init();

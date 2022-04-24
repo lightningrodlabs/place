@@ -3,7 +3,7 @@ use zome_utils::zome_panic_hook;
 
 use crate::entries::*;
 use crate::{get_current_bucket_path, PlaceLinkKind};
-
+use crate::utils::*;
 
 /// Zome Function
 #[hdk_extern]
@@ -16,6 +16,7 @@ pub fn place_pixel(input: DestructuredPlacement) -> ExternResult<HeaderHash> {
    /// Link to current bucket path
    let eh = hash_entry(placement)?;
    let path = get_current_bucket_path();
+   debug!("*** place_pixel() path: {}", path_to_str(&path));
    let _ = create_link(path.path_entry_hash()?, eh, PlaceLinkKind::Placements.as_tag())?;
    /// Done
    Ok(hh)

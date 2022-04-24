@@ -16,6 +16,7 @@ pub struct Snapshot {
 impl Snapshot {
    ///
    pub fn new(image_data: Vec<DoublePixel>, time_bucket_index: u32) -> Self {
+      assert!(image_data.len()  == (WORLD_SIZE * WORLD_SIZE / 2) as usize);
       Self {
          image_data,
          time_bucket_index,
@@ -24,7 +25,9 @@ impl Snapshot {
 
 
    pub fn create_first(placements: Vec<Placement>) -> Self {
-      let mut image_data = Vec::with_capacity((WORLD_SIZE*WORLD_SIZE / 2)as usize);
+      //let mut image_data = Vec::with_capacity((WORLD_SIZE * WORLD_SIZE / 2) as usize);
+      let mut image_data = vec![DoublePixel::new(0,0); (WORLD_SIZE * WORLD_SIZE / 2) as usize];
+
       update_image(&mut image_data, placements);
       let properties = get_properties(()).unwrap();
       Self {
@@ -46,22 +49,24 @@ impl Snapshot {
 
    /// Increment Snapshot to next time bucket with the given new placements
    pub fn increment(&mut self, placements: Vec<Placement>) {
-      self.update(1, placements)
+      assert!(self.image_data.len() == (WORLD_SIZE * WORLD_SIZE / 2) as usize);
+      self.update_to(1, placements)
    }
 
    /// Increment Snapshot to a futur time bucket with the given new placements
-   pub fn update(&mut self, bucket_increment: u16, placements: Vec<Placement>) {
+   pub fn update_to(&mut self, bucket_increment: u16, placements: Vec<Placement>) {
       self.time_bucket_index = self.time_bucket_index + bucket_increment as u32;
       update_image(&mut self.image_data, placements);
    }
-
 
 }
 
 
 ///
 pub fn update_image(image_data: &mut Vec<DoublePixel>, placements: Vec<Placement>) {
+   debug!("update_image(): {}", placements.len());
    for placement in placements {
+      debug!("placing: {:?} | {}", placement, placement.index());
       let index: usize = (placement.index() / 2) as usize;
       image_data[index].set_half(
          placement.color(),

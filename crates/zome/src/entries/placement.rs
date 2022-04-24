@@ -1,4 +1,5 @@
 use hdk::prelude::*;
+use crate::WORLD_SIZE;
 
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -35,9 +36,15 @@ impl Placement {
       }
    }
 
+   // pub fn index(&self) -> u32 {
+   //    self.pixel >> 4
+   // }
+
    pub fn index(&self) -> u32 {
-      self.pixel >> 4
+      //debug!("Index of {:?} | {} x {}", self, self.x(), self.y());
+      return self.x() as u32 + self.y() as u32 * 1000;
    }
+
 
    pub fn x(&self) -> u16 {
       let x = (self.pixel >> 20) as u16;

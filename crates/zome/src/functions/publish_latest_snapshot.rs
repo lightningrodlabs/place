@@ -21,7 +21,7 @@ pub fn publish_latest_snapshot(_:()) -> ExternResult<Vec<HeaderHash>> {
       let placements = get_placements_at(0)?;
       let first = Snapshot::create_first(placements);
       let hh = publish_snapshot(&first)?;
-      debug!("*** publish_latest_snapshot() first created: {} / {}", first.time_bucket_index, current_bucket);
+      debug!("*** publish_latest_snapshot() first created: {} / {} || {}", first.time_bucket_index, current_bucket, first.image_data.len());
       res.push(hh);
       first
    } else {

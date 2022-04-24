@@ -2,13 +2,13 @@ use hdk::prelude::*;
 
 use crate::entries::*;
 use crate::functions::*;
-use crate::{get_current_bucket_path, PlaceLinkKind};
+use crate::{get_current_bucket_path, path_to_str, PlaceLinkKind};
 
 
 /// Render next snapshot iteration and publish it to DHT
 pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<HeaderHash> {
    /// Grab all current bucket placements
-   let placements = get_placements_at(snapshot.time_bucket_index + 1)?;
+   let placements = get_placements_at(snapshot.time_bucket_index /*+ 1*/)?;
    /// Filter duplicates
    // FIXME (CRDT magic?)
    /// Merge
@@ -35,7 +35,9 @@ pub fn publish_snapshot(snapshot: &Snapshot) -> ExternResult<HeaderHash> {
    let hh = create_entry(snapshot)?;
    let eh = hash_entry(snapshot)?;
    /// Link to current bucket
-   let path_eh = get_current_bucket_path().path_entry_hash()?;
+   let path = get_current_bucket_path();
+   debug!("Publishing snapshot at path: {}", path_to_str(&path));
+   let path_eh = path.path_entry_hash()?;
    let _ = create_link(path_eh, eh, PlaceLinkKind::Snapshot.as_tag())?;
    /// Done
    Ok(hh)

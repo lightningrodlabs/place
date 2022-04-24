@@ -2,15 +2,16 @@ use hdk::prelude::*;
 use zome_utils::*;
 use crate::entries::Snapshot;
 use crate::PlaceLinkKind;
-use crate::utils::get_bucket_path;
+use crate::utils::*;
 
 
 /// Zome Function
 #[hdk_extern]
 pub fn get_snapshot(now: u64) -> ExternResult<Snapshot> {
    std::panic::set_hook(Box::new(zome_panic_hook));
-   debug!("*** get_snapshot() CALLED");
+   debug!("*** get_snapshot() CALLED - {}", now);
    let bucket_path = get_bucket_path(now);
+   debug!("get_snapshot() at path: {}", path_to_str(&bucket_path));
    let pairs = get_typed_from_links::<Snapshot>(
       bucket_path.path_entry_hash()?,
       PlaceLinkKind::Snapshot.as_tag_opt(),
