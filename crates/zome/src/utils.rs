@@ -5,14 +5,18 @@ use crate::{path_kind, PlaceProperties, TIME_BUCKET_SIZE_SEC};
 
 
 ///
-pub fn get_properties() -> PlaceProperties {
-   let props = dna_info().unwrap().properties;
-   return PlaceProperties::try_from(props).unwrap();
+#[hdk_extern]
+pub fn get_properties(_:()) -> ExternResult<PlaceProperties> {
+   let props = dna_info()?.properties;
+   //debug!("props = {:?}", props);
+   let properties: PlaceProperties = props.try_into()?;
+   Ok(properties)
 }
 
 ///
 pub fn get_current_time_bucket() -> u32 {
-   let bucket_index = now() / TIME_BUCKET_SIZE_SEC as u64;
+   //let bucket_index = now() / TIME_BUCKET_SIZE_SEC as u64;
+   let bucket_index = now() / get_properties(()).unwrap().bucket_size_sec as u64;
    assert!(bucket_index < u32::MAX as u64);
    bucket_index as u32
 }
@@ -25,7 +29,7 @@ pub fn get_current_bucket_path() -> Path {
 
 ///
 pub fn get_bucket_path(now: u64) -> Path {
-   let place_properties = get_properties();
+   let place_properties = get_properties(()).unwrap();
    let buckets_per_day = (24_f32 * 3600_f32 / place_properties.bucket_size_sec as f32).ceil(); // 288
    let day_start_epoch = days_since_epoch(now) as u64 * 24 * 3600;
    let sec_since_start_of_day = now - day_start_epoch;

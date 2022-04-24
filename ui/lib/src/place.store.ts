@@ -4,7 +4,7 @@ import { writable, Writable, derived, Readable, get } from 'svelte/store';
 import { PlaceService } from './place.service';
 import {
   DestructuredPlacement,
-  Dictionary, PlacementEntry,
+  Dictionary, PlacementEntry, PlaceProperties,
   Signal, SnapshotEntry,
 } from './types';
 
@@ -143,6 +143,10 @@ export class PlaceStore {
 
   async publishLatestSnapshot(): Promise<HeaderHashB64[]> {
     return this.service.publishLatestSnapshot();
+  }
+
+  async getProperties(): Promise<PlaceProperties> {
+    return this.service.getProperties();
   }
 
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {

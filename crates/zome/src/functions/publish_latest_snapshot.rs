@@ -11,8 +11,8 @@ use crate::get_current_time_bucket;
 /// Return HeaderHashs of newly committed Snapshots
 #[hdk_extern]
 pub fn publish_latest_snapshot(_:()) -> ExternResult<Vec<HeaderHash>> {
-   std::panic::set_hook(Box::new(zome_panic_hook));
    debug!("*** publish_latest_snapshot() CALLED");
+   std::panic::set_hook(Box::new(zome_panic_hook));
    let mut res = Vec::new();
    let current_bucket = get_current_time_bucket();
    let maybe_latest_snapshot = get_latest_local_snapshot()?;
@@ -21,6 +21,7 @@ pub fn publish_latest_snapshot(_:()) -> ExternResult<Vec<HeaderHash>> {
       let placements = get_placements_at(0)?;
       let first = Snapshot::create_first(placements);
       let hh = publish_snapshot(&first)?;
+      debug!("*** publish_latest_snapshot() first created: {} / {}", first.time_bucket_index, current_bucket);
       res.push(hh);
       first
    } else {
@@ -32,6 +33,7 @@ pub fn publish_latest_snapshot(_:()) -> ExternResult<Vec<HeaderHash>> {
    }
    /// Loop until now is reached
    while latest_snapshot.time_bucket_index < current_bucket {
+      debug!("Loop publish next: {} / {}", latest_snapshot.time_bucket_index, current_bucket);
       let hh = publish_next_snapshot(&mut latest_snapshot)?;
       res.push(hh);
    }

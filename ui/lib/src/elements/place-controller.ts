@@ -40,8 +40,6 @@ let startTime: number = Date.now();
 export class PlaceController extends ScopedElementsMixin(LitElement) {
   constructor() {
     super();
-    startTime = Date.now();
-    setInterval(async () => await this.publishLatest(), 120 * 1000)
   }
 
   /** Dependencies */
@@ -94,7 +92,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** After each render */
   async updated(changedProperties: any) {
     if (this._canPostInit) {
-      this.postInit();
+      await this.postInit();
     }
   }
 
@@ -120,8 +118,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     console.log("place-controller.init() - DONE");
   }
 
-  private postInit() {
+  private async postInit() {
     this._canPostInit = false;
+    const properties = await this._store.getProperties();
+    startTime = Date.now();
+    setInterval(async () => await this.publishLatest(), properties.bucketSizeSec * 1000)
+
     this.initPixiApp(this.playfieldElem)
   }
 
@@ -326,7 +328,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     //console.log({viewport})
     let sinceLastPublish = Date.now() - startTime;
-    sinceLastPublish = (sinceLastPublish / 1000) % 120
+    sinceLastPublish = Math.round((sinceLastPublish / 1000) % 120)
 
 
     return html`

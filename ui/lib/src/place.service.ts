@@ -6,7 +6,7 @@ import {
   SnapshotEntry,
   HoloHashed,
   Signal,
-  Dictionary, DestructuredPlacement,
+  Dictionary, DestructuredPlacement, PlaceProperties,
 } from './types';
 import {CellId} from "@holochain/client/lib/types/common";
 
@@ -35,7 +35,9 @@ export class PlaceService {
   }
 
 
-  /** Space */
+  async getProperties(): Promise<PlaceProperties> {
+    return this.callPlaceZome('get_properties', null);
+  }
 
   async publishLatestSnapshot(): Promise<HeaderHashB64[]> {
     return this.callPlaceZome('publish_latest_snapshot', null);

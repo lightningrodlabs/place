@@ -13,6 +13,10 @@ export interface HoloHashed<T> {
   content: T;
 }
 
+export interface PlaceProperties {
+  startTime: number,
+  bucketSizeSec: number,
+}
 
 export interface DestructuredPlacement {
   x: number,
@@ -32,7 +36,7 @@ export interface SnapshotEntry {
 }
 
 
-export type DoublePixel = [upper: number, lower: number];
+//export type DoublePixel = [upper: number, lower: number];
 
 
 

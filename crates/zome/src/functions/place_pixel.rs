@@ -8,8 +8,8 @@ use crate::{get_current_bucket_path, PlaceLinkKind};
 /// Zome Function
 #[hdk_extern]
 pub fn place_pixel(input: DestructuredPlacement) -> ExternResult<HeaderHash> {
+   debug!("*** place_pixel() CALLED: {:?}", input);
    std::panic::set_hook(Box::new(zome_panic_hook));
-   debug!("*** place_pixel() CALLED");
    let placement = Placement::from_destructured(input);
    /// Commit
    let hh = create_entry(placement.clone())?;

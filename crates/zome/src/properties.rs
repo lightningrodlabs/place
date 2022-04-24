@@ -2,6 +2,7 @@ use hdk::prelude::*;
 
 /// Dna properties
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, SerializedBytes)]
+#[serde(rename_all = "camelCase")]
 pub struct PlaceProperties {
    /// seconds since UNIX_EPOCH
    pub start_time: u64,
