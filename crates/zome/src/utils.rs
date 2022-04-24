@@ -1,7 +1,7 @@
 use hdk::prelude::*;
 use hdk::hash_path::path::Component;
 use zome_utils::*;
-use crate::{path_kind, PlaceProperties, TIME_BUCKET_SIZE_SEC};
+use crate::{path_kind, PlaceProperties};
 
 
 ///

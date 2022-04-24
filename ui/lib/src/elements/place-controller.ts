@@ -328,7 +328,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     //console.log({viewport})
     let sinceLastPublish = Date.now() - startTime;
-    sinceLastPublish = Math.round((sinceLastPublish / 1000) % 120)
+    sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
 
 
     return html`

@@ -1,7 +1,7 @@
 use hdk::prelude::*;
 use crate::entries::Placement;
 use crate::double_pixel::DoublePixel;
-use crate::get_properties;
+use crate::{get_properties, WORLD_SIZE};
 
 
 /// A Public Entry representing the whole canvas for a specific time bucket
@@ -24,7 +24,7 @@ impl Snapshot {
 
 
    pub fn create_first(placements: Vec<Placement>) -> Self {
-      let mut image_data = Vec::new();
+      let mut image_data = Vec::with_capacity((WORLD_SIZE*WORLD_SIZE / 2)as usize);
       update_image(&mut image_data, placements);
       let properties = get_properties(()).unwrap();
       Self {
