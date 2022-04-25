@@ -1,4 +1,4 @@
-export const WORLD_SIZE = 1000
+export const WORLD_SIZE = 100
 export const IMAGE_SCALE = 10
 
 

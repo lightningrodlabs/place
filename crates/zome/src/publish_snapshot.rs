@@ -36,7 +36,7 @@ pub fn publish_snapshot(snapshot: &Snapshot) -> ExternResult<HeaderHash> {
    let eh = hash_entry(snapshot)?;
    /// Link to current bucket
    let path = get_current_bucket_path();
-   debug!("Publishing snapshot at path: {}", path_to_str(&path));
+   debug!("Publishing snapshot at index {}, path: {}", snapshot.time_bucket_index , path_to_str(&path));
    let path_eh = path.path_entry_hash()?;
    let _ = create_link(path_eh, eh, PlaceLinkKind::Snapshot.as_tag())?;
    /// Done

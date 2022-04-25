@@ -35,6 +35,17 @@ export interface SnapshotEntry {
   timeBucketIndex: number,
 }
 
+export function print_snapshot(snapshot: SnapshotEntry): number {
+  let count = 0;
+  snapshot.imageData.forEach((doublePixel) => {
+    if (doublePixel > 0) {
+      count += 1;
+    }
+  })
+  console.log("Snapshot " + snapshot.timeBucketIndex + " pixels: " + count)
+  return count;
+}
+
 
 //export type DoublePixel = [upper: number, lower: number];
 

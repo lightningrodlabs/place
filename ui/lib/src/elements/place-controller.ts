@@ -9,7 +9,7 @@ import {contextProvided} from "@holochain-open-dev/context";
 import {StoreSubscriber} from "lit-svelte-stores";
 
 import {sharedStyles} from "../sharedStyles";
-import {placeContext} from "../types";
+import {placeContext, print_snapshot, SnapshotEntry} from "../types";
 import {PlaceStore} from "../place.store";
 import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
@@ -37,6 +37,8 @@ let startTime: number = Date.now();
 let wait = false;
 let waiting = false;
 let pixiApp:any = undefined;
+let locals:any = [];
+let pixelCount:number = 0;
 
 /**
  * @element place-controller
@@ -55,7 +57,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Private properties */
 
-  @state() _currentSnapshotEh: null | EntryHashB64 = null;
+  /*@state() */_currentSnapshotBucketIndex: number = 0;
 
   private _initialized: boolean = false;
   private _initializing: boolean = false;
@@ -66,29 +68,34 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return this.shadowRoot!.getElementById("playfield") as HTMLCanvasElement;
   }
 
+
+  /** */
   private async publishLatest() {
     console.log("Calling publishLatest()...")
     let res = await this._store.publishLatestSnapshot();
     console.log("Calling publishLatest() result length: " + res.length)
   }
 
+
   /** Launch init when myProfile has been set */
   private subscribeSnapshots() {
     this._store.snapshots.subscribe(async (snapshots) => {
-      if (!this._currentSnapshotEh) {
+       if (this._currentSnapshotBucketIndex == 0) {
         /** Select first play */
-        const [latestEh, latestSnapshot] = this._store.getLatestSnapshot();
-        if (latestEh != '') {
-          this._currentSnapshotEh = latestEh
-          console.log("starting Snapshot: " + latestSnapshot.timeBucketIndex + " | " + latestEh);
+        const latestSnapshot = this._store.getLatestSnapshot();
+        if (latestSnapshot.timeBucketIndex != 0) {
+          this._currentSnapshotBucketIndex = latestSnapshot.timeBucketIndex
+          console.log("starting Snapshot: " + latestSnapshot.timeBucketIndex);
         } else {
           console.warn("No starting Snapshot found");
-
         }
       }
-      await this.init();
+      if (!this._initialized && !this._initializing) {
+        await this.init();
+      }
     });
   }
+
 
   /** After first render only */
   async firstUpdated() {
@@ -104,16 +111,18 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
-  /**
-   * Called once a profile has been set
-   */
+  /** Called once a profile has been set */
   private async init() {
     this._initializing = true
-    console.log("place-controller.init() - START");
+    console.log("place-controller.init() - START!");
     /** Get latest public entries from DHT */
     await this._store.pullDht();
-    const snapshots = this._snapshots.value;
-    console.log({snapshots})
+    locals = await this._store.getLocalSnapshots();
+    const latest = this._store.getLatestSnapshot();
+    console.log({latest})
+    this._currentSnapshotBucketIndex = latest.timeBucketIndex;
+
+
     /** Done */
     this._initialized = true
     this._initializing = false
@@ -125,15 +134,20 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     console.log("place-controller.init() - DONE");
   }
 
+
+  /** Called once after first init */
   private async postInit() {
     this._canPostInit = false;
     const properties = await this._store.getProperties();
     startTime = Date.now();
+    console.log({properties})
     setInterval(async () => await this.publishLatest(), properties.bucketSizeSec * 1000)
 
     this.initPixiApp(this.playfieldElem)
   }
 
+
+  /** */
   takeScreenshot() {
     wait = true;
     pixiApp.renderer.extract.canvas(frameSprite).toBlob((b:any) => {
@@ -147,6 +161,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
+  /** */
+  updateFrame(snapshot: SnapshotEntry) {
+    pixelCount = print_snapshot(snapshot)
+    const buffer = snapshotIntoFrame(snapshot.imageData);
+    frameSprite.texture = buffer2Texture(buffer);
+  }
+
+
+  /** */
   initPixiApp(canvas: HTMLCanvasElement) {
     console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
     /** Setup PIXI app */
@@ -174,8 +197,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     viewport.trackedPointers = []
 
     viewport
-      .moveCenter(WORLD_SIZE / 2, WORLD_SIZE / 2)
-      .drag()
+      .moveCenter(WORLD_SIZE * IMAGE_SCALE / 2, WORLD_SIZE * IMAGE_SCALE / 2)
+      .drag({
+        //mouseButtons: "middle-right",
+      })
       //.pinch()
       .decelerate()
       .wheel({})
@@ -188,10 +213,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     // viewport.clamp({direction: 'all'})
 
     viewport.clampZoom({
-      minWidth: canvas.offsetWidth / 50,
-      minHeight: canvas.offsetHeight / 50,
-      maxWidth: WORLD_SIZE * 20,
-      maxHeight: WORLD_SIZE * 20,
+      minWidth: 50,
+      minHeight: 50,
+      maxWidth: WORLD_SIZE * 100,
+      maxHeight: WORLD_SIZE * 100,
     })
 
     /** DRAW STUFF */
@@ -203,9 +228,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //   .drawRect(0, 0, WORLD_SIZE, WORLD_SIZE)
 
     let buffer: Uint8Array;
-    if (this._currentSnapshotEh != null) {
+    if (this._currentSnapshotBucketIndex != 0) {
       const snapshots = this._snapshots.value;
-      const snapshot = snapshots[this._currentSnapshotEh];
+      const snapshot = snapshots[this._currentSnapshotBucketIndex];
+      print_snapshot(snapshot)
       buffer = snapshotIntoFrame(snapshot.imageData);
     } else {
       //let buffer = randomBuffer(1);
@@ -281,7 +307,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     //viewport.addChild(logText)
 
     viewport.on("zoomed", (e:any) => {
-      console.log("zoomed event fired: " + viewport.scale.x)
+      //console.log("zoomed event fired: " + viewport.scale.x)
       //console.log({e})
       grid.visible = viewport.scale.x > 2;
       this.requestUpdate()
@@ -301,9 +327,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
    *
    */
   async pingOthers() {
-    if (this._currentSnapshotEh) {
+    if (this._currentSnapshotBucketIndex) {
       // console.log("Pinging All")
-      //await this._store.pingOthers(this._currentSnapshotEh, this._profiles.myAgentPubKey)
+      //await this._store.pingOthers(this._currentSnapshotBucketIndex, this._profiles.myAgentPubKey)
     }
   }
 
@@ -311,6 +337,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async onRefresh() {
     console.log("refresh: Pulling data from DHT")
     await this._store.pullDht()
+    locals = await this._store.getLocalSnapshots();
+    const snapshot = this._store.getLatestSnapshot();
+    this._currentSnapshotBucketIndex = snapshot.timeBucketIndex;
+    this.updateFrame(snapshot);
     await this.pingOthers()
     this.requestUpdate();
   }
@@ -330,7 +360,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
    *
    */
   render() {
-    console.log("place-controller render() - " + this._currentSnapshotEh);
+    console.log("place-controller render() - " + this._currentSnapshotBucketIndex);
     if (!this._initialized) {
       return html`
         <span>Loading...</span>
@@ -357,10 +387,17 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           <br/>
           <div>Zoom:</div>
           <div>${Math.round(viewport?.scale.x * 100)}%</div>
-          <button style="margin:5px;" @click=${() => {viewport?.fitWorld(true); this.requestUpdate()}}>Fit</button>
+          <button style="margin:5px;" @click=${() => {
+            viewport?.fitWorld(false);
+            viewport?.moveCenter(WORLD_SIZE * IMAGE_SCALE / 2, WORLD_SIZE * IMAGE_SCALE / 2);
+            this.requestUpdate();
+          }}>Fit</button>
           <div>Time:</div>
           <div>${sinceLastPublish} sec</div>
+          <button style="margin:5px;" @click=${() => {this.onRefresh()}}>Refresh</button>
           <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
+          <div>Snaps: ${locals.length}</div>
+          <div>Pixels: ${pixelCount}</div>
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>

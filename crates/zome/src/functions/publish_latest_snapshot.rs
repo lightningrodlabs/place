@@ -45,6 +45,7 @@ pub fn publish_latest_snapshot(_:()) -> ExternResult<Vec<HeaderHash>> {
 /// RendererRole ONLY
 pub fn get_latest_local_snapshot() -> ExternResult<Option<Snapshot>> {
    let all = get_all_typed_local::<Snapshot>(entry_type!(Snapshot)?)?;
+   debug!("get_latest_local_snapshot() -> {}", all.len());
    if all.is_empty() {
       return Ok(None);
    }

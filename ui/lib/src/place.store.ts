@@ -4,7 +4,7 @@ import { writable, Writable, derived, Readable, get } from 'svelte/store';
 import { PlaceService } from './place.service';
 import {
   DestructuredPlacement,
-  Dictionary, PlacementEntry, PlaceProperties,
+  Dictionary, PlacementEntry, PlaceProperties, print_snapshot,
   Signal, SnapshotEntry,
 } from './types';
 
@@ -17,22 +17,22 @@ export class PlaceStore {
   /** Private */
   private service : PlaceService
 
-  /** SnapshotEh -> Snapshot */
+  /** TimeBucketIndex -> Snapshot */
   private snapshotStore: Writable<Dictionary<SnapshotEntry>> = writable({});
-  /** PlacementEh -> Placement */
-  private placementStore: Writable<Dictionary<PlacementEntry>> = writable({});
+  /** TimeBucketIndex -> Placement */
+  private placementStore: Writable<Dictionary<PlacementEntry[]>> = writable({});
 
   /** Static info */
   myAgentPubKey: AgentPubKeyB64;
 
   /** Readable stores */
   public snapshots: Readable<Dictionary<SnapshotEntry>> = derived(this.snapshotStore, i => i)
-  public placements: Readable<Dictionary<PlacementEntry>> = derived(this.placementStore, i => i)
+  public placements: Readable<Dictionary<PlacementEntry[]>> = derived(this.placementStore, i => i)
 
 
+  /** Ctor */
   constructor(protected hcClient: BaseClient) {
     this.service = new PlaceService(hcClient, "place");
-
     let cellClient = this.service.cellClient
     this.myAgentPubKey = this.service.myAgentPubKey;
 
@@ -61,13 +61,13 @@ export class PlaceStore {
         case "Pong":
           break;
         case "NewSnapshot":
-          const snapEh = signal.message.content
-          this.service.getSnapshot(snapEh).then(snapshot => {
-            this.snapshotStore.update(store => {
-              store[snapEh] = snapshot
-              return store
-            })
-          })
+          // const snapEh = signal.message.content
+          // this.service.getSnapshot(snapEh).then(snapshot => {
+          //   this.snapshotStore.update(store => {
+          //     store[snapEh] = snapshot
+          //     return store
+          //   })
+          // })
           break;
         case "NewPlacement":
           // const eh = signal.message.content
@@ -82,65 +82,41 @@ export class PlaceStore {
     })
   }
 
-
+  /** FIXME */
   pingOthers(spaceHash: EntryHashB64, myKey: AgentPubKeyB64) {
     const ping: Signal = {maybeSpaceHash: spaceHash, from: this.myAgentPubKey, message: {type: 'Ping', content: myKey}};
     // console.log({signal})
-    // FIXME
     //this.service.notify(ping, this.others());
   }
 
-  //
-  //
-  // async addTemplate(template: TemplateEntry) : Promise<EntryHashB64> {
-  //   const eh: EntryHashB64 = await this.service.createTemplate(template)
-  //   this.templateStore.update(templates => {
-  //     templates[eh] = template
-  //     return templates
-  //   })
-  //   this.service.notify(
-  //     {maybeSpaceHash: null, from: this.myAgentPubKey, message: {type:"NewTemplate", content: eh}}
-  //     , this.others());
-  //   return eh
-  // }
-  //
-  // async updateSnapshots() : Promise<Dictionary<SnapshotEntry>> {
-  //   const spaces = await this.service.getSpaces();
-  //   //const hiddens = await this.service.getHiddenSpaceList();
-  //   //console.log({hiddens})
-  //   for (const space of spaces.values()) {
-  //     //const visible = !hiddens.includes(space.hash)
-  //     await this.addPlay(space.hash)
-  //   }
-  //   return get(this.playStore)
-  // }
-  //
-  //
-  // async addEmojiGroup(emojiGroup: EmojiGroupEntry) : Promise<EntryHashB64> {
-  //   const eh: EntryHashB64 = await this.service.createEmojiGroup(emojiGroup)
-  //   this.emojiGroupStore.update(emojiGroups => {
-  //     emojiGroups[eh] = emojiGroup
-  //     return emojiGroups
-  //   })
-  //   this.service.notify(
-  //     {maybeSpaceHash: null, from: this.myAgentPubKey, message: {type:"NewEmojiGroup", content: eh}}
-  //     , this.others());
-  //   return eh
-  // }
 
-
-  /** Get latest entries of each type and update local store accordingly */
-  async pullDht()  {
+  /** Get latest entries of each type for current time bucket and update local store accordingly */
+  async pullDht() {
     console.log("pullDht()")
     try {
       const snapshot = await this.service.getLatestSnapshot();
+      if (snapshot.timeBucketIndex == 0) {
+        console.log("No snapshot found.")
+        return;
+      }
+      console.log("pullDht() latest: " + snapshot.timeBucketIndex)
+      this.snapshotStore.update(store => {
+        store[snapshot.timeBucketIndex] = snapshot
+        return store
+      })
       const placements = await this.service.getPlacementsAt(snapshot.timeBucketIndex);
+      this.placementStore.update(store => {
+        store[snapshot.timeBucketIndex] = placements
+        return store
+      })
       console.log(`Entries found for bucket ${snapshot.timeBucketIndex}: ${Object.keys(placements).length}`)
     } catch (e) {
       console.log("No snapshot found")
     }
   }
 
+
+  /** */
   async publishLatestSnapshot(): Promise<HeaderHashB64[]> {
     return this.service.publishLatestSnapshot();
   }
@@ -149,27 +125,33 @@ export class PlaceStore {
     return this.service.getProperties();
   }
 
+  async getLocalSnapshots(): Promise<SnapshotEntry[]> {
+    return this.service.getLocalSnapshots();
+  }
+
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
     return this.service.placePixel(destructured);
   }
 
-  getLatestSnapshot(): [EntryHashB64, SnapshotEntry] {
-    let snapshot = {
+  /** */
+  getLatestSnapshot(): SnapshotEntry {
+    let latestSnapshot = {
       imageData: new Uint8Array(),
       timeBucketIndex: 0,
     }
-    let eh = '';
-    for(const [curEh, current] of Object.entries(this.snapshots)) {
-      if (current.timeBucketIndex > snapshot.timeBucketIndex){
-        snapshot = current;
-        eh = curEh
+    const snapshots = get(this.snapshots)
+    console.log("getLatestSnapshot() - " + Object.values(snapshots).length)
+    for(const current of Object.values(snapshots)) {
+      if (current.timeBucketIndex > latestSnapshot.timeBucketIndex) {
+        latestSnapshot = current;
       }
     }
-    return [eh, snapshot];
+    print_snapshot(latestSnapshot)
+    return latestSnapshot;
   }
 
 
-  snapshot(eh: EntryHashB64): SnapshotEntry {
-    return get(this.snapshotStore)[eh];
-  }
+  // snapshot(timeBucketIndex: number): SnapshotEntry {
+  //   return get(this.snapshotStore)[timeBucketIndex];
+  // }
 }

@@ -64,9 +64,9 @@ impl Snapshot {
 
 ///
 pub fn update_image(image_data: &mut Vec<DoublePixel>, placements: Vec<Placement>) {
-   debug!("update_image(): {}", placements.len());
+   debug!("update_image(): {} placements", placements.len());
    for placement in placements {
-      debug!("placing: {:?} | {}", placement, placement.index());
+      //debug!("placing: {:?} | {}", placement, placement.index());
       let index: usize = (placement.index() / 2) as usize;
       image_data[index].set_half(
          placement.color(),

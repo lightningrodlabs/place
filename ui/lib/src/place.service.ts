@@ -51,6 +51,10 @@ export class PlaceService {
     return this.callPlaceZome('get_latest_snapshot', null);
   }
 
+  async getLocalSnapshots(): Promise<SnapshotEntry[]> {
+    return this.callPlaceZome('get_local_snapshots', null);
+  }
+
   async getPlacementsAt(bucketIndex: number): Promise<PlacementEntry[]> {
     return this.callPlaceZome('get_placements_at', bucketIndex);
   }
@@ -71,11 +75,11 @@ export class PlaceService {
 
 
   private callPlaceZome(fn_name: string, payload: any): Promise<any> {
-    //console.debug("callZome: " + fn_name)
-    //console.debug({payload})
+    //console.info("callZome: " + fn_name)
+    //console.info({payload})
     const result = this.cellClient.callZome("place", fn_name, payload);
-    //console.debug("callZome: " + fn_name + "() result")
-    //console.debug({result})
+    //console.info("callZome: " + fn_name + "() result")
+    //console.info({result})
     return result;
   }
 

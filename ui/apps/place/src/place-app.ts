@@ -75,7 +75,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
 
 
   render() {
-    console.log("place-app render() called")
+    console.log("place-app render() called!")
     if (!this.loaded) {
       return html`<span>Loading...</span>`;
     }

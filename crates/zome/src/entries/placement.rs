@@ -24,8 +24,8 @@ impl Placement {
 
 
    pub fn new(x: u16, y: u16, color: u8) -> Self {
-      assert!(x < 1000);
-      assert!(y < 1000);
+      assert!(x < WORLD_SIZE as u16);
+      assert!(y < WORLD_SIZE as u16);
       assert!(color < 16);
 
       let x_32: u32 = (x as u32) << 20;
@@ -42,19 +42,19 @@ impl Placement {
 
    pub fn index(&self) -> u32 {
       //debug!("Index of {:?} | {} x {}", self, self.x(), self.y());
-      return self.x() as u32 + self.y() as u32 * 1000;
+      return self.x() as u32 + self.y() as u32 * WORLD_SIZE;
    }
 
 
    pub fn x(&self) -> u16 {
       let x = (self.pixel >> 20) as u16;
-      assert!(x < 1000);
+      assert!(x < WORLD_SIZE as u16);
       x
    }
 
    pub fn y(&self) -> u16 {
       let y = ((self.pixel >> 4) & 0x000003FF) as u16;
-      assert!(y < 1000);
+      assert!(y < WORLD_SIZE as u16);
       y
    }
 
