@@ -6,6 +6,7 @@ use crate::{get_current_bucket_path, PlaceLinkKind};
 use crate::utils::*;
 
 /// Zome Function
+/// Add placement to current bucket
 #[hdk_extern]
 pub fn place_pixel(input: DestructuredPlacement) -> ExternResult<HeaderHash> {
    debug!("*** place_pixel() CALLED: {:?}", input);

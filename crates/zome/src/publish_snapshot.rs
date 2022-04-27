@@ -8,7 +8,7 @@ use crate::{get_current_bucket_path, path_to_str, PlaceLinkKind};
 /// Render next snapshot iteration and publish it to DHT
 pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<HeaderHash> {
    /// Grab all current bucket placements
-   let placements = get_placements_at(snapshot.time_bucket_index /*+ 1*/)?;
+   let placements = get_placements_at(snapshot.time_bucket_index)?;
    /// Filter duplicates
    // FIXME (CRDT magic?)
    /// Merge

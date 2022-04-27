@@ -13,10 +13,16 @@ pub fn get_properties(_:()) -> ExternResult<PlaceProperties> {
    Ok(properties)
 }
 
+/// Helper for crate use
+pub fn get_dna_properties() -> PlaceProperties {
+   return get_properties(()).unwrap();
+}
+
+
 ///
 pub fn get_current_time_bucket() -> u32 {
    //let bucket_index = now() / TIME_BUCKET_SIZE_SEC as u64;
-   let bucket_index = now() / get_properties(()).unwrap().bucket_size_sec as u64;
+   let bucket_index = now() / get_dna_properties().bucket_size_sec as u64;
    assert!(bucket_index < u32::MAX as u64);
    bucket_index as u32
 }
@@ -42,9 +48,13 @@ pub fn path_to_str(path: &Path) -> String {
 }
 
 
-///
+/// Determine bucket path from time in sec
+/// Format is either:
+///  - "Days"::DayIndex::HourIndex::BucketIndex
+///  - "Days"::DayIndex::BucketIndex
+/// Depending on number of buckets per hour
 pub fn get_bucket_path(now: u64) -> Path {
-   let place_properties = get_properties(()).unwrap();
+   let place_properties = get_dna_properties();
    let buckets_per_day = (24_f32 * 3600_f32 / place_properties.bucket_size_sec as f32).ceil(); // 288
    let day_start_epoch = days_since_epoch(now) as u64 * 24 * 3600;
    let sec_since_start_of_day = now - day_start_epoch;

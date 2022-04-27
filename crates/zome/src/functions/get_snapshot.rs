@@ -10,7 +10,7 @@ use crate::utils::*;
 pub fn get_snapshot(now: u64) -> ExternResult<Snapshot> {
    std::panic::set_hook(Box::new(zome_panic_hook));
    debug!("*** get_snapshot() CALLED - {}", now);
-   let bucket_path = get_bucket_path(now /*- get_properties(()).unwrap().bucket_size_sec*/);
+   let bucket_path = get_bucket_path(now);
    debug!("get_snapshot() at path: {}", path_to_str(&bucket_path));
    let pairs = get_typed_from_links::<Snapshot>(
       bucket_path.path_entry_hash()?,
@@ -35,7 +35,6 @@ pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<Snapshot>> {
 pub fn get_latest_snapshot(_:()) -> ExternResult<Snapshot> {
    std::panic::set_hook(Box::new(zome_panic_hook));
    debug!("*** get_latest_snapshot() CALLED...");
-   let start_time = get_properties(()).unwrap().start_time as u64;
    let mut current_time = now();
    /// Look back in time for a snapshot
    loop {
@@ -43,8 +42,8 @@ pub fn get_latest_snapshot(_:()) -> ExternResult<Snapshot> {
       if maybe.is_ok() {
          return maybe;
       }
-      current_time -= get_properties(()).unwrap().bucket_size_sec as u64;
-      if current_time <= start_time {
+      current_time -= get_dna_properties().bucket_size_sec as u64;
+      if current_time <= get_dna_properties().start_time as u64 {
          break;
       }
    }
