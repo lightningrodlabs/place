@@ -10,9 +10,14 @@ import {
 
 import {CellId} from "@holochain/client/lib/types/common";
 
+
 const areEqual = (first: Uint8Array, second: Uint8Array) =>
       first.length === second.length && first.every((value, index) => value === second[index]);
 
+
+/**
+ *
+ */
 export class PlaceStore {
   /** Private */
   private service : PlaceService
@@ -21,6 +26,8 @@ export class PlaceStore {
   private snapshotStore: Writable<Dictionary<SnapshotEntry>> = writable({});
   /** TimeBucketIndex -> Placement */
   private placementStore: Writable<Dictionary<PlacementEntry[]>> = writable({});
+
+  private latestBucketIndex: number = 0;
 
   /** Static info */
   myAgentPubKey: AgentPubKeyB64;
@@ -94,25 +101,39 @@ export class PlaceStore {
   async pullDht() {
     console.log("pullDht()")
     try {
-      const snapshot = await this.service.getLatestSnapshot();
-      if (snapshot.timeBucketIndex == 0) {
-        console.log("No snapshot found.")
+      const latestSnapshot = await this.service.getLatestSnapshot();
+      if (latestSnapshot.timeBucketIndex == 0) {
+        console.error("No snapshot found.")
         return;
       }
-      console.log("pullDht() latest: " + snapshot.timeBucketIndex)
-      this.snapshotStore.update(store => {
-        store[snapshot.timeBucketIndex] = snapshot
-        return store
-      })
-      const placements = await this.service.getPlacementsAt(snapshot.timeBucketIndex);
-      this.placementStore.update(store => {
-        store[snapshot.timeBucketIndex] = placements
-        return store
-      })
-      console.log(`Entries found for bucket ${snapshot.timeBucketIndex}: ${Object.keys(placements).length}`)
+      console.log("pullDht() latest found: " + latestSnapshot.timeBucketIndex)
+      //await this.storeSnapshot(latestSnapshot)
+      /** Store all snapshots since last pull */
+      while (this.latestBucketIndex < latestSnapshot.timeBucketIndex) {
+        this.latestBucketIndex += 1;
+        const snapshot = await this.service.getSnapshot(this.latestBucketIndex)
+        this.storeSnapshot(snapshot!)
+      }
     } catch (e) {
-      console.log("No snapshot found")
+      console.error("No snapshot found")
+      console.error({e})
     }
+  }
+
+
+  /** */
+  async storeSnapshot(snapshot: SnapshotEntry) {
+    this.snapshotStore.update(store => {
+      store[snapshot.timeBucketIndex] = snapshot
+      return store
+    })
+    const placements = await this.service.getPlacementsAt(snapshot.timeBucketIndex - 1);
+    this.placementStore.update(store => {
+      store[snapshot.timeBucketIndex - 1] = placements
+      return store
+    })
+
+    console.log(`storeSnapshot() bucket ${snapshot.timeBucketIndex}: ${Object.keys(placements).length}`)
   }
 
 

@@ -74,6 +74,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     console.log("Calling publishLatest()...")
     let res = await this._store.publishLatestSnapshot();
     console.log("Calling publishLatest() result length: " + res.length)
+    await this._store.pullDht();
   }
 
 

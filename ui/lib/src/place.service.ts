@@ -43,8 +43,8 @@ export class PlaceService {
     return this.callPlaceZome('publish_latest_snapshot', null);
   }
 
-  async getSnapshot(time: number): Promise<SnapshotEntry> {
-    return this.callPlaceZome('get_snapshot', time);
+  async getSnapshot(bucket_index: number): Promise<SnapshotEntry | null> {
+    return this.callPlaceZome('get_snapshot', bucket_index);
   }
 
   async getLatestSnapshot(): Promise<SnapshotEntry> {
