@@ -56,7 +56,7 @@ pub fn get_latest_snapshot(_:()) -> ExternResult<Snapshot> {
          return Ok(maybe.unwrap());
       }
       current_bucket -= 1;
-      if current_bucket <= starting_bucket {
+      if current_bucket < starting_bucket {
          break;
       }
    }

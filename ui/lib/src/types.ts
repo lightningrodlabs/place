@@ -21,7 +21,7 @@ export interface PlaceProperties {
 export interface DestructuredPlacement {
   x: number,
   y: number,
-  color: number,
+  colorIndex: number,
 }
 
 
@@ -57,13 +57,13 @@ function destructurePlacement(placement: PlacementEntry): DestructuredPlacement 
   return {
     x: id >> 20,
     y: id % 1 << 16,
-    color: placement.pixel % 16
+    colorIndex: placement.pixel % 16
   };
 }
 
 
 function packPlacement(destructured: DestructuredPlacement): PlacementEntry {
-  let pixel = destructured.color
+  let pixel = destructured.colorIndex
   + destructured.x << 20
       + destructured.y << 4;
   return {

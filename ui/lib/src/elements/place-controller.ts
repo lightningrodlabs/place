@@ -74,7 +74,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     console.log("Calling publishLatest()...")
     let res = await this._store.publishLatestSnapshot();
     console.log("Calling publishLatest() result length: " + res.length)
-    await this._store.pullDht();
+    await this.refresh();
   }
 
 
@@ -83,10 +83,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     this._store.snapshots.subscribe(async (snapshots) => {
        if (this._currentSnapshotBucketIndex == 0) {
         /** Select first play */
-        const latestSnapshot = this._store.getLatestSnapshot();
-        if (latestSnapshot.timeBucketIndex != 0) {
-          this._currentSnapshotBucketIndex = latestSnapshot.timeBucketIndex
-          console.log("starting Snapshot: " + latestSnapshot.timeBucketIndex);
+        const storedLatestSnapshot = this._store.getStoredLatestSnapshot();
+        if (storedLatestSnapshot.timeBucketIndex != 0) {
+          this._currentSnapshotBucketIndex = storedLatestSnapshot.timeBucketIndex
+          console.log("Starting Snapshot: " + storedLatestSnapshot.timeBucketIndex);
         } else {
           console.warn("No starting Snapshot found");
         }
@@ -116,12 +116,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   private async init() {
     this._initializing = true
     console.log("place-controller.init() - START!");
-    /** Get latest public entries from DHT */
+    /** Get storedLatest public entries from DHT */
     await this._store.pullDht();
     locals = await this._store.getLocalSnapshots();
-    const latest = this._store.getLatestSnapshot();
-    console.log({latest})
-    this._currentSnapshotBucketIndex = latest.timeBucketIndex;
+    const storedLatest = this._store.getStoredLatestSnapshot();
+    console.log({storedLatest})
+    this._currentSnapshotBucketIndex = storedLatest.timeBucketIndex;
 
 
     /** Done */
@@ -142,8 +142,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const properties = await this._store.getProperties();
     startTime = Date.now();
     console.log({properties})
+    /** Init publish loop */
+    await this.publishLatest()
     setInterval(async () => await this.publishLatest(), properties.bucketSizeSec * 1000)
-
+    /** Init PIXI app */
     this.initPixiApp(this.playfieldElem)
   }
 
@@ -166,13 +168,13 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   updateFrame(snapshot: SnapshotEntry) {
     pixelCount = print_snapshot(snapshot)
     const buffer = snapshotIntoFrame(snapshot.imageData);
-    frameSprite.texture = buffer2Texture(buffer);
+    if (frameSprite) frameSprite.texture = buffer2Texture(buffer);
   }
 
 
   /** */
   initPixiApp(canvas: HTMLCanvasElement) {
-    console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
+    //console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
     /** Setup PIXI app */
     pixiApp = new PIXI.Application({
       //antialias: true,
@@ -262,7 +264,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       this._store.placePixel({
         x: Math.floor(customPos.x),
         y: Math.floor(customPos.y),
-        color: color2index(g_selectedColor),
+        colorIndex: color2index(g_selectedColor),
       })
 
       sel.x = Math.floor(customPos.x) * IMAGE_SCALE
@@ -335,13 +337,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
-  async onRefresh() {
+  async refresh() {
     console.log("refresh: Pulling data from DHT")
     await this._store.pullDht()
     locals = await this._store.getLocalSnapshots();
-    const snapshot = this._store.getLatestSnapshot();
+    const snapshot = this._store.getStoredLatestSnapshot();
     this._currentSnapshotBucketIndex = snapshot.timeBucketIndex;
-    this.updateFrame(snapshot);
+    if (snapshot.timeBucketIndex > 0) {
+      this.updateFrame(snapshot);
+    }
     await this.pingOthers()
     this.requestUpdate();
   }
@@ -395,13 +399,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           }}>Fit</button>
           <div>Time:</div>
           <div>${sinceLastPublish} sec</div>
-          <button style="margin:5px;" @click=${() => {this.onRefresh()}}>Refresh</button>
+          <button style="margin:5px;" @click=${() => {this.refresh()}}>Refresh</button>
           <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
           <div>Snaps: ${locals.length}</div>
           <div>Pixels: ${pixelCount}</div>
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>
+      <div>Time bucket: ${this._store.latestBucketIndex} / ${this._currentSnapshotBucketIndex}</div>
     `;
   }
 
@@ -425,7 +430,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           min-height: 400px;
           margin-top: 0px;
           margin-bottom: 0px;
-          /*display:block;*/
         }
 
         .selected {

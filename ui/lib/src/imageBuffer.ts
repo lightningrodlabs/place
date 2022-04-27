@@ -70,7 +70,7 @@ function intoDoublePixel(packed: number): DoublePixel {
 
 /**
  *
- * @param imageData Array of indexed color 4bpp
+ * @param imageData Array of indexed colorIndex 4bpp
  * return Array of rgba
  */
 export function snapshotIntoFrame(imageData: Uint8Array): Uint8Array {

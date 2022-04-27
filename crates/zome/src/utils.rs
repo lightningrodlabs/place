@@ -57,22 +57,22 @@ pub fn get_bucket_path(now: u64) -> Path {
    let sec_since_start_of_day = now - day_start_epoch;
    assert!(sec_since_start_of_day < 24 * 3600);
    let mut day_path = get_day_path(now); // Days::DayIndex
-   let bucket_index = sec_since_start_of_day / place_properties.bucket_size_sec as u64; // 287
-   //debug!("get_bucket_path({}) ; bucket_index = {}", now, bucket_index);
+   let hour_bucket_index = sec_since_start_of_day / place_properties.bucket_size_sec as u64; // 287
+   //debug!("get_bucket_path() ; bucket_index = {} / {}", hour_bucket_index, sec_to_bucket(now));
    let current_path = if buckets_per_day >= 48_f32 {
       /// Create hour level, Days::DayIndex::HourIndex::BucketIndex
       let buckets_per_hour = (buckets_per_day / 24_f32).ceil() as u64; // 12
-      let hour_index = bucket_index / buckets_per_hour; // 23
+      let hour_index = hour_bucket_index / buckets_per_hour; // 23
       let hour = Component::from(format!("{}", hour_index).as_str());
       day_path.append_component(hour);
-      let bucket_since_hour = bucket_index % buckets_per_hour; // 11
+      let bucket_since_hour = hour_bucket_index % buckets_per_hour; // 11
       let bucket = Component::from(format!("{}", bucket_since_hour));
       //debug!("get_bucket_path({}) ; bucket_path = {}", now, path_to_str(&bucket_path));
       day_path.append_component(bucket);
       day_path
    } else {
       /// No hour level, Path is Days::DayIndex::BucketIndex
-      let bucket_path = Component::from(format!("{}", bucket_index));
+      let bucket_path = Component::from(format!("{}", hour_bucket_index));
       //debug!("get_bucket_path({}) ; bucket_path = {}", now, path_to_str(&bucket_path));
       day_path.append_component(bucket_path);
       day_path

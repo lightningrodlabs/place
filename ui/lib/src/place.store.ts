@@ -27,7 +27,7 @@ export class PlaceStore {
   /** TimeBucketIndex -> Placement */
   private placementStore: Writable<Dictionary<PlacementEntry[]>> = writable({});
 
-  private latestBucketIndex: number = 0;
+  public latestBucketIndex: number = 0;
 
   /** Static info */
   myAgentPubKey: AgentPubKeyB64;
@@ -42,6 +42,10 @@ export class PlaceStore {
     this.service = new PlaceService(hcClient, "place");
     let cellClient = this.service.cellClient
     this.myAgentPubKey = this.service.myAgentPubKey;
+
+    this.service.getProperties().then((properties) => {
+      this.latestBucketIndex = Math.floor(properties.startTime / properties.bucketSizeSec) - 1;
+    });
 
     cellClient.addSignalHandler( appSignal => {
       if (! areEqual(cellClient.cellId[0],appSignal.data.cellId[0]) || !areEqual(cellClient.cellId[1], appSignal.data.cellId[1])) {
@@ -155,13 +159,13 @@ export class PlaceStore {
   }
 
   /** */
-  getLatestSnapshot(): SnapshotEntry {
+  getStoredLatestSnapshot(): SnapshotEntry {
     let latestSnapshot = {
       imageData: new Uint8Array(),
       timeBucketIndex: 0,
     }
     const snapshots = get(this.snapshots)
-    console.log("getLatestSnapshot() - " + Object.values(snapshots).length)
+    console.log("getStoredLatestSnapshot() - count: " + Object.values(snapshots).length)
     for(const current of Object.values(snapshots)) {
       if (current.timeBucketIndex > latestSnapshot.timeBucketIndex) {
         latestSnapshot = current;

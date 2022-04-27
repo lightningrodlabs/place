@@ -12,7 +12,7 @@ module.exports.logger = electronLogger;
 
 electronLogger.transports.console.format = '[{h}:{i}:{s}][{level}] {text}';
 electronLogger.transports.file.format = '[{h}:{i}:{s}][{level}] {text}';
-//electronLogger.info('%cRed text. %cGreen text', 'color: red', 'color: green')
+//electronLogger.info('%cRed text. %cGreen text', 'colorIndex: red', 'colorIndex: green')
 
 log('info', "");
 log('info', "");
