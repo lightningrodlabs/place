@@ -18,13 +18,10 @@ pub fn get_dna_properties() -> PlaceProperties {
    return get_properties(()).unwrap();
 }
 
-
-///
-pub fn get_current_time_bucket() -> u32 {
-   //let bucket_index = now() / TIME_BUCKET_SIZE_SEC as u64;
-   let bucket_index = now() / get_dna_properties().bucket_size_sec as u64;
-   assert!(bucket_index < u32::MAX as u64);
-   bucket_index as u32
+pub fn sec_to_bucket(now: u64) -> u32 {
+   let div = now / get_dna_properties().bucket_size_sec as u64;
+   assert!(div < u32::MAX as u64);
+   return div as u32;
 }
 
 ///

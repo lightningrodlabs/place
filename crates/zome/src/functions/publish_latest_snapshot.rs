@@ -1,8 +1,8 @@
 use hdk::prelude::*;
-use zome_utils::{get_all_typed_local, zome_panic_hook};
+use zome_utils::{get_all_typed_local, now, zome_panic_hook};
 use crate::entries::Snapshot;
 use crate::publish_snapshot::*;
-use crate::get_current_time_bucket;
+use crate::sec_to_bucket;
 
 /// Zome function
 /// RendererRole ONLY
@@ -12,7 +12,7 @@ use crate::get_current_time_bucket;
 pub fn publish_latest_snapshot(_:()) -> ExternResult<Vec<HeaderHash>> {
    debug!("*** publish_latest_snapshot() CALLED");
    std::panic::set_hook(Box::new(zome_panic_hook));
-   let current_bucket = get_current_time_bucket();
+   let current_bucket = sec_to_bucket(now());
    let mut res = Vec::new();
    let maybe_latest_snapshot = get_latest_local_snapshot()?;
    /// Create first frame if no snapshot found
