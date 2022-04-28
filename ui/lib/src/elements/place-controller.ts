@@ -370,13 +370,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     g_cursor.lineStyle(1, 0xFF0000)
       .drawRect(0,0, IMAGE_SCALE, IMAGE_SCALE)
     g_cursor.visible = false;
-    
+
+
     /** Add all elements to stage */
+
     pixiApp.stage.addChild(g_viewport)
     g_viewport.addChild(g_frameSprite)
     g_viewport.addChild(g_grid)
     g_viewport.addChild(g_cursor)
-    g_viewport.addChild(logText)
+    //g_viewport.addChild(logText)
 
     g_viewport.on("zoomed", (e:any) => {
       //console.log("zoomed event fired: " + viewport.scale.x)
@@ -386,12 +388,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     })
     g_viewport.fitWorld(true)
 
+
+
     /** DEBUG ; without viewport **/
 
-    //pixiApp.stage.addChild(img)
-    ////pixiApp.stage.addChild(grid)
-    //pixiApp.stage.addChild(sel)
-    //pixiApp.stage.addChild(logText)
+    // pixiApp.stage.addChild(g_frameSprite)
+    // //pixiApp.stage.addChild(grid)
+    // pixiApp.stage.addChild(g_cursor)
+    // pixiApp.stage.addChild(logText)
   }
 
 
@@ -445,7 +449,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       `;
     }
     const stored = Object.values(this._store.snapshotStore);
-    console.log({stored})
+    //console.log({stored})
 
     /** Build snapshot button list */
     let snapshotButtons = stored.map((snapshot) => {

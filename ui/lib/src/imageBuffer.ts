@@ -36,6 +36,7 @@ export function pos2Index(pos: PIXI.Point): number {
 
 export function setPixel(buffer: Uint8Array, colorHex:number, point: PIXI.Point) {
   const index = pos2Index(point);
+  console.log(`SetPixel(${index}) x: ${point.x} y: ${point.y}`)
   buffer[index] = colorHex / (256 * 256);
   buffer[index+ 1] = colorHex / 256 % 256;
   buffer[index+ 2] = colorHex % 256;

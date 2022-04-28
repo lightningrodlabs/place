@@ -126,7 +126,7 @@ export class PlaceStore {
         //: Math.floor(dnaProperties.startTime / dnaProperties.bucketSizeSec) - 1;
         : latestSnapshot.timeBucketIndex - 1;
 
-      console.log("pullDht() latest found: " + latestSnapshot.timeBucketIndex + " | " + storedLatestIndex)
+      //console.log("pullDht() latest found: " + latestSnapshot.timeBucketIndex + " | " + storedLatestIndex)
       let count = 0;
       //await this.storeSnapshot(latestSnapshot)
       /** Store all snapshots since last pull */
@@ -134,15 +134,15 @@ export class PlaceStore {
         storedLatestIndex += 1;
         const snapshot = await this.service.getSnapshotAt(storedLatestIndex)
         if (snapshot) {
-          console.log("Attempting to store " + snapshot_to_str(snapshot))
+          //console.log("Attempting to store " + snapshot_to_str(snapshot))
           this.storeSnapshot(snapshot!)
           count += 1;
         } else {
           console.log("No snapshot found at " + storedLatestIndex)
         }
       }
-      console.log("pullDht() added to store: " + count)
-      console.log("pullDht()    store count: " + Object.values(this.snapshotStore).length)
+      //console.log("pullDht() added to store: " + count)
+      //console.log("pullDht()    store count: " + Object.values(this.snapshotStore).length)
     } catch (e) {
       console.error("No snapshot found")
       console.error({e})

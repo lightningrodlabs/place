@@ -58,10 +58,10 @@ export function snapshot_to_str(snapshot: SnapshotEntry): string {
 
 
 export function destructurePlacement(placement: PlacementEntry): DestructuredPlacement {
-  let id: number = placement.pixel / 16;
+  let id: number = placement.pixel >> 4;
   return {
-    x: id >> 20,
-    y: id % 1 << 16,
+    x: id >> 16,
+    y: id % (1 << 16),
     colorIndex: placement.pixel % 16
   };
 }
