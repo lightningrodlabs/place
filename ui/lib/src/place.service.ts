@@ -6,12 +6,13 @@ import {
   SnapshotEntry,
   HoloHashed,
   Signal,
-  Dictionary, DestructuredPlacement, PlaceProperties,
+  Dictionary, DestructuredPlacement, PlaceProperties, PlaceAtInput,
 } from './types';
 import {CellId} from "@holochain/client/lib/types/common";
 
 
 export class PlaceService {
+  /** Ctor */
   constructor(
     public hcClient: BaseClient,
     protected roleId: string,
@@ -34,6 +35,7 @@ export class PlaceService {
     return serializeHash(this.cellClient.cellId[1]);
   }
 
+  /** Zome API */
 
   async getProperties(): Promise<PlaceProperties> {
     return this.callPlaceZome('get_properties', null);
@@ -43,8 +45,8 @@ export class PlaceService {
     return this.callPlaceZome('publish_latest_snapshot', null);
   }
 
-  async getSnapshot(bucket_index: number): Promise<SnapshotEntry | null> {
-    return this.callPlaceZome('get_snapshot', bucket_index);
+  async getSnapshotAt(bucket_index: number): Promise<SnapshotEntry | null> {
+    return this.callPlaceZome('get_snapshot_at', bucket_index);
   }
 
   async getLatestSnapshot(): Promise<SnapshotEntry> {
@@ -61,6 +63,17 @@ export class PlaceService {
 
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
     return this.callPlaceZome('place_pixel', destructured);
+  }
+
+
+  /** DEBUG */
+
+  async placePixelAt(input: PlaceAtInput): Promise<HeaderHashB64> {
+    return this.callPlaceZome('place_pixel_at', input);
+  }
+
+  async publishSnapshotAt(bucket_index: number): Promise<HeaderHashB64[]> {
+    return this.callPlaceZome('publish_snapshot_at', bucket_index);
   }
 
 

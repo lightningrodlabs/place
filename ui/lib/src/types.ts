@@ -25,6 +25,12 @@ export interface DestructuredPlacement {
 }
 
 
+export interface PlaceAtInput {
+  placement: DestructuredPlacement,
+  bucket_index: number,
+}
+
+
 export interface PlacementEntry {
   pixel: number,
 }
@@ -35,15 +41,14 @@ export interface SnapshotEntry {
   timeBucketIndex: number,
 }
 
-export function print_snapshot(snapshot: SnapshotEntry): number {
+export function snapshot_to_str(snapshot: SnapshotEntry): string {
   let count = 0;
   snapshot.imageData.forEach((doublePixel) => {
     if (doublePixel > 0) {
       count += 1;
     }
   })
-  console.log("Snapshot " + snapshot.timeBucketIndex + " pixels: " + count)
-  return count;
+  return "Snapshot " + snapshot.timeBucketIndex + " pixels: " + count;
 }
 
 

@@ -9,7 +9,7 @@ import {contextProvided} from "@holochain-open-dev/context";
 import {StoreSubscriber} from "lit-svelte-stores";
 
 import {sharedStyles} from "../sharedStyles";
-import {destructurePlacement, placeContext, print_snapshot, SnapshotEntry} from "../types";
+import {destructurePlacement, placeContext, snapshot_to_str, SnapshotEntry} from "../types";
 import {PlaceStore} from "../place.store";
 import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
@@ -28,7 +28,7 @@ import tinycolor from "tinycolor2";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
-let g_selectedColor: string | null = COLOR_PALETTE[0];
+let g_selectedColor: string | null = null;
 let g_viewport: any = undefined;
 let g_grid: any = undefined;
 let g_frameSprite: any = undefined;
@@ -54,13 +54,13 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   @contextProvided({ context: placeContext })
   _store!: PlaceStore;
 
-  _snapshots = new StoreSubscriber(this, () => this._store?.snapshots);
-  _placements = new StoreSubscriber(this, () => this._store?.placements);
+  //_snapshots = new StoreSubscriber(this, () => this._store?.snapshots);
+  //_placements = new StoreSubscriber(this, () => this._store?.placements);
 
 
   /** Private properties */
 
-  /*@state() */_currentSnapshotBucketIndex: number = 0;
+  _latestStoredBucketIndex: number = 0;
   _displayedIndex: number = 0;
 
   private _initialized: boolean = false;
@@ -73,23 +73,34 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
+  private async publishNextSnapshot() {
+    const nextIndex = this._latestStoredBucketIndex + 1
+    let res = await this._store.publishSnapshotAt(nextIndex);
+    console.log("publishNextSnapshot() " + nextIndex + ": " + (res.length > 0? "SUCCEEDED" : "FAILED"));
+    await this.refresh()
+    if (res.length > 0) {
+      await this.viewFuture()
+    }
+  }
+
+
   /** */
-  private async publishLatest() {
-    console.log("Calling publishLatest()...")
+  private async publishLatestSnapshot() {
+    console.log("Calling publishLatestSnapshot()...")
     let res = await this._store.publishLatestSnapshot();
-    console.log("Calling publishLatest() result length: " + res.length)
+    console.log("Calling publishLatestSnapshot() result length: " + res.length)
     await this.refresh();
   }
 
 
   /** Launch init when myProfile has been set */
-  private subscribeSnapshots() {
-    this._store.snapshots.subscribe(async (snapshots) => {
-       if (this._currentSnapshotBucketIndex == 0) {
+  private async subscribeSnapshots() {
+    //this._store.snapshots.subscribe(async (snapshots) => {
+       if (this._latestStoredBucketIndex == 0) {
         /** Select first play */
         const storedLatestSnapshot = this._store.getStoredLatestSnapshot();
-        if (storedLatestSnapshot.timeBucketIndex != 0) {
-          this._currentSnapshotBucketIndex = storedLatestSnapshot.timeBucketIndex
+        if (storedLatestSnapshot) {
+          this._latestStoredBucketIndex = storedLatestSnapshot.timeBucketIndex
           console.log("Starting Snapshot: " + storedLatestSnapshot.timeBucketIndex);
         } else {
           console.warn("No starting Snapshot found");
@@ -98,14 +109,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       if (!this._initialized && !this._initializing) {
         await this.init();
       }
-    });
+    //});
   }
 
 
   /** After first render only */
   async firstUpdated() {
     console.log("place-controller first updated!")
-    this.subscribeSnapshots();
+    await this.subscribeSnapshots();
   }
 
   /** After each render */
@@ -125,7 +136,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     g_localSnapshots = await this._store.getLocalSnapshots();
     const storedLatest = this._store.getStoredLatestSnapshot();
     console.log({storedLatest})
-    this._currentSnapshotBucketIndex = storedLatest.timeBucketIndex;
+    if (storedLatest) {
+      this._latestStoredBucketIndex = storedLatest.timeBucketIndex;
+    }
 
 
     /** Done */
@@ -146,23 +159,27 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const properties = await this._store.getProperties();
     g_startTime = Date.now();
     console.log({properties})
+
+    await this.publishLatestSnapshot()
+
     /** Init publish loop */
-    await this.publishLatest()
-    const startSec = Math.floor(g_startTime / 1000);
-    const waitForSec = startSec - Math.floor(startSec / properties.bucketSizeSec) * properties.bucketSizeSec
-    setTimeout(() => {
-      setInterval(async () => {
-        g_lastRefreshMs = Date.now();
-        await this.publishLatest();
-        },
-        properties.bucketSizeSec * 1000
-      );
-    },
-    waitForSec * 1000
-    )
+    // const startSec = Math.floor(g_startTime / 1000);
+    // const waitForSec = startSec
+    //   - Math.floor(startSec / properties.bucketSizeSec) * properties.bucketSizeSec
+    // setTimeout(() => {
+    //   setInterval(async () => {
+    //     g_lastRefreshMs = Date.now();
+    //     await this.publishLatestSnapshot();
+    //     },
+    //     properties.bucketSizeSec * 1000
+    //   );
+    // },
+    // waitForSec * 1000
+    // )
+
      /** Init PIXI app */
     this.initPixiApp(this.playfieldElem)
-    this.requestUpdate()
+    await this.viewFuture()
   }
 
 
@@ -182,6 +199,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async viewFuture() {
     /* Reload latest */
     const latest = this._store.getStoredLatestSnapshot();
+    if (!latest) {
+      return;
+    }
+    this._latestStoredBucketIndex = latest.timeBucketIndex;
     const placements = await this._store.getPlacementsAt(latest.timeBucketIndex);
     this.setFrame(latest);
     /* Update frame with current bucket placements */
@@ -193,14 +214,17 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       const pos = new PIXI.Point(destructed.x, destructed.y)
       setPixel(buffer, colorNum, pos);
     }
+    this._displayedIndex = latest.timeBucketIndex + 1
     /** Apply new texture */
     g_frameSprite.texture = buffer2Texture(buffer)
+    this.requestUpdate()
   }
+
 
   /** */
   setFrame(snapshot: SnapshotEntry) {
     this._displayedIndex = snapshot.timeBucketIndex
-    pixelCount = print_snapshot(snapshot)
+    console.log("frame set to: " + snapshot_to_str(snapshot));
     const buffer = snapshotIntoFrame(snapshot.imageData);
     if (g_frameSprite) g_frameSprite.texture = buffer2Texture(buffer);
   }
@@ -265,10 +289,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //   .drawRect(0, 0, WORLD_SIZE, WORLD_SIZE)
 
     let buffer: Uint8Array;
-    if (this._currentSnapshotBucketIndex != 0) {
-      const snapshots = this._snapshots.value;
-      const snapshot = snapshots[this._currentSnapshotBucketIndex];
-      print_snapshot(snapshot)
+    if (this._latestStoredBucketIndex != 0) {
+      //const snapshots = this._snapshots.value;
+      const snapshot = this._store.snapshotStore[this._latestStoredBucketIndex];
+      console.log("Starting latest: " + snapshot_to_str(snapshot));
       buffer = snapshotIntoFrame(snapshot.imageData);
     } else {
       //let buffer = randomBuffer(1);
@@ -296,12 +320,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         //+ canvas.offsetLeft + " ; " + canvas.offsetTop
 
       // Store placement
-      if (g_selectedColor) {
-        this._store.placePixel({
+      if (g_selectedColor && this._displayedIndex > this._latestStoredBucketIndex) {
+        this._store.placePixelAt({
+          placement: {
           x: Math.floor(customPos.x),
-          y: Math.floor(customPos.y),
+            y: Math.floor(customPos.y),
           colorIndex: color2index(g_selectedColor),
-        })
+        },
+          bucket_index: this._latestStoredBucketIndex
+      })
 
         sel.x = Math.floor(customPos.x) * IMAGE_SCALE
         sel.y = Math.floor(customPos.y) * IMAGE_SCALE
@@ -367,19 +394,22 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
    *
    */
   async pingOthers() {
-    if (this._currentSnapshotBucketIndex) {
+    if (this._latestStoredBucketIndex) {
       // console.log("Pinging All")
-      //await this._store.pingOthers(this._currentSnapshotBucketIndex, this._profiles.myAgentPubKey)
+      //await this._store.pingOthers(this._latestStoredBucketIndex, this._profiles.myAgentPubKey)
     }
   }
 
 
   async refresh() {
-    console.log("refresh: Pulling data from DHT")
+    console.log("refresh(): Pulling data from DHT")
     await this._store.pullDht()
     g_localSnapshots = await this._store.getLocalSnapshots();
     const latestStored = this._store.getStoredLatestSnapshot();
-    this._currentSnapshotBucketIndex = latestStored.timeBucketIndex;
+    if (!latestStored) {
+      return;
+    }
+    this._latestStoredBucketIndex = latestStored.timeBucketIndex;
     if (latestStored.timeBucketIndex > 0) {
       this.setFrame(latestStored);
     }
@@ -393,6 +423,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const color = e.target.lastValueEmitted;
   }
 
+
   private async handleSpaceClick(event: any) {
     await this.pingOthers();
   }
@@ -402,20 +433,25 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
    *
    */
   render() {
-    console.log("place-controller render() - " + this._currentSnapshotBucketIndex);
+    console.log("place-controller render() - " + this._latestStoredBucketIndex);
     if (!this._initialized) {
       return html`
         <span>Loading...</span>
       `;
     }
+    const stored = Object.values(this._store.snapshotStore);
+    console.log({stored})
 
-    /** Build snapshots button list */
-    let snapshotButtons = Object.values(this._snapshots.value).map((snapshot) => {
+    /** Build snapshot button list */
+    let snapshotButtons = stored.map((snapshot) => {
       const relIndex = this._store.getRelativeBucketIndex(snapshot.timeBucketIndex);
-      const count = this._placements.value[snapshot.timeBucketIndex - 1]
-      console.log({count})
+      let count = this._store.placementStore[snapshot.timeBucketIndex - 1]
+      if (!count) {
+        count = [];
+      }
+      //console.log({count})
       return html`<button class="" style=""
-                          @click=${() => {this.setFrame(snapshot)}}>${relIndex}: ${count.length}</button>`
+                          @click=${() => {this.setFrame(snapshot); this.requestUpdate();}}>${relIndex}: ${count.length}</button>`
     })
 
     /** Build palette button list */
@@ -445,20 +481,24 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             g_viewport?.moveCenter(WORLD_SIZE * IMAGE_SCALE / 2, WORLD_SIZE * IMAGE_SCALE / 2);
             this.requestUpdate();
           }}>Fit</button>
-          <div>Time:</div>
-          <div>${sinceLastPublishSec} sec</div>
-          <button style="margin:5px;" @click=${() => {this.refresh()}}>Refresh</button>
           <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
-          <div>Sshots: ${g_localSnapshots.length}</div>
-          <div>Pixels: ${pixelCount}</div>
+          <button style="margin:5px;" @click=${() => {this.refresh()}}>Refresh</button>
+          <!--<div>Time:</div>-->
+           <!--<div>${sinceLastPublishSec} sec</div>-->
+          <button class="" style=""
+                  @click=${async () => {await this.publishNextSnapshot()}}>Publish</button>
+          <br/>
+          <div> local: ${g_localSnapshots.length}</div>
+          <div>stored: ${stored.length}</div>
+            <!--<div>Pixels: ${pixelCount}</div>-->
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>
+      <div> Latest: ${this._store.getRelativeBucketIndex(this._latestStoredBucketIndex)}</div>
       <div>Viewing: ${this._store.getRelativeBucketIndex(this._displayedIndex)}</div>
       <div>
-        <button class="" style=""
-                @click=${async () => {await this.viewFuture()}}>now</button>
         ${snapshotButtons}
+        <button class="" style="" @click=${async () => {await this.viewFuture()}}>now</button>
       </div>
     `;
   }

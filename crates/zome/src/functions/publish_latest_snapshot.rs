@@ -43,11 +43,12 @@ pub fn get_latest_local_snapshot() -> ExternResult<Option<Snapshot>> {
 
 #[hdk_extern]
 pub fn publish_snapshot_at(current_bucket: u32) -> ExternResult<Vec<HeaderHash>> {
-   debug!("*** publish_snapshot_at() CALLED");
+   debug!("*** publish_snapshot_at({}) CALLED", current_bucket);
    std::panic::set_hook(Box::new(zome_panic_hook));
 
    let mut res = Vec::new();
    let maybe_latest_snapshot = get_latest_local_snapshot()?;
+
    /// Create first frame if no snapshot found
    let mut latest_snapshot = if maybe_latest_snapshot.is_none() {
       /// TODO: add starting placements to DNA properties
@@ -61,7 +62,8 @@ pub fn publish_snapshot_at(current_bucket: u32) -> ExternResult<Vec<HeaderHash>>
    };
    /// Bail if already latest
    if current_bucket <= latest_snapshot.time_bucket_index {
-      return Ok(Vec::new());
+      debug!("*** publish_snapshot_at({}) bailing: latest is {}", current_bucket, latest_snapshot.time_bucket_index);
+      return Ok(res);
    }
    /// Loop until now is reached
    while latest_snapshot.time_bucket_index < current_bucket {

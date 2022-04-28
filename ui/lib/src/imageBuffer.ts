@@ -1,8 +1,6 @@
 import * as PIXI from 'pixi.js'
 import {SCALE_MODES} from "pixi.js";
 import {COLOR_PALETTE, WORLD_SIZE} from "./constants";
-import assert from "assert";
-
 
 export function rand(n: number) {
   return Math.round(Math.random() * n)
@@ -74,7 +72,10 @@ function intoDoublePixel(packed: number): DoublePixel {
  * return Array of rgba
  */
 export function snapshotIntoFrame(imageData: Uint8Array): Uint8Array {
-  assert(imageData.length == WORLD_SIZE * WORLD_SIZE / 2)
+  if(imageData.length != WORLD_SIZE * WORLD_SIZE / 2) {
+    console.error("snapshotIntoFrame() error: invalid imageData length: " + imageData.length)
+    return new Uint8Array();
+  }
   let frame = new Uint8Array(WORLD_SIZE * WORLD_SIZE * 4);
   frame.fill(255)
   let i = 0;
