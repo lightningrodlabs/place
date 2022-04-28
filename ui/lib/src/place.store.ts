@@ -29,6 +29,8 @@ export class PlaceStore {
 
   public latestBucketIndex: number = 0;
 
+  public _dnaProperties?: PlaceProperties;
+
   /** Static info */
   myAgentPubKey: AgentPubKeyB64;
 
@@ -147,7 +149,10 @@ export class PlaceStore {
   }
 
   async getProperties(): Promise<PlaceProperties> {
-    return this.service.getProperties();
+    if (!this._dnaProperties) {
+      this._dnaProperties = await this.service.getProperties();
+    }
+    return this._dnaProperties;
   }
 
   async getLocalSnapshots(): Promise<SnapshotEntry[]> {
@@ -156,6 +161,15 @@ export class PlaceStore {
 
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
     return this.service.placePixel(destructured);
+  }
+
+  async getPlacementsAt(bucketIndex: number): Promise<PlacementEntry[]> {
+    return this.service.getPlacementsAt(bucketIndex);
+  }
+
+  getRelativeBucketIndex(absIndex: number): number {
+    if (!this._dnaProperties) return absIndex;
+    return absIndex - Math.floor(this._dnaProperties!.startTime / this._dnaProperties!.bucketSizeSec);
   }
 
   /** */

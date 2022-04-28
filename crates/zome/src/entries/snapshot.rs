@@ -1,8 +1,8 @@
 use hdk::prelude::*;
 use crate::entries::Placement;
 use crate::double_pixel::DoublePixel;
-use crate::{CANVAS_SIZE, get_dna_properties};
-
+use crate::CANVAS_SIZE;
+use crate::functions::get_dna_properties;
 
 /// A Public Entry representing the whole canvas for a specific time bucket
 #[hdk_entry(id = "Snapshot")]

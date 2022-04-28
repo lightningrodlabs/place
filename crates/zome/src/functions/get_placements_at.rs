@@ -1,7 +1,8 @@
 use hdk::prelude::*;
-use crate::entries::{Placement};
+use crate::entries::Placement;
 use zome_utils::*;
-use crate::{get_dna_properties, PlaceLinkKind};
+use crate::PlaceLinkKind;
+use crate::functions::get_properties::get_dna_properties;
 use crate::utils::*;
 
 

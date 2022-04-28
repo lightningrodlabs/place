@@ -52,7 +52,7 @@ export function print_snapshot(snapshot: SnapshotEntry): number {
 
 
 
-function destructurePlacement(placement: PlacementEntry): DestructuredPlacement {
+export function destructurePlacement(placement: PlacementEntry): DestructuredPlacement {
   let id: number = placement.pixel / 16;
   return {
     x: id >> 20,

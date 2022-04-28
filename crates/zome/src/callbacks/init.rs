@@ -2,7 +2,7 @@ use hdk::hash_path::path::Component;
 use hdk::prelude::*;
 use zome_utils::now;
 use crate::*;
-
+use crate::functions::*;
 
 /// Zome Callback
 #[hdk_extern]

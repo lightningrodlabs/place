@@ -1,6 +1,7 @@
 use hdk::prelude::*;
 use zome_utils::*;
 use crate::entries::Snapshot;
+use crate::functions::get_properties::get_dna_properties;
 use crate::PlaceLinkKind;
 use crate::utils::*;
 
@@ -8,7 +9,7 @@ use crate::utils::*;
 /// Zome Function
 /// Return Snapshot found at given bucket
 #[hdk_extern]
-pub fn get_snapshot(time_bucket_index: u32) -> ExternResult<Option<Snapshot>> {
+pub fn get_snapshot_at(time_bucket_index: u32) -> ExternResult<Option<Snapshot>> {
    std::panic::set_hook(Box::new(zome_panic_hook));
    debug!("*** get_snapshot() CALLED - bucket: {}", time_bucket_index);
    if time_bucket_index < sec_to_bucket(get_dna_properties().start_time) {
@@ -47,7 +48,7 @@ pub fn get_latest_snapshot(_:()) -> ExternResult<Snapshot> {
    debug!("*** get_latest_snapshot() now: {} ; starting time: {}", current_bucket, starting_bucket);
    /// Look back in time for a snapshot unless starting time is reached
    loop {
-      let maybe_maybe = get_snapshot(current_bucket);
+      let maybe_maybe = get_snapshot_at(current_bucket);
       if maybe_maybe.is_err() {
          return Err(maybe_maybe.err().unwrap());
       }
