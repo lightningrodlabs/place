@@ -2,7 +2,7 @@ use hdk::prelude::*;
 
 use crate::entries::*;
 use crate::functions::*;
-use crate::{bucket_index_to_path, get_current_bucket_path, path_to_str, PlaceLinkKind};
+use crate::{bucket_index_to_path, path_to_str, PlaceLinkKind};
 
 
 /// Render next snapshot iteration and publish it to DHT
@@ -35,8 +35,8 @@ pub fn publish_snapshot(snapshot: &Snapshot) -> ExternResult<HeaderHash> {
    let hh = create_entry(snapshot)?;
    let eh = hash_entry(snapshot)?;
    /// Link to current bucket
-   // let path = get_current_bucket_path();
    let path = bucket_index_to_path(snapshot.time_bucket_index);
+   // assert!(path == get_current_bucket_path())
    debug!("Publishing snapshot at index {}, path: {}", snapshot.time_bucket_index , path_to_str(&path));
    let path_eh = path.path_entry_hash()?;
    let _ = create_link(path_eh, eh, PlaceLinkKind::Snapshot.as_tag())?;

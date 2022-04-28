@@ -2,7 +2,7 @@ import {css, html, LitElement} from "lit";
 import {state} from "lit/decorators.js";
 
 import * as PIXI from 'pixi.js'
-import {SCALE_MODES} from 'pixi.js'
+//import {SCALE_MODES} from 'pixi.js'
 import {Viewport} from 'pixi-viewport'
 
 import {contextProvided} from "@holochain-open-dev/context";
@@ -32,6 +32,7 @@ let g_selectedColor: string | null = null;
 let g_viewport: any = undefined;
 let g_grid: any = undefined;
 let g_frameSprite: any = undefined;
+let g_cursor: any = undefined;
 
 let g_startTime: number = Date.now();
 let g_lastRefreshMs: number = Date.now();
@@ -185,7 +186,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** */
   takeScreenshot() {
-    pixiApp.renderer.extract.canvas(g_frameSprite).toBlob((b:any) => {
+    pixiApp.renderer.extract.canvas(g_viewport).toBlob((b:any) => {
       const a = document.createElement('a');
       document.body.append(a);
       a.download = 'screenshot';
@@ -232,7 +233,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** */
   initPixiApp(canvas: HTMLCanvasElement) {
-    //console.log(canvas.id + ": " + canvas.offsetWidth + "x" + canvas.offsetHeight)
+    console.log("Pixi canvas '" + canvas.id + "': " + canvas.offsetWidth + "x" + canvas.offsetHeight)
     /** Setup PIXI app */
     pixiApp = new PIXI.Application({
       //antialias: true,
@@ -240,7 +241,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       backgroundColor: 0x111111,
       width: canvas.offsetWidth,
       height: canvas.offsetHeight,
-      resolution: devicePixelRatio
+      preserveDrawingBuffer: true,
+      //resolution: devicePixelRatio,
+      //resizeTo: canvas
     })
     pixiApp.view.style.textAlign = 'center'
     //container.appendChild(pixiApp.view)
@@ -321,6 +324,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
       // Store placement
       if (g_selectedColor && this._displayedIndex > this._latestStoredBucketIndex) {
+        g_cursor.visible = true;
         this._store.placePixelAt({
           placement: {
           x: Math.floor(customPos.x),
@@ -330,8 +334,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           bucket_index: this._latestStoredBucketIndex
       })
 
-        sel.x = Math.floor(customPos.x) * IMAGE_SCALE
-        sel.y = Math.floor(customPos.y) * IMAGE_SCALE
+        g_cursor.x = Math.floor(customPos.x) * IMAGE_SCALE
+        g_cursor.y = Math.floor(customPos.y) * IMAGE_SCALE
         const tiny = new tinycolor(g_selectedColor)
         const colorNum = parseInt(tiny.toHex(), 16);
         setPixel(buffer, colorNum, customPos);
@@ -362,15 +366,16 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     );
 
     /** pixel cursor */
-    let sel = new PIXI.Graphics();
-    sel.lineStyle(1, 0xFF0000)
+    g_cursor = new PIXI.Graphics();
+    g_cursor.lineStyle(1, 0xFF0000)
       .drawRect(0,0, IMAGE_SCALE, IMAGE_SCALE)
-
+    g_cursor.visible = false;
+    
     /** Add all elements to stage */
     pixiApp.stage.addChild(g_viewport)
     g_viewport.addChild(g_frameSprite)
     g_viewport.addChild(g_grid)
-    g_viewport.addChild(sel)
+    g_viewport.addChild(g_cursor)
     g_viewport.addChild(logText)
 
     g_viewport.on("zoomed", (e:any) => {
@@ -470,8 +475,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return html`
       <div style="display: flex;flex-direction: row">
         <div style="width:80px;display: flex;flex-direction: column">
-          <button class="colorButton" style=""
-                  @click=${() => {g_selectedColor = null; this.requestUpdate()}}>None</button>
+          <button class=" ${g_selectedColor? "colorButton" : "selected"} " style=""
+                  @click=${() => {g_selectedColor = null; g_cursor.visible = false; this.requestUpdate()}}>None</button>
           ${palette}
           <br/>
           <div>Zoom:</div>
