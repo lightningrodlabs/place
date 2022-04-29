@@ -200,7 +200,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async viewFuture() {
     /* Reload latest */
     const latest = this._store.getStoredLatestSnapshot();
-    if (!latest) {
+    if (!latest || !g_frameSprite) {
+      this.requestUpdate();
       return;
     }
     this._latestStoredBucketIndex = latest.timeBucketIndex;
@@ -423,7 +424,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       this.setFrame(latestStored);
     }
     await this.pingOthers()
-    this.requestUpdate();
+    await this.viewFuture()
+    //this.requestUpdate();
   }
 
 

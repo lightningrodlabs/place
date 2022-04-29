@@ -36,7 +36,7 @@ export function pos2Index(pos: PIXI.Point): number {
 
 export function setPixel(buffer: Uint8Array, colorHex:number, point: PIXI.Point) {
   const index = pos2Index(point);
-  console.log(`SetPixel(${index}) x: ${point.x} y: ${point.y}`)
+  //console.log(`SetPixel(${index}) x: ${point.x} y: ${point.y}  | ${colorHex}`)
   buffer[index] = colorHex / (256 * 256);
   buffer[index+ 1] = colorHex / 256 % 256;
   buffer[index+ 2] = colorHex % 256;
@@ -82,8 +82,8 @@ export function snapshotIntoFrame(imageData: Uint8Array): Uint8Array {
   let i = 0;
   for (const packed of imageData) {
     const doublePixel = intoDoublePixel(packed);
-    let color1 = PIXI.utils.string2hex(COLOR_PALETTE[doublePixel[0]]);
-    let color2 = PIXI.utils.string2hex(COLOR_PALETTE[doublePixel[1]]);
+    let color1 = PIXI.utils.string2hex(COLOR_PALETTE[doublePixel[1]]);
+    let color2 = PIXI.utils.string2hex(COLOR_PALETTE[doublePixel[0]]);
 
     frame[i * 8] = color1 / (256 * 256); // R
     frame[i * 8 + 1] = color1 / 256 % 256;  // G

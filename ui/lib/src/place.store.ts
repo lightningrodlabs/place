@@ -184,7 +184,13 @@ export class PlaceStore {
   }
 
   async getLocalSnapshots(): Promise<SnapshotEntry[]> {
-    return this.service.getLocalSnapshots();
+    const locals = await this.service.getLocalSnapshots();
+    for (const local of locals) {
+      this.snapshotStore[local.timeBucketIndex] = local;
+      const placements = await this.service.getPlacementsAt(local.timeBucketIndex - 1);
+      this.placementStore[local.timeBucketIndex - 1] = placements
+    }
+    return locals;
   }
 
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
