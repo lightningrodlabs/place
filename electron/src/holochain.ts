@@ -5,7 +5,7 @@ import {MAIN_APP_ID, COMMUNITY_PROXY_URL} from './constants'
 
 // these messages get seen on the splash page
 export enum StateSignalText {
-  IsFirstRun = 'Welcome to Where...',
+  IsFirstRun = 'Welcome to Place...',
   IsNotFirstRun = 'Loading...',
   CreatingKeys = 'Creating cryptographic keys...',
   RegisteringDna = 'Registering Profiles DNA to Holochain...',

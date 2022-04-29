@@ -15,7 +15,7 @@ function fatalError(message: string, error?: any) {
   log('error', message);
   log('error', error);
   dialog.showMessageBoxSync({
-    title: 'Where: Fatal error',
+    title: 'Place: Fatal error',
     buttons: ['exit'],
     type: 'error',
     message,
@@ -118,7 +118,7 @@ function setupSessionStorage(sessionPath, dnaHash) {
       log('error', e);
     }
     if (storedDnaHash !== dnaHash) {
-      const msg = "The data found on disk is for a different version of Where's core:\n" +
+      const msg = "The data found on disk is for a different version of Place's core:\n" +
         '  Stored data version: ' + storedDnaHash + '\n' +
         'This running version: ' + dnaHash;
       log('error', msg);
