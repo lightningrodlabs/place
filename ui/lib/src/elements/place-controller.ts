@@ -493,6 +493,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
                           @click=${() => {g_selectedColor = color; this.requestUpdate()}}></button>`
     })
 
+    let localBirthDate = new Date(g_startTime).toLocaleString()
+    //localBirthDate.setUTCSeconds(g_startTime);
+
     /** render all */
     return html`
       <div style="display: flex;flex-direction: row">
@@ -517,6 +520,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>
+      <div>Birthdate: ${localBirthDate}</div>
       <div> Latest: ${this._store.getRelativeBucketIndex(this._latestStoredBucketIndex)}</div>
       <div>Viewing: ${this._store.getRelativeBucketIndex(this._displayedIndex)}</div>
       <div>
