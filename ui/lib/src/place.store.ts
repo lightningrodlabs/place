@@ -5,7 +5,7 @@ import { PlaceService } from './place.service';
 import {
   DestructuredPlacement,
   Dictionary, PlaceAtInput, PlacementEntry, PlaceProperties, snapshot_to_str,
-  Signal, SnapshotEntry,
+  Signal, SnapshotEntry, PlacementDetails, destructurePlacement,
 } from './types';
 
 import {CellId} from "@holochain/client/lib/types/common";
@@ -31,7 +31,7 @@ export class PlaceStore {
   snapshotStore: Dictionary<SnapshotEntry> = {};
   /** TimeBucketIndex -> Placement */
   //private placementStore: Writable<Dictionary<PlacementEntry[]>> = writable({});
-  placementStore: Dictionary<PlacementEntry[]> = {};
+  placementStore: Dictionary<PlacementDetails[]> = {};
 
 
   // public latestBucketIndex: number = 0;
@@ -138,7 +138,15 @@ export class PlaceStore {
     //   store[snapshot.timeBucketIndex - 1] = placements
     //   return store
     // })
-    this.placementStore[snapshot.timeBucketIndex - 1] = placements
+
+    let details:PlacementDetails[] = []
+    for (const placement of placements) {
+      let author = await this.service.getPlacementsAuthor(placement.pixel, snapshot.timeBucketIndex - 1);
+      author = author? author : "<unknown>"
+      details.push({placement: destructurePlacement(placement), author})
+    }
+
+    this.placementStore[snapshot.timeBucketIndex - 1] = details
 
     console.log(`storeSnapshot() bucket ${snapshot.timeBucketIndex}: ${Object.keys(placements).length}`)
   }

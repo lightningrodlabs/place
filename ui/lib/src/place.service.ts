@@ -6,7 +6,7 @@ import {
   SnapshotEntry,
   HoloHashed,
   Signal,
-  Dictionary, DestructuredPlacement, PlaceProperties, PlaceAtInput,
+  Dictionary, DestructuredPlacement, PlaceProperties, PlaceAtInput, PlacementAuthorInput,
 } from './types';
 import {CellId} from "@holochain/client/lib/types/common";
 
@@ -55,6 +55,13 @@ export class PlaceService {
   async getPlacementsAt(bucketIndex: number): Promise<PlacementEntry[]> {
     return this.callPlaceZome('get_placements_at', bucketIndex);
   }
+
+  async getPlacementsAuthor(placement: number, bucket_index: number): Promise<AgentPubKeyB64 | null> {
+    return this.callPlaceZome('get_placement_author', {placement, bucket_index});
+  }
+
+
+
 
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
     return this.callPlaceZome('place_pixel', destructured);

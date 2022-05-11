@@ -18,6 +18,12 @@ pub struct Placement {
 
 impl Placement {
 
+   pub fn from(pixel: u32) -> Self {
+      Self {
+         pixel
+      }
+   }
+
    pub fn from_destructured(input: DestructuredPlacement) -> Self {
       Self::new(input.x, input.y, input.colorIndex)
    }

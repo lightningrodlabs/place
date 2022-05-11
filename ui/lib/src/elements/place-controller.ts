@@ -447,13 +447,22 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     //console.log({stored})
     let snapshotButtons = stored.map((snapshot) => {
       const relIndex = this._store.getRelativeBucketIndex(snapshot.timeBucketIndex);
-      let count = this._store.placementStore[snapshot.timeBucketIndex - 1]
-      if (!count) {
-        count = [];
+      let details = this._store.placementStore[snapshot.timeBucketIndex /*- 1*/]
+      if (!details) {
+        details = [];
       }
-      //console.log({count})
+      //console.log({details})
       return html`<button class="" style=""
-                          @click=${() => {this.setFrame(snapshot); this.requestUpdate();}}>${relIndex}: ${count.length}</button>`
+                          @click=${() => {this.setFrame(snapshot); this.requestUpdate();}}>${relIndex}: ${details.length}</button>`
+    })
+
+    /** Build placement log list */
+    let currentDetails = this._store.placementStore[this._displayedIndex]
+    if (!currentDetails) {
+      currentDetails = [];
+    }
+    let placementDetails = currentDetails.map((detail) => {
+      return html`<li>{x: ${detail.placement.x}, y:${detail.placement.y}, color:${detail.placement.colorIndex}} - ${detail.author}</li>`
     })
 
 
@@ -498,6 +507,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       <div>
         ${snapshotButtons}
         <button class="" style="" @click=${async () => {await this.viewFuture()}}>now</button>
+      </div>
+      <div>
+        <span>Placements:</span>
+        <ol>${placementDetails}</ol>
       </div>
     `;
   }

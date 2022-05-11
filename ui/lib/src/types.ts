@@ -30,6 +30,15 @@ export interface PlaceAtInput {
   bucket_index: number,
 }
 
+export interface PlacementAuthorInput {
+  placement: number,
+  bucket_index: number,
+}
+
+export interface PlacementDetails {
+  placement: DestructuredPlacement,
+  author: AgentPubKeyB64,
+}
 
 export interface PlacementEntry {
   pixel: number,
