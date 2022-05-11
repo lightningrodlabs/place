@@ -33,7 +33,7 @@ pub struct PlaceAtInput {
 }
 
 /// Zome Function
-/// Add placement to current bucket
+/// Add placement to given bucket
 #[hdk_extern]
 pub fn place_pixel_at(input: PlaceAtInput) -> ExternResult<HeaderHash> {
    debug!("*** place_pixel_at() CALLED: {:?}", input);

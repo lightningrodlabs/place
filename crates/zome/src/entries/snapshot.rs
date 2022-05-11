@@ -62,7 +62,7 @@ impl Snapshot {
 }
 
 
-///
+/// Apply placements to 'image_data'
 pub fn apply_pixels_to_canvas(image_data: &mut Vec<DoublePixel>, placements: Vec<Placement>) {
    debug!("apply_pixels_to_canvas(): {} placements", placements.len());
    for placement in placements {

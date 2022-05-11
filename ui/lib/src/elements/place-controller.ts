@@ -34,7 +34,6 @@ let g_grid: any = undefined;
 let g_frameSprite: any = undefined;
 let g_cursor: any = undefined;
 
-let g_startTime: number = Date.now();
 let g_lastRefreshMs: number = Date.now();
 let g_localSnapshots: any = [];
 
@@ -65,7 +64,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Private properties */
 
-  _latestStoredBucketIndex: number = 0;
+  //_latestStoredBucketIndex: number = 0;
   _displayedIndex: number = 0;
 
   private _initialized: boolean = false;
@@ -78,8 +77,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
+  /** DEBUG */
   private async publishNextSnapshot() {
-    const nextIndex = this._latestStoredBucketIndex + 1
+    const nextIndex = this._store.latestStoredBucketIndex + 1
     let res = await this._store.publishSnapshotAt(nextIndex);
     console.log("publishNextSnapshot() " + nextIndex + ": " + (res.length > 0? "SUCCEEDED" : "FAILED"));
     await this.refresh()
@@ -101,16 +101,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** Launch init when myProfile has been set */
   private async subscribeSnapshots() {
     //this._store.snapshots.subscribe(async (snapshots) => {
-       if (this._latestStoredBucketIndex == 0) {
-        /** Select first play */
-        const storedLatestSnapshot = this._store.getStoredLatestSnapshot();
-        if (storedLatestSnapshot) {
-          this._latestStoredBucketIndex = storedLatestSnapshot.timeBucketIndex
-          console.log("Starting Snapshot: " + storedLatestSnapshot.timeBucketIndex);
-        } else {
-          console.warn("No starting Snapshot found");
-        }
-      }
       if (!this._initialized && !this._initializing) {
         await this.init();
       }
@@ -139,12 +129,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     /** Get storedLatest public entries from DHT */
     await this._store.pullDht();
     g_localSnapshots = await this._store.getLocalSnapshots();
-    const storedLatest = this._store.getStoredLatestSnapshot();
+    const storedLatest = this._store.getLatestStoredSnapshot();
     console.log({storedLatest})
-    if (storedLatest) {
-      this._latestStoredBucketIndex = storedLatest.timeBucketIndex;
-    }
-
 
     /** Done */
     this._initialized = true
@@ -162,13 +148,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   private async postInit() {
     this._canPostInit = false;
     const properties = await this._store.getProperties();
-    g_startTime = Date.now();
     console.log({properties})
 
     await this.publishLatestSnapshot()
 
     /** Init publish loop */
-    // const startSec = Math.floor(g_startTime / 1000);
     // const waitForSec = startSec
     //   - Math.floor(startSec / properties.bucketSizeSec) * properties.bucketSizeSec
     // setTimeout(() => {
@@ -203,12 +187,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   async viewFuture() {
     /* Reload latest */
-    const latest = this._store.getStoredLatestSnapshot();
+    const latest = this._store.getLatestStoredSnapshot();
     if (!latest || !g_frameSprite) {
       this.requestUpdate();
       return;
     }
-    this._latestStoredBucketIndex = latest.timeBucketIndex;
     const placements = await this._store.getPlacementsAt(latest.timeBucketIndex);
     this.setFrame(latest);
     /* Update frame with current bucket placements */
@@ -297,9 +280,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //   .drawRect(0, 0, WORLD_SIZE, WORLD_SIZE)
 
     let buffer: Uint8Array;
-    if (this._latestStoredBucketIndex != 0) {
+    if (this._store.latestStoredBucketIndex != 0) {
       //const snapshots = this._snapshots.value;
-      const snapshot = this._store.snapshotStore[this._latestStoredBucketIndex];
+      const snapshot = this._store.snapshotStore[this._store.latestStoredBucketIndex];
       console.log("Starting latest: " + snapshot_to_str(snapshot));
       buffer = snapshotIntoFrame(snapshot.imageData);
     } else {
@@ -328,7 +311,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         //+ canvas.offsetLeft + " ; " + canvas.offsetTop
 
       /** Store placement */
-      if (g_selectedColor && this._displayedIndex > this._latestStoredBucketIndex) {
+      if (g_selectedColor && this._displayedIndex > this._store.latestStoredBucketIndex) {
         g_cursor.visible = true;
         this._store.placePixelAt({
           placement: {
@@ -336,7 +319,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             y: Math.floor(customPos.y),
             colorIndex: color2index(g_selectedColor),
           },
-          bucket_index: this._latestStoredBucketIndex
+          bucket_index: this._store.latestStoredBucketIndex
         })
 
         g_cursor.x = Math.floor(customPos.x) * IMAGE_SCALE
@@ -403,30 +386,19 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     // pixiApp.stage.addChild(logText)
   }
 
-  /**
-   *
-   */
-  async pingOthers() {
-    if (this._latestStoredBucketIndex) {
-      // console.log("Pinging All")
-      //await this._store.pingOthers(this._latestStoredBucketIndex, this._profiles.myAgentPubKey)
-    }
-  }
 
-
+  /** */
   async refresh() {
     console.log("refresh(): Pulling data from DHT")
     await this._store.pullDht()
     g_localSnapshots = await this._store.getLocalSnapshots();
-    const latestStored = this._store.getStoredLatestSnapshot();
+    const latestStored = this._store.getLatestStoredSnapshot();
     if (!latestStored) {
       return;
     }
-    this._latestStoredBucketIndex = latestStored.timeBucketIndex;
     if (latestStored.timeBucketIndex > 0) {
       this.setFrame(latestStored);
     }
-    await this.pingOthers()
     await this.viewFuture()
     //this.requestUpdate();
   }
@@ -434,20 +406,20 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   async handleColorChange(e: any) {
     console.log("handleColorChange: " + e.target.lastValueEmitted)
-    const color = e.target.lastValueEmitted;
+    //const color = e.target.lastValueEmitted;
   }
 
 
-  private async handleSpaceClick(event: any) {
-    await this.pingOthers();
-  }
+  // private async handleSpaceClick(event: any) {
+  //   // n/a
+  // }
 
 
   /**
    *
    */
   render() {
-    console.log("place-controller render() - " + this._latestStoredBucketIndex);
+    console.log("place-controller render() - " + this._store.latestStoredBucketIndex);
     if (!this._initialized) {
       return html`
         <span>Loading...</span>
@@ -493,7 +465,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
                           @click=${() => {g_selectedColor = color; this.requestUpdate()}}></button>`
     })
 
-    let localBirthDate = new Date(g_startTime).toLocaleString()
+    let localBirthDate = new Date(this._store.getMaybeProperties()!.startTime * 1000).toLocaleString()
     //localBirthDate.setUTCSeconds(g_startTime);
 
     /** render all */
@@ -521,7 +493,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>
       <div>Birthdate: ${localBirthDate}</div>
-      <div> Latest: ${this._store.getRelativeBucketIndex(this._latestStoredBucketIndex)}</div>
+      <div> Latest: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>
       <div>Viewing: ${this._store.getRelativeBucketIndex(this._displayedIndex)}</div>
       <div>
         ${snapshotButtons}

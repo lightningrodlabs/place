@@ -1,6 +1,7 @@
 use hdk::prelude::*;
 use zome_utils::{get_all_typed_local, now, zome_panic_hook};
 use crate::entries::Snapshot;
+use crate::functions::get_latest_local_snapshot;
 use crate::publish_snapshot::*;
 use crate::sec_to_bucket;
 
@@ -18,30 +19,7 @@ pub fn publish_latest_snapshot(_:()) -> ExternResult<Vec<HeaderHash>> {
 }
 
 
-/// RendererRole ONLY
-pub fn get_latest_local_snapshot() -> ExternResult<Option<Snapshot>> {
-   let all = get_all_typed_local::<Snapshot>(entry_type!(Snapshot)?)?;
-   debug!("get_latest_local_snapshot() -> {}", all.len());
-   if all.is_empty() {
-      return Ok(None);
-   }
-   let mut latest_index = 0;
-   let mut latest_bucket = all[0].time_bucket_index;
-   let mut i = 0;
-   for snapshot in all.iter() {
-      if snapshot.time_bucket_index >  latest_bucket {
-         latest_bucket = snapshot.time_bucket_index;
-         latest_index = i;
-      }
-      i += 1;
-   }
-   Ok(Some(all[latest_index].clone()))
-}
-
-
-/** DEBUGGING API */
-
-#[hdk_extern]
+#[hdk_extern] // extern for debugging only
 pub fn publish_snapshot_at(current_bucket: u32) -> ExternResult<Vec<HeaderHash>> {
    debug!("*** publish_snapshot_at({}) CALLED", current_bucket);
    std::panic::set_hook(Box::new(zome_panic_hook));

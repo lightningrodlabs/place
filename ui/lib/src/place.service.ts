@@ -12,17 +12,16 @@ import {CellId} from "@holochain/client/lib/types/common";
 
 
 export class PlaceService {
+
   /** Ctor */
-  constructor(
-    public hcClient: BaseClient,
-    protected roleId: string,
-  ) {
+  constructor(public hcClient: BaseClient, protected roleId: string) {
     let maybe_cell = hcClient.cellDataByRoleId(roleId);
     if (!maybe_cell) {
       throw new Error("Cell not found for role: " + roleId);
     }
     this.cellClient = hcClient.forCell(maybe_cell)
   }
+
 
   /** Fields */
 
@@ -47,10 +46,6 @@ export class PlaceService {
 
   async getSnapshotAt(bucket_index: number): Promise<SnapshotEntry | null> {
     return this.callPlaceZome('get_snapshot_at', bucket_index);
-  }
-
-  async getLatestSnapshot(): Promise<SnapshotEntry> {
-    return this.callPlaceZome('get_latest_snapshot', null);
   }
 
   async getLocalSnapshots(): Promise<SnapshotEntry[]> {

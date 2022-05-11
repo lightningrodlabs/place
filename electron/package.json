@@ -26,7 +26,7 @@
   "build": {
     "productName": "Place",
     "afterSign": "./afterSignHook.js",
-    "appId": "com.harris-braun.place",
+    "appId": "org.lightningrodlab.place",
     "copyright": "© 2021-2022 Harris-Braun Enterprises, LLC",
     "asar": false,
     "files": [

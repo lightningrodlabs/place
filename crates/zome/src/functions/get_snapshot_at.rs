@@ -7,7 +7,7 @@ use crate::utils::*;
 
 
 /// Zome Function
-/// Return Snapshot found at given bucket
+/// Return Snapshot at given bucket, if any
 #[hdk_extern]
 pub fn get_snapshot_at(time_bucket_index: u32) -> ExternResult<Option<Snapshot>> {
    std::panic::set_hook(Box::new(zome_panic_hook));
@@ -31,6 +31,7 @@ pub fn get_snapshot_at(time_bucket_index: u32) -> ExternResult<Option<Snapshot>>
 }
 
 /// Zome Function
+/// Return all snapshots stored locally
 #[hdk_extern]
 pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<Snapshot>> {
    let all: Vec<Snapshot> = get_all_typed_local::<Snapshot>(entry_type!(Snapshot)?)?;
@@ -38,28 +39,22 @@ pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<Snapshot>> {
 }
 
 
-/// Zome Function
-#[hdk_extern]
-pub fn get_latest_snapshot(_:()) -> ExternResult<Snapshot> {
-   std::panic::set_hook(Box::new(zome_panic_hook));
-   debug!("*** get_latest_snapshot() CALLED");
-   let starting_bucket = sec_to_bucket(get_dna_properties().start_time);
-   let mut current_bucket = sec_to_bucket(now());
-   debug!("*** get_latest_snapshot() now: {} ; starting time: {}", current_bucket, starting_bucket);
-   /// Look back in time for a snapshot unless starting time is reached
-   loop {
-      let maybe_maybe = get_snapshot_at(current_bucket);
-      if maybe_maybe.is_err() {
-         return Err(maybe_maybe.err().unwrap());
-      }
-      let maybe = maybe_maybe.unwrap();
-      if maybe.is_some() {
-         return Ok(maybe.unwrap());
-      }
-      current_bucket -= 1;
-      if current_bucket < starting_bucket {
-         break;
-      }
+/// RendererRole ONLY
+pub fn get_latest_local_snapshot() -> ExternResult<Option<Snapshot>> {
+   let all = get_all_typed_local::<Snapshot>(entry_type!(Snapshot)?)?;
+   debug!("get_latest_local_snapshot() -> {}", all.len());
+   if all.is_empty() {
+      return Ok(None);
    }
-   return error("No snapshot found");
+   let mut latest_index = 0;
+   let mut latest_bucket = all[0].time_bucket_index;
+   let mut i = 0;
+   for snapshot in all.iter() {
+      if snapshot.time_bucket_index >  latest_bucket {
+         latest_bucket = snapshot.time_bucket_index;
+         latest_index = i;
+      }
+      i += 1;
+   }
+   Ok(Some(all[latest_index].clone()))
 }

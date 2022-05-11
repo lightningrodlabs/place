@@ -4,8 +4,8 @@ use hdk::prelude::*;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, SerializedBytes)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaceProperties {
-   /// seconds since UNIX_EPOCH
-   pub start_time: u64,
-   //pub canvas_size: u16,
+   pub start_time: u64, // seconds since UNIX_EPOCH
    pub bucket_size_sec: u32,
+   //pub canvas_size: u16,
+   //pub starting_image: Vec<DoublePixel>
 }

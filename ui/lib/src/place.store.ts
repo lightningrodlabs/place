@@ -21,6 +21,10 @@ const areEqual = (first: Uint8Array, second: Uint8Array) =>
 export class PlaceStore {
   /** Private */
   private service : PlaceService
+  private _dnaProperties?: PlaceProperties;
+
+
+  /** Public */
 
   /** TimeBucketIndex -> Snapshot */
   //private snapshotStore: Writable<Dictionary<SnapshotEntry>> = writable({});
@@ -31,10 +35,12 @@ export class PlaceStore {
 
 
   // public latestBucketIndex: number = 0;
+  latestStoredBucketIndex: number = 0;
 
-  public _dnaProperties?: PlaceProperties;
+
 
   /** Static info */
+
   myAgentPubKey: AgentPubKeyB64;
 
   /** Readable stores */
@@ -45,104 +51,68 @@ export class PlaceStore {
   /** Ctor */
   constructor(protected hcClient: BaseClient) {
     this.service = new PlaceService(hcClient, "place");
-    let cellClient = this.service.cellClient
+    //let cellClient = this.service.cellClient
     this.myAgentPubKey = this.service.myAgentPubKey;
 
     // this.service.getProperties().then((properties) => {
     //   this.latestBucketIndex = Math.floor(properties.startTime / properties.bucketSizeSec) - 1;
     // });
-
-    cellClient.addSignalHandler( appSignal => {
-      if (! areEqual(cellClient.cellId[0],appSignal.data.cellId[0]) || !areEqual(cellClient.cellId[1], appSignal.data.cellId[1])) {
-        return
-      }
-      const signal = appSignal.data.payload
-      //if (signal.message.type != "Ping" && signal.message.type != "Pong") {
-      //  console.debug(`SIGNAL: ${signal.message.type}`, appSignal)
-      //}
-      // Send pong response
-      if (signal.message.type != "Pong") {
-        //console.log("PONGING ", payload.from)
-        const pong: Signal = {
-          maybeSpaceHash: signal.maybeSpaceHash,
-          from: this.myAgentPubKey,
-          message: {type: 'Pong', content: this.myAgentPubKey}
-        };
-        // FIXME
-        // this.service.notify(pong, [signal.from])
-      }
-      // Handle signal
-      switch(signal.message.type) {
-        case "Ping":
-        case "Pong":
-          break;
-        case "NewSnapshot":
-          // const snapEh = signal.message.content
-          // this.service.getSnapshotAt(snapEh).then(snapshot => {
-          //   this.snapshotStore.update(store => {
-          //     store[snapEh] = snapshot
-          //     return store
-          //   })
-          // })
-          break;
-        case "NewPlacement":
-          // const eh = signal.message.content
-          // this.service.getPlacement(eh).then(placement => {
-          //   this.placementStore.update(store => {
-          //     store[eh] = placement
-          //     return store
-          //   })
-          // })
-          break;
-      }
-    })
-  }
-
-  /** FIXME */
-  pingOthers(spaceHash: EntryHashB64, myKey: AgentPubKeyB64) {
-    const ping: Signal = {maybeSpaceHash: spaceHash, from: this.myAgentPubKey, message: {type: 'Ping', content: myKey}};
-    // console.log({signal})
-    //this.service.notify(ping, this.others());
   }
 
 
-  /** Get latest entries of each type for current time bucket and update local store accordingly */
+  /** */
+  async getLatestSnapshot(): Promise<SnapshotEntry | null> {
+    const startIndex = this.epochToBucketIndex((await this.getProperties()).startTime)
+    let currentBucketIndex = this.epochToBucketIndex(Date.now() / 1000);
+    let maybeSnapshot = null;
+    do {
+      console.log("getLatestSnapshot() - " + currentBucketIndex + " (" + startIndex + ")")
+      maybeSnapshot = await this.service.getSnapshotAt(currentBucketIndex);
+      currentBucketIndex -= 1;
+    } while(maybeSnapshot == null && currentBucketIndex > startIndex)
+    if (maybeSnapshot == null) {
+      console.warn("getLatestSnapshot(): No snapshot found")
+    }
+    return maybeSnapshot;
+  }
+
+
+  /**
+   * Get latest entries of each type for current time bucket and update local store accordingly
+   */
   async pullDht() {
     console.log("pullDht()")
-    // if (this.latestBucketIndex == 0) {
-    //const dnaProperties = await this.getProperties();
-    // }
 
-    const storedLatest = this.getStoredLatestSnapshot();
-
+    const latestStoredSnapshot = this.getLatestStoredSnapshot();
     try {
-      const latestSnapshot = await this.service.getLatestSnapshot();
-      if (latestSnapshot.timeBucketIndex == 0) {
-        console.error("No snapshot found.")
+      const latestSnapshot = await this.getLatestSnapshot();
+      if (latestSnapshot == null) {
+        //console.error("No snapshot found.")
         return;
       }
-      let storedLatestIndex = storedLatest
-        ? storedLatest.timeBucketIndex
-        //: Math.floor(dnaProperties.startTime / dnaProperties.bucketSizeSec) - 1;
+
+      let latestStoredIndex = latestStoredSnapshot
+        ? latestStoredSnapshot.timeBucketIndex
+        //: Math.floor(_dnaProperties.startTime / _dnaProperties.bucketSizeSec) - 1;
         : latestSnapshot.timeBucketIndex - 1;
 
-      //console.log("pullDht() latest found: " + latestSnapshot.timeBucketIndex + " | " + storedLatestIndex)
+      console.log("pullDht() latest found: " + latestSnapshot.timeBucketIndex + " | " + latestStoredIndex)
       let count = 0;
       //await this.storeSnapshot(latestSnapshot)
       /** Store all snapshots since last pull */
-      while (storedLatestIndex < latestSnapshot.timeBucketIndex) {
-        storedLatestIndex += 1;
-        const snapshot = await this.service.getSnapshotAt(storedLatestIndex)
+      while (latestStoredIndex < latestSnapshot.timeBucketIndex) {
+        latestStoredIndex += 1;
+        const snapshot = await this.service.getSnapshotAt(latestStoredIndex)
         if (snapshot) {
           //console.log("Attempting to store " + snapshot_to_str(snapshot))
-          this.storeSnapshot(snapshot!)
+          this.storeSnapshot(snapshot)
           count += 1;
         } else {
-          console.log("No snapshot found at " + storedLatestIndex)
+          console.log("No snapshot found at " + latestStoredIndex)
         }
       }
-      //console.log("pullDht() added to store: " + count)
-      //console.log("pullDht()    store count: " + Object.values(this.snapshotStore).length)
+      console.log("pullDht() added to store: " + count)
+      console.log("pullDht()    store count: " + Object.values(this.snapshotStore).length)
     } catch (e) {
       console.error("No snapshot found")
       console.error({e})
@@ -157,6 +127,11 @@ export class PlaceStore {
     //   store[snapshot.timeBucketIndex] = snapshot
     //   return store
     // })
+
+    if (this.latestStoredBucketIndex < snapshot.timeBucketIndex) {
+      this.latestStoredBucketIndex = snapshot.timeBucketIndex
+    }
+
 
     const placements = await this.service.getPlacementsAt(snapshot.timeBucketIndex - 1);
     // this.placementStore.update(store => {
@@ -183,12 +158,15 @@ export class PlaceStore {
     return this._dnaProperties;
   }
 
+  getMaybeProperties(): PlaceProperties | undefined {
+    return this._dnaProperties;
+  }
+
+  /** WTF */
   async getLocalSnapshots(): Promise<SnapshotEntry[]> {
     const locals = await this.service.getLocalSnapshots();
     for (const local of locals) {
-      this.snapshotStore[local.timeBucketIndex] = local;
-      const placements = await this.service.getPlacementsAt(local.timeBucketIndex - 1);
-      this.placementStore[local.timeBucketIndex - 1] = placements
+      await this.storeSnapshot(local)
     }
     return locals;
   }
@@ -221,27 +199,20 @@ export class PlaceStore {
     return absIndex - Math.floor(this._dnaProperties!.startTime / this._dnaProperties!.bucketSizeSec);
   }
 
+
+  epochToBucketIndex(epochSec: number): number {
+    return Math.ceil((epochSec) / this._dnaProperties!.bucketSizeSec);
+  }
+
+
   /** */
-  getStoredLatestSnapshot(): SnapshotEntry | null {
+  getLatestStoredSnapshot(): SnapshotEntry | null {
     const stored = Object.values(this.snapshotStore);
     if (stored.length == 0) {
       return null
     }
-
-    let latestSnapshot = {
-      imageData: new Uint8Array(),
-      timeBucketIndex: 0,
-    }
-    //const snapshots = get(this.snapshots)
-    //console.log("getStoredLatestSnapshot() - count: " + Object.values(snapshots).length)
-
-    for(const current of stored) {
-      if (current.timeBucketIndex > latestSnapshot.timeBucketIndex) {
-        latestSnapshot = current;
-      }
-    }
-
-    console.log("Latest in store: " + snapshot_to_str(latestSnapshot));
+    let latestSnapshot = this.snapshotStore[this.latestStoredBucketIndex]
+    console.log("Latest snapshot in store: " + snapshot_to_str(latestSnapshot));
     return latestSnapshot;
   }
 
