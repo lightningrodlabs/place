@@ -1,5 +1,5 @@
 import {css, html, LitElement} from "lit";
-import {state} from "lit/decorators.js";
+import {property, state} from "lit/decorators.js";
 
 import * as PIXI from 'pixi.js'
 //import {SCALE_MODES} from 'pixi.js'
@@ -49,6 +49,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   constructor() {
     super();
   }
+
+  /** Public attributes */
+  @property({ type: Boolean, attribute: 'debug' })
+  debugMode: boolean = false;
 
   /** Dependencies */
 
@@ -310,12 +314,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     g_frameSprite.scale.y = IMAGE_SCALE
     g_frameSprite.interactive = true;
 
-    /** On pixel click */
+    /** On pixel click (can't declare elsewhere because we need defined variables) */
     g_frameSprite.on('pointerdown', (e:any) => {
-      //console.log({e})
+      console.log({e})
       let custom = new PIXI.Point(e.data.global.x, e.data.global.y)
-      //custom.x -= canvas.offsetLeft
-      custom.y -= canvas.offsetTop
+      //custom.x -= this.playfieldElem.offsetLeft
+      custom.y -= this.playfieldElem.offsetTop
       let customPos;
       customPos = e.data.getLocalPosition(g_frameSprite, customPos, custom)
       logText.text = ""
@@ -323,25 +327,25 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         + "custom:" + customPos + "\n"
         //+ canvas.offsetLeft + " ; " + canvas.offsetTop
 
-      // Store placement
+      /** Store placement */
       if (g_selectedColor && this._displayedIndex > this._latestStoredBucketIndex) {
         g_cursor.visible = true;
         this._store.placePixelAt({
           placement: {
-          x: Math.floor(customPos.x),
+            x: Math.floor(customPos.x),
             y: Math.floor(customPos.y),
-          colorIndex: color2index(g_selectedColor),
-        },
+            colorIndex: color2index(g_selectedColor),
+          },
           bucket_index: this._latestStoredBucketIndex
-      })
+        })
 
         g_cursor.x = Math.floor(customPos.x) * IMAGE_SCALE
         g_cursor.y = Math.floor(customPos.y) * IMAGE_SCALE
         const tiny = new tinycolor(g_selectedColor)
         const colorNum = parseInt(tiny.toHex(), 16);
         setPixel(buffer, colorNum, customPos);
-        let newText = buffer2Texture(buffer)
-        g_frameSprite.texture = newText
+        let updatedTexture = buffer2Texture(buffer)
+        g_frameSprite.texture = updatedTexture
       }
     })
 
@@ -399,7 +403,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     // pixiApp.stage.addChild(logText)
   }
 
-
   /**
    *
    */
@@ -450,10 +453,26 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         <span>Loading...</span>
       `;
     }
-    const stored = Object.values(this._store.snapshotStore);
-    //console.log({stored})
+
+    /** Build Time UI */
+    let sinceLastPublishSec = Math.floor((Date.now() - g_lastRefreshMs) / 1000);
+    //sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
+    let timeUi;
+    if (this.debugMode) {
+      timeUi = html`
+        <button class="" style="" @click=${async () => {await this.publishNextSnapshot()}}>Publish</button>
+        <br/>
+      `
+    } else {
+      timeUi = html`
+        <div>Time:</div>
+        <div>${sinceLastPublishSec} sec</div>
+      `
+    }
 
     /** Build snapshot button list */
+    const stored = Object.values(this._store.snapshotStore);
+    //console.log({stored})
     let snapshotButtons = stored.map((snapshot) => {
       const relIndex = this._store.getRelativeBucketIndex(snapshot.timeBucketIndex);
       let count = this._store.placementStore[snapshot.timeBucketIndex - 1]
@@ -465,6 +484,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
                           @click=${() => {this.setFrame(snapshot); this.requestUpdate();}}>${relIndex}: ${count.length}</button>`
     })
 
+
     /** Build palette button list */
     //let palette = html``
     let palette = COLOR_PALETTE.map((color)=> {
@@ -473,11 +493,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
                           @click=${() => {g_selectedColor = color; this.requestUpdate()}}></button>`
     })
 
-    //console.log({viewport})
-    let sinceLastPublishSec = Math.floor((Date.now() - g_lastRefreshMs) / 1000);
-    //sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
-
-
+    /** render all */
     return html`
       <div style="display: flex;flex-direction: row">
         <div style="width:80px;display: flex;flex-direction: column">
@@ -494,11 +510,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           }}>Fit</button>
           <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
           <button style="margin:5px;" @click=${() => {this.refresh()}}>Refresh</button>
-          <!--<div>Time:</div>-->
-           <!--<div>${sinceLastPublishSec} sec</div>-->
-          <button class="" style=""
-                  @click=${async () => {await this.publishNextSnapshot()}}>Publish</button>
-          <br/>
+          ${timeUi}
           <div> local: ${g_localSnapshots.length}</div>
           <div>stored: ${stored.length}</div>
             <!--<div>Pixels: ${pixelCount}</div>-->
@@ -514,6 +526,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     `;
   }
 
+
+  /** */
   static get scopedElements() {
     return {
       //"place-snapshot": PlaceSnapshot,

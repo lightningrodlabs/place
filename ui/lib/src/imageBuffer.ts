@@ -51,11 +51,9 @@ export function getPixel(buffer: Uint8Array, point: PIXI.Point): number {
 }
 
 
-export function buffer2Texture(buffer:Uint8Array): PIXI.Texture {
+export function buffer2Texture(buffer: Uint8Array): PIXI.Texture {
   return PIXI.Texture.fromBuffer(buffer, WORLD_SIZE, WORLD_SIZE, {scaleMode: SCALE_MODES.NEAREST})
 }
-
-
 
 //export type Pixel = [r: number, g: number, b: number, a: number];
 
