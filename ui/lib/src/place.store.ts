@@ -92,8 +92,12 @@ export class PlaceStore {
   async getLatestSnapshot(): Promise<SnapshotEntry> {
     console.log("getLatestSnapshot(): called")
     const startIndex = this.epochToBucketIndex((await this.getProperties()).startTime)
-    let currentBucketIndex = this.epochToBucketIndex(Date.now() / 1000);
-    let maybeSnapshot = await this.searchLatestSnapshot(startIndex, currentBucketIndex, 0);
+    let nowIndex = this.epochToBucketIndex(Date.now() / 1000);
+    let maybeNow = await this.getSnapshotAt(nowIndex);
+    if (maybeNow) {
+      return maybeNow;
+    }
+    let maybeSnapshot = await this.searchLatestSnapshot(startIndex, nowIndex, 0);
     if (maybeSnapshot == null) {
       console.warn("getLatestSnapshot(): No snapshot found. Creating first one.")
       let res = await this.PublishStartingSnapshot();
@@ -114,40 +118,33 @@ export class PlaceStore {
   async publishUpTo(nowIndex: number) {
     console.log("publishUpTo()")
 
-    const latestStoredSnapshot = this.getLatestStoredSnapshot();
-
     try {
       const latestChainedSnapshot = await this.getLatestSnapshot();
 
-      let latestStoredIndex = latestStoredSnapshot
-        ? latestStoredSnapshot.timeBucketIndex
-        //: Math.floor(_dnaProperties.startTime / _dnaProperties.bucketSizeSec) - 1;
-        : latestChainedSnapshot.timeBucketIndex - 1;
-
-      console.log(`publishUpTo()\n - latest stored: ${latestStoredIndex}\n - latest chained: ${latestChainedSnapshot.timeBucketIndex}\n - now: `)
+      console.log(`publishUpTo()\n - latest chained: ${latestChainedSnapshot.timeBucketIndex}\n - now: ${nowIndex}`)
       let count = 0;
       //await this.storeSnapshot(latestSnapshot)
       /** Store all snapshots since last pull */
-      while (latestStoredIndex < latestChainedSnapshot.timeBucketIndex) {
-        latestStoredIndex += 1;
-        const snapshot = await this.service.getSnapshotAt(latestStoredIndex)
-        if (snapshot) {
-          const res = await this.publishNextSnapshotAt(latestStoredIndex)
-          if (res == null) {
-            console.error("Failed to publish snapshot at " + latestStoredIndex + 1)
-            break;
-          }
-          const newSnapshot = await this.service.getSnapshotAt(latestStoredIndex + 1)
-          if (newSnapshot == null) {
-            console.error("Failed to get snapshot at " + latestStoredIndex + 1)
-            break;
-          }
-          console.log("Attempting to store " + snapshot_to_str(newSnapshot!))
-          await this.storeSnapshot(newSnapshot!)
-          count += 1;
-        } else {
-          console.log("No snapshot found at " + latestStoredIndex)
+
+      for (let latestChainedIndex = latestChainedSnapshot.timeBucketIndex; latestChainedIndex < nowIndex; latestChainedIndex += 1) {
+        // const snapshot = await this.service.getSnapshotAt(latestChainedIndex)
+        // if (!snapshot) {
+        //   console.log("Snapshot not found at " + latestChainedIndex)
+        //   break;
+        // }
+        const res = await this.service.publishNextSnapshotAt(latestChainedIndex)
+        if (res == null) {
+          console.error("Failed to publish snapshot " + latestChainedIndex + 1)
+          break;
         }
+        const newSnapshot = await this.service.getSnapshotAt(latestChainedIndex + 1)
+        if (newSnapshot == null) {
+          console.error("Failed to get snapshot at " + latestChainedIndex + 1)
+          break;
+        }
+        console.log("Attempting to store " + snapshot_to_str(newSnapshot!))
+        await this.storeSnapshot(newSnapshot!)
+        count += 1;
       }
       console.log("publishUpTo() added to store: " + count)
       console.log("publishUpTo()    store count: " + Object.values(this.snapshotStore).length)
@@ -167,7 +164,7 @@ export class PlaceStore {
 
       if (!this.snapshotStore[latestSnapshot.timeBucketIndex]) {
         console.log("pullDht(): Adding latest snapshot found at " + latestSnapshot.timeBucketIndex)
-        this.storeSnapshot(latestSnapshot)
+        await this.storeSnapshot(latestSnapshot)
       } else {
         // n/a
       }
@@ -180,8 +177,13 @@ export class PlaceStore {
   }
 
 
-  async getSnapshotAt(bucket_index: number): Promise<SnapshotEntry | null> {
-    const snapshot = await this.service.getSnapshotAt(bucket_index);
+  async getSnapshotAt(bucketIndex: number): Promise<SnapshotEntry | null> {
+    const maybeStored = this.snapshotStore[bucketIndex];
+    if (maybeStored) {
+      return maybeStored;
+    }
+    /** look foor snapshot in DHT */
+    const snapshot = await this.service.getSnapshotAt(bucketIndex);
     if (snapshot == null) {
       return null;
     }
@@ -192,6 +194,8 @@ export class PlaceStore {
 
   /** */
   async storeSnapshot(snapshot: SnapshotEntry) {
+    console.log(`storeSnapshot() called for ${snapshot.timeBucketIndex}`)
+
     this.snapshotStore[snapshot.timeBucketIndex] = snapshot
     // this.snapshotStore.update(store => {
     //   store[snapshot.timeBucketIndex] = snapshot
@@ -256,7 +260,7 @@ export class PlaceStore {
   async publishNextSnapshotAt(bucket_index: number): Promise<HeaderHashB64 | null> {
     console.log("publishNextSnapshotAt() " + bucket_index)
     let res = await this.service.publishNextSnapshotAt(bucket_index);
-    console.log("publishNextSnapshotAt() res = " + JSON.stringify(res))
+    console.log("publishNextSnapshotAt() succeeded = " + res != null)
     await this.pullDht();
     return res;
   }

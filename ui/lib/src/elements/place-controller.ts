@@ -78,16 +78,20 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
 
   /** */
-  private async publishLatestSnapshot() {
+  private async publishNowSnapshot() {
     const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
-    console.log("publishLatestSnapshot() now = " + nowIndex);
-
-    let res = await this._store.publishNextSnapshotAt(nowIndex);
+    let nowSnapshot = await this._store.getSnapshotAt(nowIndex);
+    console.log(`publishNowSnapshot() now = ${nowIndex} ; exists = ` + nowSnapshot != null);
+    if (nowSnapshot) {
+      console.log("publishNowSnapshot() aborted. Already exists | " + nowIndex)
+      return;
+    }
+    let res = await this._store.publishNextSnapshotAt(nowIndex - 1);
     if (!res) {
       /* Sync to 'now' */
-      await this._store.pullDhtAndStoreSinceLastKnown(nowIndex);
+      await this._store.publishUpTo(nowIndex - 1);
     }
-    console.log("publishLatestSnapshot() " + (nowIndex + 1) + ": " + (res? "SUCCEEDED" : "FAILED"));
+    console.log("publishNowSnapshot() " + nowIndex + ": " + (res? "SUCCEEDED" : "FAILED"));
     await this.refresh()
     if (res) {
       await this.viewFuture()
@@ -119,7 +123,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
-  /** Called once a profile has been set */
+  /** Called once subscribed to stores */
   private async init() {
     this._initializing = true
     console.log("place-controller.init() - START!");
@@ -127,9 +131,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     await this._store.pullDht();
 
     g_localSnapshots = await this._store.getLocalSnapshots();
-    console.log({g_localSnapshots})
-    const storedLatest = this._store.getLatestStoredSnapshot();
-    console.log({storedLatest})
+    //console.log({g_localSnapshots})
+    console.log("Latest in store: " + this._store.getLatestStoredSnapshot())
 
     /** Done */
     this._initialized = true
@@ -143,27 +146,52 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
-  /** Called once after first init */
+  /** Called once after first update after init is done */
   private async postInit() {
     console.log("place-controller.postInit() - START!");
     this._canPostInit = false;
-    const properties = await this._store.getProperties();
-    console.log({properties})
+    console.log({properties: await this._store.getProperties()})
 
-    await this.publishLatestSnapshot()
+    this.initPixiApp(this.playfieldElem)
+
+    const maybeLatestStored = this._store.getLatestStoredSnapshot()
+    console.log({maybeLatestStored})
+    if (maybeLatestStored) {
+      this.setFrame(maybeLatestStored);
+
+
+      ///** Update page every second */
+      //setInterval(() => {this.requestUpdate()}, 2000);
+
+      // TODO: should be offloaded to a different thread
+      await this.startRealTimePublishing();
+
+      // const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
+      // if (maybeLatestStored.timeBucketIndex != nowIndex) {
+      //   this.syncToNow(nowIndex)
+      // }
+    }
+    //await this.viewFuture()
+    console.log("place-controller.postInit() - DONE");
+  }
+
+
+  private async startRealTimePublishing() {
+    await this.publishNowSnapshot()
 
     /** Init auto-publish loop */
     if (!this.debugMode) {
+      const properties = await this._store.getProperties();
       /* Wait for next bucket start to launch loop */
       const startSec = Math.ceil(Date.now() / 1000);
-      const startIndexPlus = Math.floor(startSec / properties.bucketSizeSec)
+      const startIndexPlus = Math.ceil(startSec / properties.bucketSizeSec)
       const waitForSec = startIndexPlus * properties.bucketSizeSec - startSec
       console.log("Auto-publish loop starting in " + waitForSec + " secs")
       setTimeout(() => {
           setInterval(async () => {
               g_lastRefreshMs = Date.now();
-              console.log("auto calling publishLatestSnapshot() - " + g_lastRefreshMs)
-              await this.publishLatestSnapshot();
+              console.log("auto calling publishNowSnapshot() - " + g_lastRefreshMs)
+              await this.publishNowSnapshot();
             },
             properties.bucketSizeSec * 1000
           );
@@ -172,10 +200,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       )
     }
 
-     /** Init PIXI app */
-    this.initPixiApp(this.playfieldElem)
     await this.viewFuture()
-    console.log("place-controller.postInit() - DONE");
   }
 
 
@@ -206,7 +231,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
     if (!latest || latest.timeBucketIndex != nowIndex) {
       /* Sync to 'now' */
-      await this._store.pullDhtAndStoreSinceLastKnown(nowIndex);
+      await this._store.publishUpTo(nowIndex);
     }
     latest = this._store.getLatestStoredSnapshot();
     if (!latest || latest.timeBucketIndex != nowIndex) {
@@ -319,15 +344,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     g_frameSprite.interactive = true;
 
     /** On pixel click (can't declare elsewhere because we need defined variables) */
-    g_frameSprite.on('pointerdown', (e:any) => {
-      console.log({e})
-      let custom = new PIXI.Point(e.data.global.x, e.data.global.y)
+    g_frameSprite.on('pointerdown', (event:any) => {
+      //console.log({event})
+      let custom = new PIXI.Point(event.data.global.x, event.data.global.y)
       //custom.x -= this.playfieldElem.offsetLeft
       custom.y -= this.playfieldElem.offsetTop
       let customPos;
-      customPos = e.data.getLocalPosition(g_frameSprite, customPos, custom)
+      customPos = event.data.getLocalPosition(g_frameSprite, customPos, custom)
       logText.text = ""
-        //+ "global:" + e.data.global + "\n"
+        //+ "global:" + event.data.global + "\n"
         + "custom:" + customPos + "\n"
         //+ canvas.offsetLeft + " ; " + canvas.offsetTop
 
@@ -453,7 +478,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     let timeUi;
     if (this.debugMode) {
       timeUi = html`
-        <button class="" style="" @click=${async () => {await this.publishLatestSnapshot()}}>Publish</button>
+        <button class="" style="" @click=${async () => {await this.publishNowSnapshot()}}>Publish</button>
         <br/>
       `
     } else {
@@ -469,29 +494,31 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     let snapshotButtons: any[] = [];
     const startIndex = this._store.getStartIndex()
     const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
-    let bucketCount = nowIndex - startIndex;
-    // for(let relBucketIndex = 0; relBucketIndex < bucketCount; relBucketIndex += 1) {
-    //   this._store.getSnapshotAt(startIndex + relBucketIndex).then((maybeSnapshot) => {
-    //     if (maybeSnapshot == null) {
-    //       return;
-    //     }
-    //     let details = this._store.placementStore[startIndex + relBucketIndex - 1]
-    //     if (!details) {
-    //       details = [];
-    //     }
-    //     //console.log({details})
-    //     const button = html`<button class="" style=""
-    //                       @click=${() => {this.setFrame(maybeSnapshot); this.requestUpdate();}}>${relBucketIndex}: ${details.length}</button>`
-    //     snapshotButtons.push(button)
-    //   })
-    // }
+    let bucketCount = nowIndex - startIndex + 1;
+    console.log(`Buttons: bucketCount: ${bucketCount} = ${nowIndex} - ${startIndex}`)
+    for(let relBucketIndex = 0; relBucketIndex < bucketCount; relBucketIndex += 1) {
+      const maybeSnapshot = this._store.snapshotStore[startIndex + relBucketIndex]
+      if (!maybeSnapshot) {
+        console.log(`Buttons: no snapshot found at ${relBucketIndex}`)
+        continue;
+      }
+      let details = this._store.placementStore[startIndex + relBucketIndex - 1]
+      if (!details) {
+        details = [];
+      }
+      console.log({details})
+      const button = html`<button class="" style=""
+                        @click=${() => {this.setFrame(maybeSnapshot); this.requestUpdate();}}>${relBucketIndex}: ${details.length}</button>`
+      snapshotButtons[relBucketIndex] = button
+    }
+    //console.log("snapshotButtons: " + snapshotButtons.length)
 
     /** Build placement log list */
-    let currentDetails = this._store.placementStore[this._displayedIndex]
-    if (!currentDetails) {
-      currentDetails = [];
+    let displayedDetails = this._store.placementStore[this._displayedIndex]
+    if (!displayedDetails) {
+      displayedDetails = [];
     }
-    let placementDetails = currentDetails.map((detail) => {
+    let placementDetails = displayedDetails.map((detail) => {
       return html`<li>{x: ${detail.placement.x}, y:${detail.placement.y}, color:${detail.placement.colorIndex}} - ${detail.author}</li>`
     })
 

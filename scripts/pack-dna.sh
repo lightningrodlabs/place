@@ -5,6 +5,6 @@ NOW=`date +%s`
 LINE=`echo startTime: $NOW`
 echo \* Extract start_time from workdir/dna.yaml
 echo $LINE
-#sed -i "6s/.*/  ${LINE}/" workdir/dna.yaml
+sed -i "6s/.*/  ${LINE}/" workdir/dna.yaml
 
 hc dna pack workdir
