@@ -30,9 +30,11 @@ impl Snapshot {
       /// Update canvas with starting placements
       apply_pixels_to_canvas(&mut image_data, starting_placements);
       let properties = get_dna_properties();
+      let time_bucket_index =(properties.start_time / properties.bucket_size_sec as u64) as u32;
+      debug!("Creating first snapshot. Starting time bucket is: {}", time_bucket_index);
       Self {
          image_data,
-         time_bucket_index: (properties.start_time / properties.bucket_size_sec as u64) as u32,
+         time_bucket_index,
       }
    }
 

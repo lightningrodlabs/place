@@ -77,24 +77,21 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
-  /** DEBUG */
-  private async publishNextSnapshot() {
-    const nextIndex = this._store.latestStoredBucketIndex + 1
-    let res = await this._store.publishSnapshotAt(nextIndex);
-    console.log("publishNextSnapshot() " + nextIndex + ": " + (res.length > 0? "SUCCEEDED" : "FAILED"));
-    await this.refresh()
-    if (res.length > 0) {
-      await this.viewFuture()
-    }
-  }
-
-
   /** */
   private async publishLatestSnapshot() {
-    console.log("Calling publishLatestSnapshot()...")
-    let res = await this._store.publishLatestSnapshot();
-    console.log("Calling publishLatestSnapshot() result length: " + res.length)
-    await this.refresh();
+    const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
+    console.log("publishLatestSnapshot() now = " + nowIndex);
+
+    let res = await this._store.publishNextSnapshotAt(nowIndex);
+    if (!res) {
+      /* Sync to 'now' */
+      await this._store.pullDhtAndStoreSinceLastKnown(nowIndex);
+    }
+    console.log("publishLatestSnapshot() " + (nowIndex + 1) + ": " + (res? "SUCCEEDED" : "FAILED"));
+    await this.refresh()
+    if (res) {
+      await this.viewFuture()
+    }
   }
 
 
@@ -128,7 +125,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     console.log("place-controller.init() - START!");
     /** Get storedLatest public entries from DHT */
     await this._store.pullDht();
+
     g_localSnapshots = await this._store.getLocalSnapshots();
+    console.log({g_localSnapshots})
     const storedLatest = this._store.getLatestStoredSnapshot();
     console.log({storedLatest})
 
@@ -146,29 +145,37 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Called once after first init */
   private async postInit() {
+    console.log("place-controller.postInit() - START!");
     this._canPostInit = false;
     const properties = await this._store.getProperties();
     console.log({properties})
 
     await this.publishLatestSnapshot()
 
-    /** Init publish loop */
-    // const waitForSec = startSec
-    //   - Math.floor(startSec / properties.bucketSizeSec) * properties.bucketSizeSec
-    // setTimeout(() => {
-    //   setInterval(async () => {
-    //     g_lastRefreshMs = Date.now();
-    //     await this.publishLatestSnapshot();
-    //     },
-    //     properties.bucketSizeSec * 1000
-    //   );
-    // },
-    // waitForSec * 1000
-    // )
+    /** Init auto-publish loop */
+    if (!this.debugMode) {
+      /* Wait for next bucket start to launch loop */
+      const startSec = Math.ceil(Date.now() / 1000);
+      const startIndexPlus = Math.floor(startSec / properties.bucketSizeSec)
+      const waitForSec = startIndexPlus * properties.bucketSizeSec - startSec
+      console.log("Auto-publish loop starting in " + waitForSec + " secs")
+      setTimeout(() => {
+          setInterval(async () => {
+              g_lastRefreshMs = Date.now();
+              console.log("auto calling publishLatestSnapshot() - " + g_lastRefreshMs)
+              await this.publishLatestSnapshot();
+            },
+            properties.bucketSizeSec * 1000
+          );
+        },
+        waitForSec * 1000
+      )
+    }
 
      /** Init PIXI app */
     this.initPixiApp(this.playfieldElem)
     await this.viewFuture()
+    console.log("place-controller.postInit() - DONE");
   }
 
 
@@ -185,11 +192,25 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
+  /** Set Frame to next snapshot */
   async viewFuture() {
-    /* Reload latest */
-    const latest = this._store.getLatestStoredSnapshot();
-    if (!latest || !g_frameSprite) {
+    console.log("viewFuture()...")
+    /* pixi must be initiazed */
+    if (!g_frameSprite) {
       this.requestUpdate();
+      return;
+    }
+    /* Reload latest */
+    let latest = this._store.getLatestStoredSnapshot();
+    /* Latest must corresond to 'now' */
+    const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
+    if (!latest || latest.timeBucketIndex != nowIndex) {
+      /* Sync to 'now' */
+      await this._store.pullDhtAndStoreSinceLastKnown(nowIndex);
+    }
+    latest = this._store.getLatestStoredSnapshot();
+    if (!latest || latest.timeBucketIndex != nowIndex) {
+      console.error("Latest snapshot should be 'now'");
       return;
     }
     const placements = await this._store.getPlacementsAt(latest.timeBucketIndex);
@@ -432,7 +453,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     let timeUi;
     if (this.debugMode) {
       timeUi = html`
-        <button class="" style="" @click=${async () => {await this.publishNextSnapshot()}}>Publish</button>
+        <button class="" style="" @click=${async () => {await this.publishLatestSnapshot()}}>Publish</button>
         <br/>
       `
     } else {
@@ -444,17 +465,26 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** Build snapshot button list */
     const stored = Object.values(this._store.snapshotStore);
-    //console.log({stored})
-    let snapshotButtons = stored.map((snapshot) => {
-      const relIndex = this._store.getRelativeBucketIndex(snapshot.timeBucketIndex);
-      let details = this._store.placementStore[snapshot.timeBucketIndex /*- 1*/]
-      if (!details) {
-        details = [];
-      }
-      //console.log({details})
-      return html`<button class="" style=""
-                          @click=${() => {this.setFrame(snapshot); this.requestUpdate();}}>${relIndex}: ${details.length}</button>`
-    })
+    console.log({stored})
+    let snapshotButtons: any[] = [];
+    const startIndex = this._store.getStartIndex()
+    const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
+    let bucketCount = nowIndex - startIndex;
+    // for(let relBucketIndex = 0; relBucketIndex < bucketCount; relBucketIndex += 1) {
+    //   this._store.getSnapshotAt(startIndex + relBucketIndex).then((maybeSnapshot) => {
+    //     if (maybeSnapshot == null) {
+    //       return;
+    //     }
+    //     let details = this._store.placementStore[startIndex + relBucketIndex - 1]
+    //     if (!details) {
+    //       details = [];
+    //     }
+    //     //console.log({details})
+    //     const button = html`<button class="" style=""
+    //                       @click=${() => {this.setFrame(maybeSnapshot); this.requestUpdate();}}>${relBucketIndex}: ${details.length}</button>`
+    //     snapshotButtons.push(button)
+    //   })
+    // }
 
     /** Build placement log list */
     let currentDetails = this._store.placementStore[this._displayedIndex]

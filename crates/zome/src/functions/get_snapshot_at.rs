@@ -11,13 +11,13 @@ use crate::utils::*;
 #[hdk_extern]
 pub fn get_snapshot_at(time_bucket_index: u32) -> ExternResult<Option<Snapshot>> {
    std::panic::set_hook(Box::new(zome_panic_hook));
-   debug!("*** get_snapshot() CALLED - bucket: {}", time_bucket_index);
+   debug!("*** get_snapshot_at() CALLED - bucket: {}", time_bucket_index);
    if time_bucket_index < sec_to_bucket(get_dna_properties().start_time) {
-      warn!("get_snapshot() aborted: requested time_bucket is older than starting time.");
+      warn!("get_snapshot_at() aborted: requested time_bucket is older than starting time.");
       return Ok(None)
    }
    let bucket_path = get_bucket_path((time_bucket_index * get_dna_properties().bucket_size_sec) as u64);
-   debug!("get_snapshot() at path: {}", path_to_str(&bucket_path));
+   debug!("get_snapshot_at() at path: {}", path_to_str(&bucket_path));
    let pairs = get_typed_from_links::<Snapshot>(
       bucket_path.path_entry_hash()?,
       PlaceLinkKind::Snapshot.as_tag_opt(),

@@ -80,7 +80,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
       return html`<span>Loading...</span>`;
     }
     return html`
-       <place-controller debug="true"></place-controller>
+       <place-controller></place-controller>
     `;
   }
 

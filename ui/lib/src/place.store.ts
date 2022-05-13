@@ -9,6 +9,7 @@ import {
 } from './types';
 
 import {CellId} from "@holochain/client/lib/types/common";
+import {delay} from "./elements/place-controller";
 
 
 const areEqual = (first: Uint8Array, second: Uint8Array) =>
@@ -19,6 +20,7 @@ const areEqual = (first: Uint8Array, second: Uint8Array) =>
  *
  */
 export class PlaceStore {
+
   /** Private */
   private service : PlaceService
   private _dnaProperties?: PlaceProperties;
@@ -59,64 +61,132 @@ export class PlaceStore {
     // });
   }
 
+  getStartIndex(): number {
+    const properties = this.getMaybeProperties();
+    return this.epochToBucketIndex(properties!.startTime);
+  }
+
+  /** We assume that a snapshot at each bucket should be published */
+  async searchLatestSnapshot(startRange: number, endRange: number, lastKnown: number): Promise<SnapshotEntry | null> {
+    console.log(`searchLatestSnapshot(): ${startRange} - ${endRange} | ${lastKnown}`)
+    /* End condition: No range left */
+    if (startRange == endRange) {
+      if (lastKnown == 0) {
+        return null;
+      }
+      return await this.service.getSnapshotAt(lastKnown);
+    }
+    /* Binary search */
+    let candidatIndex = (startRange + endRange) >> 1;
+    let maybeSnapshot = await this.service.getSnapshotAt(candidatIndex);
+    if (maybeSnapshot) {
+      if (candidatIndex == startRange) {
+        endRange = endRange - 1
+      }
+      return await this.searchLatestSnapshot(candidatIndex, endRange, candidatIndex);
+    }
+    return await this.searchLatestSnapshot(startRange, candidatIndex, lastKnown)
+  }
 
   /** */
-  async getLatestSnapshot(): Promise<SnapshotEntry | null> {
+  async getLatestSnapshot(): Promise<SnapshotEntry> {
+    console.log("getLatestSnapshot(): called")
     const startIndex = this.epochToBucketIndex((await this.getProperties()).startTime)
     let currentBucketIndex = this.epochToBucketIndex(Date.now() / 1000);
-    let maybeSnapshot = null;
-    do {
-      console.log("getLatestSnapshot() - " + currentBucketIndex + " (" + startIndex + ")")
-      maybeSnapshot = await this.service.getSnapshotAt(currentBucketIndex);
-      currentBucketIndex -= 1;
-    } while(maybeSnapshot == null && currentBucketIndex > startIndex)
+    let maybeSnapshot = await this.searchLatestSnapshot(startIndex, currentBucketIndex, 0);
     if (maybeSnapshot == null) {
-      console.warn("getLatestSnapshot(): No snapshot found")
+      console.warn("getLatestSnapshot(): No snapshot found. Creating first one.")
+      let res = await this.PublishStartingSnapshot();
+      return res;
     }
+    console.log("getLatestSnapshot(): result = " + maybeSnapshot.timeBucketIndex)
     return maybeSnapshot;
   }
 
+  async PublishStartingSnapshot(): Promise<SnapshotEntry> {
+    return this.service.PublishStartingSnapshot();
+  }
+
+  /**
+   * Get latest entries of each type for current time bucket and update local store
+   * with all snapshots & placements since last known snapshot
+   */
+  async publishUpTo(nowIndex: number) {
+    console.log("publishUpTo()")
+
+    const latestStoredSnapshot = this.getLatestStoredSnapshot();
+
+    try {
+      const latestChainedSnapshot = await this.getLatestSnapshot();
+
+      let latestStoredIndex = latestStoredSnapshot
+        ? latestStoredSnapshot.timeBucketIndex
+        //: Math.floor(_dnaProperties.startTime / _dnaProperties.bucketSizeSec) - 1;
+        : latestChainedSnapshot.timeBucketIndex - 1;
+
+      console.log(`publishUpTo()\n - latest stored: ${latestStoredIndex}\n - latest chained: ${latestChainedSnapshot.timeBucketIndex}\n - now: `)
+      let count = 0;
+      //await this.storeSnapshot(latestSnapshot)
+      /** Store all snapshots since last pull */
+      while (latestStoredIndex < latestChainedSnapshot.timeBucketIndex) {
+        latestStoredIndex += 1;
+        const snapshot = await this.service.getSnapshotAt(latestStoredIndex)
+        if (snapshot) {
+          const res = await this.publishNextSnapshotAt(latestStoredIndex)
+          if (res == null) {
+            console.error("Failed to publish snapshot at " + latestStoredIndex + 1)
+            break;
+          }
+          const newSnapshot = await this.service.getSnapshotAt(latestStoredIndex + 1)
+          if (newSnapshot == null) {
+            console.error("Failed to get snapshot at " + latestStoredIndex + 1)
+            break;
+          }
+          console.log("Attempting to store " + snapshot_to_str(newSnapshot!))
+          await this.storeSnapshot(newSnapshot!)
+          count += 1;
+        } else {
+          console.log("No snapshot found at " + latestStoredIndex)
+        }
+      }
+      console.log("publishUpTo() added to store: " + count)
+      console.log("publishUpTo()    store count: " + Object.values(this.snapshotStore).length)
+    } catch (e) {
+      console.error("No snapshot found")
+      console.error({e})
+    }
+  }
 
   /**
    * Get latest entries of each type for current time bucket and update local store accordingly
    */
   async pullDht() {
     console.log("pullDht()")
-
-    const latestStoredSnapshot = this.getLatestStoredSnapshot();
-    try {
+    //try {
       const latestSnapshot = await this.getLatestSnapshot();
-      if (latestSnapshot == null) {
-        //console.error("No snapshot found.")
-        return;
-      }
 
-      let latestStoredIndex = latestStoredSnapshot
-        ? latestStoredSnapshot.timeBucketIndex
-        //: Math.floor(_dnaProperties.startTime / _dnaProperties.bucketSizeSec) - 1;
-        : latestSnapshot.timeBucketIndex - 1;
-
-      console.log("pullDht() latest found: " + latestSnapshot.timeBucketIndex + " | " + latestStoredIndex)
-      let count = 0;
-      //await this.storeSnapshot(latestSnapshot)
-      /** Store all snapshots since last pull */
-      while (latestStoredIndex < latestSnapshot.timeBucketIndex) {
-        latestStoredIndex += 1;
-        const snapshot = await this.service.getSnapshotAt(latestStoredIndex)
-        if (snapshot) {
-          //console.log("Attempting to store " + snapshot_to_str(snapshot))
-          this.storeSnapshot(snapshot)
-          count += 1;
-        } else {
-          console.log("No snapshot found at " + latestStoredIndex)
-        }
+      if (!this.snapshotStore[latestSnapshot.timeBucketIndex]) {
+        console.log("pullDht(): Adding latest snapshot found at " + latestSnapshot.timeBucketIndex)
+        this.storeSnapshot(latestSnapshot)
+      } else {
+        // n/a
       }
-      console.log("pullDht() added to store: " + count)
-      console.log("pullDht()    store count: " + Object.values(this.snapshotStore).length)
-    } catch (e) {
-      console.error("No snapshot found")
-      console.error({e})
+    //   console.log("pullDht() added to store: " + count)
+    //   console.log("pullDht()    store count: " + Object.values(this.snapshotStore).length)
+    // } catch (e) {
+    //   console.error("No snapshot found")
+    //   console.error({e})
+    // }
+  }
+
+
+  async getSnapshotAt(bucket_index: number): Promise<SnapshotEntry | null> {
+    const snapshot = await this.service.getSnapshotAt(bucket_index);
+    if (snapshot == null) {
+      return null;
     }
+    await this.storeSnapshot(snapshot);
+    return snapshot;
   }
 
 
@@ -148,16 +218,9 @@ export class PlaceStore {
 
     this.placementStore[snapshot.timeBucketIndex - 1] = details
 
-    console.log(`storeSnapshot() bucket ${snapshot.timeBucketIndex}: ${Object.keys(placements).length}`)
+    console.log(`Snapshot stored at bucket ${snapshot.timeBucketIndex} ; new placement(s): ${Object.keys(placements).length}`)
   }
 
-
-  /** */
-  async publishLatestSnapshot(): Promise<HeaderHashB64[]> {
-    const res = await this.service.publishLatestSnapshot();
-    await this.pullDht()
-    return res;
-  }
 
   async getProperties(): Promise<PlaceProperties> {
     if (!this._dnaProperties) {
@@ -173,9 +236,12 @@ export class PlaceStore {
   /** WTF */
   async getLocalSnapshots(): Promise<SnapshotEntry[]> {
     const locals = await this.service.getLocalSnapshots();
+    console.log("getLocalSnapshots(): storing " + locals.length + " local snapshots")
+    await delay(100); // minor delay to avoid "source chain head has moved" error
     for (const local of locals) {
       await this.storeSnapshot(local)
     }
+    console.log("getLocalSnapshots() - DONE");
     return locals;
   }
 
@@ -187,16 +253,18 @@ export class PlaceStore {
     return this.service.getPlacementsAt(bucketIndex);
   }
 
+  async publishNextSnapshotAt(bucket_index: number): Promise<HeaderHashB64 | null> {
+    console.log("publishNextSnapshotAt() " + bucket_index)
+    let res = await this.service.publishNextSnapshotAt(bucket_index);
+    console.log("publishNextSnapshotAt() res = " + JSON.stringify(res))
+    await this.pullDht();
+    return res;
+  }
+
   /** DEBUGGING */
 
   async placePixelAt(input: PlaceAtInput): Promise<HeaderHashB64> {
     return this.service.placePixelAt(input);
-  }
-
-  async publishSnapshotAt(bucket_index: number): Promise<HeaderHashB64[]> {
-    let res = await this.service.publishSnapshotAt(bucket_index);
-    await this.pullDht();
-    return res;
   }
 
 
@@ -209,7 +277,7 @@ export class PlaceStore {
 
 
   epochToBucketIndex(epochSec: number): number {
-    return Math.ceil((epochSec) / this._dnaProperties!.bucketSizeSec);
+    return Math.floor((epochSec) / this._dnaProperties!.bucketSizeSec);
   }
 
 

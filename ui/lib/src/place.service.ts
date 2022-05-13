@@ -40,8 +40,8 @@ export class PlaceService {
     return this.callPlaceZome('get_properties', null);
   }
 
-  async publishLatestSnapshot(): Promise<HeaderHashB64[]> {
-    return this.callPlaceZome('publish_latest_snapshot', null);
+  async publishNextSnapshotAt(bucket_index: number): Promise<HeaderHashB64 | null> {
+    return this.callPlaceZome('publish_next_snapshot_at', bucket_index);
   }
 
   async getSnapshotAt(bucket_index: number): Promise<SnapshotEntry | null> {
@@ -50,6 +50,10 @@ export class PlaceService {
 
   async getLocalSnapshots(): Promise<SnapshotEntry[]> {
     return this.callPlaceZome('get_local_snapshots', null);
+  }
+
+  async PublishStartingSnapshot(): Promise<SnapshotEntry> {
+    return this.callPlaceZome('publish_starting_snapshot', null);
   }
 
   async getPlacementsAt(bucketIndex: number): Promise<PlacementEntry[]> {
@@ -74,9 +78,9 @@ export class PlaceService {
     return this.callPlaceZome('place_pixel_at', input);
   }
 
-  async publishSnapshotAt(bucket_index: number): Promise<HeaderHashB64[]> {
-    return this.callPlaceZome('publish_snapshot_at', bucket_index);
-  }
+  // async publishSnapshotAt(bucket_index: number): Promise<HeaderHashB64[]> {
+  //   return this.callPlaceZome('publish_snapshot_at', bucket_index);
+  // }
 
 
   /** Misc */
