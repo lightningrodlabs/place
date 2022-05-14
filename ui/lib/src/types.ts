@@ -45,6 +45,10 @@ export interface PlacementEntry {
 }
 
 
+export interface PublishCallback {
+  (snapshot: SnapshotEntry, cbData?: any): void;
+}
+
 export interface SnapshotEntry {
   imageData: Uint8Array,
   timeBucketIndex: number,

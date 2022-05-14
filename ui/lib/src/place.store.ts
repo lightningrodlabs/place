@@ -5,7 +5,7 @@ import { PlaceService } from './place.service';
 import {
   DestructuredPlacement,
   Dictionary, PlaceAtInput, PlacementEntry, PlaceProperties, snapshot_to_str,
-  Signal, SnapshotEntry, PlacementDetails, destructurePlacement,
+  Signal, SnapshotEntry, PlacementDetails, destructurePlacement, PublishCallback,
 } from './types';
 
 import {CellId} from "@holochain/client/lib/types/common";
@@ -88,6 +88,7 @@ export class PlaceStore {
     return await this.searchLatestSnapshot(startRange, candidatIndex, lastKnown)
   }
 
+
   /** */
   async getLatestSnapshot(): Promise<SnapshotEntry> {
     console.log("getLatestSnapshot(): called")
@@ -107,49 +108,49 @@ export class PlaceStore {
     return maybeSnapshot;
   }
 
+
+  /** */
   async PublishStartingSnapshot(): Promise<SnapshotEntry> {
     return this.service.PublishStartingSnapshot();
   }
+
 
   /**
    * Get latest entries of each type for current time bucket and update local store
    * with all snapshots & placements since last known snapshot
    */
-  async publishUpTo(nowIndex: number) {
-    console.log("publishUpTo()")
-
+  async publishUpTo(nowIndex: number, cb: PublishCallback, cbData?: any) {
+    console.log("publishUpTo() called")
     try {
-      const latestChainedSnapshot = await this.getLatestSnapshot();
-
-      console.log(`publishUpTo()\n - latest chained: ${latestChainedSnapshot.timeBucketIndex}\n - now: ${nowIndex}`)
+      const latestSnapshot = await this.getLatestSnapshot();
+      console.log(`publishUpTo()\n - latest: ${latestSnapshot.timeBucketIndex}\n - now: ${nowIndex}`)
       let count = 0;
-      //await this.storeSnapshot(latestSnapshot)
-      /** Store all snapshots since last pull */
-
-      for (let latestChainedIndex = latestChainedSnapshot.timeBucketIndex; latestChainedIndex < nowIndex; latestChainedIndex += 1) {
+      /** Publish all snapshots since lastest until 'now' */
+      for (let latestIndex = latestSnapshot.timeBucketIndex; latestIndex < nowIndex; latestIndex += 1) {
         // const snapshot = await this.service.getSnapshotAt(latestChainedIndex)
         // if (!snapshot) {
         //   console.log("Snapshot not found at " + latestChainedIndex)
         //   break;
         // }
-        const res = await this.service.publishNextSnapshotAt(latestChainedIndex)
+        const res = await this.service.publishNextSnapshotAt(latestIndex)
         if (res == null) {
-          console.error("Failed to publish snapshot " + latestChainedIndex + 1)
+          console.error("Failed to publish snapshot " + latestIndex + 1)
           break;
         }
-        const newSnapshot = await this.service.getSnapshotAt(latestChainedIndex + 1)
+        const newSnapshot = await this.service.getSnapshotAt(latestIndex + 1)
         if (newSnapshot == null) {
-          console.error("Failed to get snapshot at " + latestChainedIndex + 1)
+          console.error("Failed to get snapshot at " + latestIndex + 1)
           break;
         }
         console.log("Attempting to store " + snapshot_to_str(newSnapshot!))
         await this.storeSnapshot(newSnapshot!)
+        cb(newSnapshot!, cbData)
         count += 1;
       }
       console.log("publishUpTo() added to store: " + count)
       console.log("publishUpTo()    store count: " + Object.values(this.snapshotStore).length)
     } catch (e) {
-      console.error("No snapshot found")
+      console.error("publishUpTo() failed:")
       console.error({e})
     }
   }
@@ -195,44 +196,42 @@ export class PlaceStore {
   /** */
   async storeSnapshot(snapshot: SnapshotEntry) {
     console.log(`storeSnapshot() called for ${snapshot.timeBucketIndex}`)
-
     this.snapshotStore[snapshot.timeBucketIndex] = snapshot
     // this.snapshotStore.update(store => {
     //   store[snapshot.timeBucketIndex] = snapshot
     //   return store
     // })
-
     if (this.latestStoredBucketIndex < snapshot.timeBucketIndex) {
       this.latestStoredBucketIndex = snapshot.timeBucketIndex
     }
+    console.log(`Snapshot stored at bucket ${snapshot.timeBucketIndex}`)
+  }
 
 
-    const placements = await this.service.getPlacementsAt(snapshot.timeBucketIndex - 1);
+  /** */
+  async storePlacements(placements: PlacementEntry[], index: number) {
+    //     const placements = await this.service.getPlacementsAt(index);
+    let details: PlacementDetails[] = []
+    for (const placement of placements) {
+      let author = await this.service.getPlacementsAuthor(placement.pixel, index);
+      author = author? author : "<unknown>"
+      details.push({placement: destructurePlacement(placement), author})
+    }
+    this.placementStore[index] = details
     // this.placementStore.update(store => {
     //   store[snapshot.timeBucketIndex - 1] = placements
     //   return store
     // })
-
-    let details:PlacementDetails[] = []
-    for (const placement of placements) {
-      let author = await this.service.getPlacementsAuthor(placement.pixel, snapshot.timeBucketIndex - 1);
-      author = author? author : "<unknown>"
-      details.push({placement: destructurePlacement(placement), author})
-    }
-
-    this.placementStore[snapshot.timeBucketIndex - 1] = details
-
-    console.log(`Snapshot stored at bucket ${snapshot.timeBucketIndex} ; new placement(s): ${Object.keys(placements).length}`)
+    console.log(`Placements stored at bucket ${index} ; new placement(s): ${Object.keys(placements).length}`)
   }
 
-
+  /** */
   async getProperties(): Promise<PlaceProperties> {
     if (!this._dnaProperties) {
       this._dnaProperties = await this.service.getProperties();
     }
     return this._dnaProperties;
   }
-
   getMaybeProperties(): PlaceProperties | undefined {
     return this._dnaProperties;
   }
@@ -254,7 +253,9 @@ export class PlaceStore {
   }
 
   async getPlacementsAt(bucketIndex: number): Promise<PlacementEntry[]> {
-    return this.service.getPlacementsAt(bucketIndex);
+    let placements = await this.service.getPlacementsAt(bucketIndex);
+    await this.storePlacements(placements, bucketIndex);
+    return placements;
   }
 
   async publishNextSnapshotAt(bucket_index: number): Promise<HeaderHashB64 | null> {
