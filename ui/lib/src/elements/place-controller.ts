@@ -9,7 +9,14 @@ import {contextProvided} from "@holochain-open-dev/context";
 import {StoreSubscriber} from "lit-svelte-stores";
 
 import {sharedStyles} from "../sharedStyles";
-import {destructurePlacement, placeContext, snapshot_to_str, SnapshotEntry} from "../types";
+import {
+  destructurePlacement,
+  packPlacement,
+  placeContext,
+  PlacementEntry,
+  snapshot_to_str,
+  SnapshotEntry
+} from "../types";
 import {PlaceStore} from "../place.store";
 import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
@@ -25,6 +32,7 @@ import {
   snapshotIntoFrame
 } from "../imageBuffer";
 import tinycolor from "tinycolor2";
+import {unpack_destructuring} from "svelte/types/compiler/compile/nodes/shared/Context";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
@@ -34,8 +42,10 @@ let g_grid: any = undefined;
 let g_frameSprite: any = undefined;
 let g_cursor: any = undefined;
 
+let g_buffer: Uint8Array = new Uint8Array();
+
 let g_lastRefreshMs: number = Date.now();
-let g_localSnapshots: any = [];
+let g_localSnapshotIndexes: any = [];
 
 
 let pixiApp: any = undefined;
@@ -120,8 +130,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     console.log("Latest in store: " + snapshot_to_str(this._store.getLatestStoredSnapshot()!))
 
     /** Store all local snapshots */
-    g_localSnapshots = await this._store.getLocalSnapshots();
-    //console.log({g_localSnapshots})
+    g_localSnapshotIndexes = await this._store.getLocalSnapshots();
+    //console.log({g_localSnapshotIndexes})
 
     /** Done */
     this._initialized = true
@@ -143,15 +153,19 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     this.initPixiApp(this.playfieldElem)
 
-    const maybeLatestStored = this._store.getLatestStoredSnapshot()
+    let maybeLatestStored = this._store.getLatestStoredSnapshot()
     console.log({maybeLatestStored})
     if (maybeLatestStored) {
       this.setFrame(maybeLatestStored);
-      /** Check if we need to sync */
-      const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
-      if (maybeLatestStored.timeBucketIndex < nowIndex) {
-        await this.syncToNow(nowIndex);
-      }
+      /** Check if we need to sync. Also we may need to sync again after a sync if a sync takes too long */
+      let nowIndex = 0
+      do {
+        nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
+        if (maybeLatestStored!.timeBucketIndex < nowIndex) {
+          await this.syncToNow(nowIndex);
+        }
+        maybeLatestStored = this._store.getLatestStoredSnapshot()
+      } while(maybeLatestStored!.timeBucketIndex != nowIndex)
 
       ///** Update page every second */
       //setInterval(() => {this.requestUpdate()}, 2000);
@@ -196,6 +210,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     await this.refresh()
     if (res) {
       await this.viewFuture()
+      this.requestUpdate()
     }
   }
 
@@ -240,7 +255,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
 
   /** Set frame to now snapshot */
-  async viewFuture() {
+  async viewFuture(currentPlacement?: PlacementEntry) {
     console.log("viewFuture()...")
     /* pixi must be initiazed */
     if (!g_frameSprite) {
@@ -249,33 +264,44 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
     /* Reload latest */
     let latest = this._store.getLatestStoredSnapshot();
+    if (!latest) {
+      console.warn("viewFuture() aborting: no latest snapshot stored")
+      return;
+    }
     /* Latest must correspond to 'now' */
-    const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
-    if (!latest || latest.timeBucketIndex != nowIndex) {
-      this.syncToNow();
-      return;
-      //await this._store.publishUpTo(nowIndex);
+    // const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
+    // if (!latest || latest.timeBucketIndex != nowIndex) {
+    //   console.log("viewFuture() syncToNow ...")
+    //   await this.syncToNow();
+    //   return;
+    //   //await this._store.publishUpTo(nowIndex);
+    // }
+    // latest = this._store.getLatestStoredSnapshot();
+    // if (!latest || latest.timeBucketIndex != nowIndex) {
+    //   console.error("Latest snapshot should be 'now'");
+    //   return;
+    // }
+
+    // this.setFrame(latest);
+
+    let placements = await this._store.getPlacementsAt(latest.timeBucketIndex);
+    if (currentPlacement) {
+      placements.push(currentPlacement)
     }
-    latest = this._store.getLatestStoredSnapshot();
-    if (!latest || latest.timeBucketIndex != nowIndex) {
-      console.error("Latest snapshot should be 'now'");
-      return;
-    }
-    const placements = await this._store.getPlacementsAt(latest.timeBucketIndex);
-    this.setFrame(latest);
+    console.log("viewFuture() adding placements: " + placements.length)
     /* Update frame with current bucket placements */
-    let buffer = snapshotIntoFrame(latest.imageData);
+    g_buffer = snapshotIntoFrame(latest.imageData);
     for (const placement of placements) {
       let destructed = destructurePlacement(placement)
       const tiny = new tinycolor(COLOR_PALETTE[destructed.colorIndex])
       const colorNum = parseInt(tiny.toHex(), 16);
       const pos = new PIXI.Point(destructed.x, destructed.y)
-      setPixel(buffer, colorNum, pos);
+      setPixel(g_buffer, colorNum, pos);
     }
     this._displayedIndex = latest.timeBucketIndex + 1
     /** Apply new texture */
-    g_frameSprite.texture = buffer2Texture(buffer)
-    this.requestUpdate()
+    g_frameSprite.texture = buffer2Texture(g_buffer)
+    // this.requestUpdate()
   }
 
 
@@ -283,8 +309,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   setFrame(snapshot: SnapshotEntry) {
     this._displayedIndex = snapshot.timeBucketIndex
     console.log("frame set to: " + snapshot_to_str(snapshot));
-    const buffer = snapshotIntoFrame(snapshot.imageData);
-    if (g_frameSprite) g_frameSprite.texture = buffer2Texture(buffer);
+    g_buffer = snapshotIntoFrame(snapshot.imageData);
+    if (g_frameSprite) g_frameSprite.texture = buffer2Texture(g_buffer);
   }
 
 
@@ -348,26 +374,26 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //   .lineStyle(1, 0xff0000)
       //   .drawRect(0, 0, WORLD_SIZE, WORLD_SIZE)
 
-    let buffer: Uint8Array;
+    //let buffer: Uint8Array;
     if (this._store.latestStoredBucketIndex != 0) {
       //const snapshots = this._snapshots.value;
       const snapshot = this._store.snapshotStore[this._store.latestStoredBucketIndex];
       console.log("Starting latest: " + snapshot_to_str(snapshot));
-      buffer = snapshotIntoFrame(snapshot.imageData);
+      g_buffer = snapshotIntoFrame(snapshot.imageData);
     } else {
       //let buffer = randomBuffer(1);
       let buf = randomSnapshotData();
-      buffer = snapshotIntoFrame(buf);
+      g_buffer = snapshotIntoFrame(buf);
     }
 
-    let texture = buffer2Texture(buffer);
+    let texture = buffer2Texture(g_buffer);
     g_frameSprite = PIXI.Sprite.from(texture);
     g_frameSprite.scale.x = IMAGE_SCALE
     g_frameSprite.scale.y = IMAGE_SCALE
     g_frameSprite.interactive = true;
 
     /** On pixel click (can't declare elsewhere because we need defined variables) */
-    g_frameSprite.on('pointerdown', (event:any) => {
+    g_frameSprite.on('pointerdown', async (event:any) => {
       //console.log({event})
       let custom = new PIXI.Point(event.data.global.x, event.data.global.y)
       //custom.x -= this.playfieldElem.offsetLeft
@@ -379,25 +405,35 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         + "custom:" + customPos + "\n"
         //+ canvas.offsetLeft + " ; " + canvas.offsetTop
 
-      /** Store placement */
+      /** get buffer */
+      // const latest = this._store.getLatestStoredSnapshot();
+      // if (latest) {
+      //   buffer = snapshotIntoFrame(latest.imageData);
+      // }
+
+      /** Set & store clicked placement */
       if (g_selectedColor && this._displayedIndex > this._store.latestStoredBucketIndex) {
         g_cursor.visible = true;
-        this._store.placePixelAt({
-          placement: {
+        const placement = {
             x: Math.floor(customPos.x),
             y: Math.floor(customPos.y),
             colorIndex: color2index(g_selectedColor),
-          },
+          };
+        this._store.placePixelAt({
+          placement,
           bucket_index: this._store.latestStoredBucketIndex
         })
 
         g_cursor.x = Math.floor(customPos.x) * IMAGE_SCALE
         g_cursor.y = Math.floor(customPos.y) * IMAGE_SCALE
+
         const tiny = new tinycolor(g_selectedColor)
         const colorNum = parseInt(tiny.toHex(), 16);
-        setPixel(buffer, colorNum, customPos);
-        let updatedTexture = buffer2Texture(buffer)
+        setPixel(g_buffer, colorNum, customPos);
+        let updatedTexture = buffer2Texture(g_buffer)
         g_frameSprite.texture = updatedTexture
+
+        // await this.viewFuture(packPlacement(placement))
       }
     })
 
@@ -460,7 +496,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async refresh() {
     console.log("refresh(): Pulling data from DHT")
     await this._store.pullDht()
-    g_localSnapshots = await this._store.getLocalSnapshots();
+    g_localSnapshotIndexes = await this._store.getLocalSnapshots();
     const latestStored = this._store.getLatestStoredSnapshot();
     if (!latestStored) {
       return;
@@ -469,7 +505,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       this.setFrame(latestStored);
     }
     await this.viewFuture()
-    //this.requestUpdate();
+    this.requestUpdate();
   }
 
 
@@ -510,9 +546,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     /** */
     return html`
       <canvas id="playfield" class="appCanvas"></canvas>
-      <h2>SYNCING...</h2>
+      <h2>SYNCING... ${this._store.getRelativeBucketIndex(this._displayedIndex)} / ${this._store.getRelativeBucketIndex(nowIndex)}</h2>
       <div>Birthdate: ${localBirthDate}</div>
-      <div>Synced to: ${this._store.getRelativeBucketIndex(this._displayedIndex)} / ${this._store.getRelativeBucketIndex(nowIndex)}</div>
     `;
   }
 
@@ -546,24 +581,20 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     let bucketCount = nowIndex - startIndex + 1;
     console.log(`Buttons: bucketCount: ${bucketCount} = ${nowIndex} - ${startIndex}`)
     for(let relBucketIndex = 0; relBucketIndex < bucketCount; relBucketIndex += 1) {
-      const maybeSnapshot = this._store.snapshotStore[startIndex + relBucketIndex]
+      const iBucketIndex = startIndex + relBucketIndex
+      const maybeSnapshot = this._store.snapshotStore[iBucketIndex]
       if (!maybeSnapshot) {
-        console.log(`Buttons: no snapshot found at ${relBucketIndex}`)
+        //console.log(`Buttons: no snapshot found at ${relBucketIndex}`)
         continue;
       }
-      let details = this._store.placementStore[startIndex + relBucketIndex - 1]
       let label = "" + relBucketIndex
-      if (!details) {
-        details = [];
-      } else {
-        label = relBucketIndex + ": " + details.length
-      }
-      console.log({details})
       const button = html`<button class="" style=""
                         @click=${() => {this.setFrame(maybeSnapshot); this.requestUpdate();}}>${label}</button>`
       snapshotButtons[relBucketIndex] = button
     }
     //console.log("snapshotButtons: " + snapshotButtons.length)
+
+
 
     /** Build placement log list */
     let displayedDetails = this._store.placementStore[this._displayedIndex]
@@ -604,7 +635,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
           <button style="margin:5px;" @click=${() => {this.refresh()}}>Refresh</button>
           ${timeUi}
-          <div> local: ${g_localSnapshots.length}</div>
+          <div> local: ${g_localSnapshotIndexes.length}</div>
           <div>stored: ${stored.length}</div>
             <!--<div>Pixels: ${pixelCount}</div>-->
         </div>

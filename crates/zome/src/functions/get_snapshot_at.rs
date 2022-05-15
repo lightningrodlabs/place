@@ -31,11 +31,12 @@ pub fn get_snapshot_at(time_bucket_index: u32) -> ExternResult<Option<Snapshot>>
 }
 
 /// Zome Function
-/// Return all snapshots stored locally
+/// Return bucket index of all snapshots stored locally
 #[hdk_extern]
-pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<Snapshot>> {
+pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<u32>> {
    let all: Vec<Snapshot> = get_all_typed_local::<Snapshot>(entry_type!(Snapshot)?)?;
-   Ok(all)
+   let indexes = all.iter().map(|snapshot| snapshot.time_bucket_index).collect();
+   Ok(indexes)
 }
 
 

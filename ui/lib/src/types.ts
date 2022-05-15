@@ -80,7 +80,7 @@ export function destructurePlacement(placement: PlacementEntry): DestructuredPla
 }
 
 
-function packPlacement(destructured: DestructuredPlacement): PlacementEntry {
+export function packPlacement(destructured: DestructuredPlacement): PlacementEntry {
   let pixel = destructured.colorIndex
   + destructured.x << 20
       + destructured.y << 4;

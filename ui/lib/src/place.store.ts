@@ -159,7 +159,7 @@ export class PlaceStore {
    * Get latest entries of each type for current time bucket and update local store accordingly
    */
   async pullDht() {
-    console.log("pullDht()")
+    console.log("pullDht() - START")
     //try {
       const latestSnapshot = await this.getLatestSnapshot();
 
@@ -175,9 +175,11 @@ export class PlaceStore {
     //   console.error("No snapshot found")
     //   console.error({e})
     // }
+    console.log("pullDht() - DONE")
   }
 
 
+  /** */
   async getSnapshotAt(bucketIndex: number): Promise<SnapshotEntry | null> {
     const maybeStored = this.snapshotStore[bucketIndex];
     if (maybeStored) {
@@ -237,15 +239,16 @@ export class PlaceStore {
   }
 
   /** WTF */
-  async getLocalSnapshots(): Promise<SnapshotEntry[]> {
-    const locals = await this.service.getLocalSnapshots();
-    console.log("getLocalSnapshots(): storing " + locals.length + " local snapshots")
-    await delay(100); // minor delay to avoid "source chain head has moved" error
-    for (const local of locals) {
-      await this.storeSnapshot(local)
-    }
-    console.log("getLocalSnapshots() - DONE");
-    return locals;
+  async getLocalSnapshots(): Promise<number[]> {
+    const localIndexes = await this.service.getLocalSnapshots();
+    // console.log("getLocalSnapshots(): storing " + localIndexes.length + " local snapshots")
+    // // await delay(100); // minor delay to avoid "source chain head has moved" error
+    // // for (const index of localIndexes) {
+    // //   const local = await this.service.getSnapshotAt(index);
+    // //   await this.storeSnapshot(local!)
+    // // }
+    // console.log("getLocalSnapshots() - DONE");
+    return localIndexes;
   }
 
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {

@@ -48,7 +48,7 @@ export class PlaceService {
     return this.callPlaceZome('get_snapshot_at', bucket_index);
   }
 
-  async getLocalSnapshots(): Promise<SnapshotEntry[]> {
+  async getLocalSnapshots(): Promise<number[]> {
     return this.callPlaceZome('get_local_snapshots', null);
   }
 
