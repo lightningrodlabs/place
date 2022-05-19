@@ -3,8 +3,9 @@ manifest_version: "1"
 name: place
 uuid: 00000000-0000-0000-0000-000000000000
 properties:
-  startTime: 1651177628
+  startTime: 1652974195
   bucketSizeSec: 60
+  canvasSize: 100
 zomes:
   - name: place
     bundled: ../target/wasm32-unknown-unknown/release/zome_place.wasm

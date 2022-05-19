@@ -40,22 +40,22 @@ pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<u32>> {
 }
 
 
-/// RendererRole ONLY
-pub fn get_latest_local_snapshot() -> ExternResult<Option<Snapshot>> {
-   let all = get_all_typed_local::<Snapshot>(entry_type!(Snapshot)?)?;
-   debug!("get_latest_local_snapshot() -> {}", all.len());
-   if all.is_empty() {
-      return Ok(None);
-   }
-   let mut latest_index = 0;
-   let mut latest_bucket = all[0].time_bucket_index;
-   let mut i = 0;
-   for snapshot in all.iter() {
-      if snapshot.time_bucket_index >  latest_bucket {
-         latest_bucket = snapshot.time_bucket_index;
-         latest_index = i;
-      }
-      i += 1;
-   }
-   Ok(Some(all[latest_index].clone()))
-}
+// /// RendererRole ONLY
+// pub fn get_latest_local_snapshot() -> ExternResult<Option<Snapshot>> {
+//    let all = get_all_typed_local::<Snapshot>(entry_type!(Snapshot)?)?;
+//    debug!("get_latest_local_snapshot() -> {}", all.len());
+//    if all.is_empty() {
+//       return Ok(None);
+//    }
+//    let mut latest_index = 0;
+//    let mut latest_bucket = all[0].time_bucket_index;
+//    let mut i = 0;
+//    for snapshot in all.iter() {
+//       if snapshot.time_bucket_index >  latest_bucket {
+//          latest_bucket = snapshot.time_bucket_index;
+//          latest_index = i;
+//       }
+//       i += 1;
+//    }
+//    Ok(Some(all[latest_index].clone()))
+// }

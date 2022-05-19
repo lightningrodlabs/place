@@ -1,9 +1,8 @@
 use hdk::prelude::*;
-use zome_utils::{now, zome_panic_hook};
+use zome_utils::zome_panic_hook;
 use crate::entries::Snapshot;
-use crate::functions::{get_latest_local_snapshot, get_snapshot_at};
+use crate::functions::get_snapshot_at;
 use crate::publish_snapshot::*;
-use crate::sec_to_bucket;
 
 
 /// Zome Function
@@ -31,7 +30,7 @@ pub fn publish_starting_snapshot(_: ()) -> ExternResult<Snapshot> {
    debug!("*** publish_starting_snapshot() CALLED");
    std::panic::set_hook(Box::new(zome_panic_hook));
    let first = Snapshot::create_first(Vec::new());
-   let hh = publish_snapshot(&first)?;
+   let _hh = publish_snapshot(&first)?;
    debug!("*** publish_starting_snapshot() first snapshot created: {}", first.time_bucket_index);
    Ok(first)
 }

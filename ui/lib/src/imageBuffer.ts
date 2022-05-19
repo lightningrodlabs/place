@@ -1,15 +1,15 @@
 import * as PIXI from 'pixi.js'
 import {SCALE_MODES} from "pixi.js";
-import {COLOR_PALETTE, WORLD_SIZE} from "./constants";
+import {COLOR_PALETTE} from "./constants";
 
 export function rand(n: number) {
   return Math.round(Math.random() * n)
 }
 
 
-export function randomBuffer(pct:number): Uint8Array {
-  let buff = new Uint8Array(WORLD_SIZE * WORLD_SIZE * 4);
-  for (let i = 0; i < WORLD_SIZE * WORLD_SIZE; i++) {
+export function randomBuffer(pct:number, worldSize: number): Uint8Array {
+  let buff = new Uint8Array(worldSize * worldSize * 4);
+  for (let i = 0; i < worldSize * worldSize; i++) {
     buff[i * 4] = Math.floor(255 * pct);  // R
     buff[i * 4 + 1] = Math.floor(255 * pct);  // G
     buff[i * 4 + 2] = Math.floor(255 * pct);  // B
@@ -18,9 +18,9 @@ export function randomBuffer(pct:number): Uint8Array {
   return buff;
 }
 
-export function randomSnapshotData(): Uint8Array {
-  let buff = new Uint8Array(WORLD_SIZE * WORLD_SIZE / 2);
-  for (let i = 0; i < WORLD_SIZE * WORLD_SIZE / 2; i += 1) {
+export function randomSnapshotData(worldSize: number): Uint8Array {
+  let buff = new Uint8Array(worldSize * worldSize / 2);
+  for (let i = 0; i < worldSize * worldSize / 2; i += 1) {
     const index = i * 2 % 16
     //buff[i] = index * 16 + ((index + 1) % 16);
     //buff[i] = 5 * 16 + 5;
@@ -30,20 +30,20 @@ export function randomSnapshotData(): Uint8Array {
 }
 
 
-export function pos2Index(pos: PIXI.Point): number {
-  return (Math.floor(pos.y) * WORLD_SIZE + Math.floor(pos.x)) * 4
+export function pos2Index(pos: PIXI.Point, worldSize: number): number {
+  return (Math.floor(pos.y) * worldSize + Math.floor(pos.x)) * 4
 }
 
-export function setPixel(buffer: Uint8Array, colorHex:number, point: PIXI.Point) {
-  const index = pos2Index(point);
+export function setPixel(buffer: Uint8Array, colorHex:number, point: PIXI.Point, worldSize: number) {
+  const index = pos2Index(point, worldSize);
   //console.log(`SetPixel(${index}) x: ${point.x} y: ${point.y}  | ${colorHex}`)
   buffer[index] = colorHex / (256 * 256);
   buffer[index+ 1] = colorHex / 256 % 256;
   buffer[index+ 2] = colorHex % 256;
 }
 
-export function getPixel(buffer: Uint8Array, point: PIXI.Point): number {
-  const index = pos2Index(point);
+export function getPixel(buffer: Uint8Array, point: PIXI.Point, worldSize: number): number {
+  const index = pos2Index(point, worldSize);
   const r = buffer[index] * (256 * 256);
   const g = buffer[index + 1] * 256;
   const b = buffer[index + 2] ;
@@ -51,8 +51,8 @@ export function getPixel(buffer: Uint8Array, point: PIXI.Point): number {
 }
 
 
-export function buffer2Texture(buffer: Uint8Array): PIXI.Texture {
-  return PIXI.Texture.fromBuffer(buffer, WORLD_SIZE, WORLD_SIZE, {scaleMode: SCALE_MODES.NEAREST})
+export function buffer2Texture(buffer: Uint8Array, worldSize: number): PIXI.Texture {
+  return PIXI.Texture.fromBuffer(buffer, worldSize, worldSize, {scaleMode: SCALE_MODES.NEAREST})
 }
 
 //export type Pixel = [r: number, g: number, b: number, a: number];
@@ -70,12 +70,12 @@ function intoDoublePixel(packed: number): DoublePixel {
  * @param imageData Array of indexed colorIndex 4bpp
  * return Array of rgba
  */
-export function snapshotIntoFrame(imageData: Uint8Array): Uint8Array {
-  if(imageData.length != WORLD_SIZE * WORLD_SIZE / 2) {
+export function snapshotIntoFrame(imageData: Uint8Array, worldSize: number): Uint8Array {
+  if(imageData.length != worldSize * worldSize / 2) {
     console.error("snapshotIntoFrame() error: invalid imageData length: " + imageData.length)
     return new Uint8Array();
   }
-  let frame = new Uint8Array(WORLD_SIZE * WORLD_SIZE * 4);
+  let frame = new Uint8Array(worldSize * worldSize * 4);
   frame.fill(255)
   let i = 0;
   for (const packed of imageData) {

@@ -1,7 +1,6 @@
 use hdk::prelude::*;
 use crate::entries::Placement;
 use crate::double_pixel::DoublePixel;
-use crate::CANVAS_SIZE;
 use crate::functions::get_dna_properties;
 
 /// A Public Entry representing the whole canvas for a specific time bucket
@@ -16,7 +15,7 @@ pub struct Snapshot {
 impl Snapshot {
    ///
    pub fn new(image_data: Vec<DoublePixel>, time_bucket_index: u32) -> Self {
-      assert!(image_data.len()  == (CANVAS_SIZE * CANVAS_SIZE / 2) as usize);
+      //assert!(image_data.len()  == (CANVAS_SIZE * CANVAS_SIZE / 2) as usize);
       Self {
          image_data,
          time_bucket_index,
@@ -25,11 +24,11 @@ impl Snapshot {
 
 
    pub fn create_first(starting_placements: Vec<Placement>) -> Self {
+      let properties = get_dna_properties();
       /// Create starting canvas with colorIndex = 0
-      let mut image_data = vec![DoublePixel::new(0,0); (CANVAS_SIZE * CANVAS_SIZE / 2) as usize];
+      let mut image_data = vec![DoublePixel::new(0,0); (properties.canvas_size * properties.canvas_size / 2) as usize];
       /// Update canvas with starting placements
       apply_pixels_to_canvas(&mut image_data, starting_placements);
-      let properties = get_dna_properties();
       let time_bucket_index =(properties.start_time / properties.bucket_size_sec as u64) as u32;
       debug!("Creating first snapshot. Starting time bucket is: {}", time_bucket_index);
       Self {
@@ -51,7 +50,7 @@ impl Snapshot {
 
    /// Increment Snapshot to next time bucket with the given new placements
    pub fn increment(&mut self, placements: Vec<Placement>) {
-      assert!(self.image_data.len() == (CANVAS_SIZE * CANVAS_SIZE / 2) as usize);
+      //assert!(self.image_data.len() == (CANVAS_SIZE * CANVAS_SIZE / 2) as usize);
       self.update_to(1, placements)
    }
 
@@ -67,12 +66,13 @@ impl Snapshot {
 /// Apply placements to 'image_data'
 pub fn apply_pixels_to_canvas(image_data: &mut Vec<DoublePixel>, placements: Vec<Placement>) {
    debug!("apply_pixels_to_canvas(): {} placements", placements.len());
+   let canvas_size = get_dna_properties().canvas_size;
    for placement in placements {
       //debug!("placing: {:?} | {}", placement, placement.index());
-      let index: usize = (placement.index() / 2) as usize;
+      let index: usize = (placement.index(canvas_size) / 2) as usize;
       image_data[index].set_half(
          placement.colorIndex(),
-         placement.index() % 2 == 1,
+         placement.index(canvas_size) % 2 == 1,
       );
    }
 }

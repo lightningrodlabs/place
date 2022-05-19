@@ -1,5 +1,4 @@
 use hdk::prelude::*;
-use crate::CANVAS_SIZE;
 
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -30,8 +29,8 @@ impl Placement {
 
    ///
    pub fn new(x: u16, y: u16, color: u8) -> Self {
-      assert!(x < CANVAS_SIZE as u16);
-      assert!(y < CANVAS_SIZE as u16);
+      //assert!(x < CANVAS_SIZE as u16);
+      //assert!(y < CANVAS_SIZE as u16);
       assert!(color < 16);
       let x_32: u32 = (x as u32) << 20;
       let y_32: u32 = (y as u32) << 4;
@@ -45,21 +44,21 @@ impl Placement {
    // }
 
    /// Pixel index in canvas
-   pub fn index(&self) -> u32 {
+   pub fn index(&self, canvas_size: u16) -> u32 {
       //debug!("Index of {:?} | {} x {}", self, self.x(), self.y());
-      return self.x() as u32 + self.y() as u32 * CANVAS_SIZE;
+      return self.x() as u32 + self.y() as u32 * canvas_size as u32;
    }
 
 
    pub fn x(&self) -> u16 {
       let x = (self.pixel >> 20) as u16;
-      assert!(x < CANVAS_SIZE as u16);
+      //assert!(x < CANVAS_SIZE as u16);
       x
    }
 
    pub fn y(&self) -> u16 {
       let y = ((self.pixel >> 4) & 0x000003FF) as u16;
-      assert!(y < CANVAS_SIZE as u16);
+      //assert!(y < CANVAS_SIZE as u16);
       y
    }
 
