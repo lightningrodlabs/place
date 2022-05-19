@@ -16,13 +16,21 @@ pub fn get_placements_at(time_bucket_index: u32) -> ExternResult<Vec<Placement>>
    let bucket_path = get_bucket_path(time);
    debug!("*** get_placements_at() bucket_path: {}", path_to_str(&bucket_path));
    /// Get placements at given bucket path
-   let pairs = get_typed_from_links::<Placement>(
+   let mut pairs = get_typed_from_links::<Placement>(
       bucket_path.path_entry_hash()?,
       PlaceLinkKind::Placements.as_tag_opt(),
    )?;
-   let placements:Vec<Placement> = pairs.iter()
+   /// Sort by Link timestamp
+   pairs.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp));
+   debug!("****** sorted pairs:");
+   for pair in pairs.iter() {
+      debug!(" - {:?}", pair.1.timestamp)
+   }
+   /// Return only Placement
+   let placements: Vec<Placement> = pairs.iter()
       .map(|pair| pair.0.clone())
       .collect();
+   /// Done
    debug!("*** get_placements_at() END - {}", placements.len());
    Ok(placements)
 }

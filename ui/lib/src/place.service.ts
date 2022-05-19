@@ -60,11 +60,13 @@ export class PlaceService {
     return this.callPlaceZome('get_placements_at', bucketIndex);
   }
 
-  async getPlacementsAuthor(placement: number, bucket_index: number): Promise<AgentPubKeyB64 | null> {
-    return this.callPlaceZome('get_placement_author', {placement, bucket_index});
+  async getPlacementAuthor(placement: number, bucketIndex: number): Promise<AgentPubKeyB64 | null> {
+    return this.callPlaceZome('get_placement_author', {placement, bucketIndex});
   }
 
-
+  async getAuthorRank(author: AgentPubKeyB64, bucketIndex: number): Promise<number> {
+    return this.callPlaceZome('get_author_rank', {author, bucketIndex});
+  }
 
 
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {

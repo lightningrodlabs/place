@@ -215,7 +215,7 @@ export class PlaceStore {
     //     const placements = await this.service.getPlacementsAt(index);
     let details: PlacementDetails[] = []
     for (const placement of placements) {
-      let author = await this.service.getPlacementsAuthor(placement.pixel, index);
+      let author = await this.service.getPlacementAuthor(placement.pixel, index);
       author = author? author : "<unknown>"
       details.push({placement: destructurePlacement(placement), author})
     }
@@ -268,6 +268,51 @@ export class PlaceStore {
     await this.pullDht();
     return res;
   }
+
+  /**  FIGURE OUT SNAPSHOT RENDER ORDER */
+
+  /** */
+  async publishNextSnapshot(): Promise<HeaderHashB64 | null> {
+    console.log("publishNextSnapshot() called")
+    const nowSec = Date.now() / 1000;
+    const nowIndex = this.epochToBucketIndex(nowSec)
+    const myRenderTime = await this.getMyRenderTime(nowIndex)
+    const latestSnapshot = await this.getLatestSnapshot();
+    /* Must not already by published */
+    if (latestSnapshot.timeBucketIndex >= nowIndex) {
+      console.warn(`publishNextSnapshot() Aborted: latest snapshot already published.`)
+      return null;
+    }
+    /* Make sure previous is published */
+    if (latestSnapshot.timeBucketIndex < nowIndex - 1) {
+      let res = await this.service.publishNextSnapshotAt(nowIndex - 1);
+      console.log("publishNextSnapshot() publish (nowIndex - 1) succeeded = " + res != null)
+    }
+    /*  Must be past our render time to publish */
+    if (latestSnapshot.timeBucketIndex == nowIndex - 1 && nowSec > myRenderTime) {
+      let res = await this.service.publishNextSnapshotAt(latestSnapshot.timeBucketIndex);
+      console.log("publishNextSnapshot() succeeded = " + res != null)
+      await this.pullDht();
+      return res;
+    } else {
+      console.warn(`publishNextSnapshot() Aborted: too soon. Index: ${nowIndex}\n -         now = ${nowSec}\n - myRenderTime: ${myRenderTime} | wait: ${myRenderTime - nowSec}`)
+    }
+    return null;
+  }
+
+  /** */
+  async getMyRenderTime(bucketIndex: number): Promise<number> {
+    const bucketSize = this.getMaybeProperties()!.bucketSizeSec;
+    const nextBucketTime = (bucketIndex + 1) * bucketSize;
+    const rank = await this.service.getAuthorRank(this.myAgentPubKey, bucketIndex);
+    console.log("MyRank for " + bucketIndex + ", is: " + rank)
+    if (rank == 0) {
+      return nextBucketTime;
+    }
+    const rankTime = bucketIndex * bucketSize + (rank - 1) * (bucketSize / 10)
+    return Math.min(nextBucketTime, rankTime)
+  }
+
 
   /** DEBUGGING */
 

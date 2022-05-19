@@ -12,7 +12,7 @@ pub struct DestructuredPlacement {
 #[hdk_entry(id = "Placement")]
 #[derive(Clone, PartialEq)]
 pub struct Placement {
-   pixel: u32, // a DestructuredPlacement stored as an u32
+   pub pixel: u32, // a DestructuredPlacement stored as an u32
 }
 
 impl Placement {

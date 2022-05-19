@@ -5,6 +5,7 @@ use zome_utils::*;
 use crate::utils::*;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetPlacementAuthorInput {
   pub placement: u32,
   pub bucket_index: u32,

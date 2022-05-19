@@ -5,6 +5,12 @@ use crate::functions::get_snapshot_at;
 use crate::publish_snapshot::*;
 
 
+// let timeSinceBucketStartSec = now - now_index * get_dna_properties().bucket_size_sec;
+// if timeSinceBucketStartSec < (rank - 1) * 10 {
+// warn!("Not my turn yet to publish");
+// return error("Me has already placed pixel at current bucket")
+// }
+
 /// Zome Function
 /// Publish next snapshot if not already created
 #[hdk_extern]

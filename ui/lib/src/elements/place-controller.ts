@@ -208,7 +208,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       console.log("publishNowSnapshot() aborted. Already exists | " + nowIndex)
       return;
     }
-    const res = await this._store.publishNextSnapshotAt(nowIndex - 1)
+    //const res = await this._store.publishNextSnapshotAt(nowIndex - 1)
+    const res = await this._store.publishNextSnapshot()
     console.log("publishNowSnapshot() " + nowIndex + ": " + (res? "SUCCEEDED" : "FAILED"));
     await this.refresh()
     if (res) {
@@ -424,20 +425,24 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             y: Math.floor(customPos.y),
             colorIndex: color2index(g_selectedColor),
           };
-        this._store.placePixelAt({
-          placement,
-          bucket_index: this._store.latestStoredBucketIndex
-        })
 
         g_cursor.x = Math.floor(customPos.x) * IMAGE_SCALE
         g_cursor.y = Math.floor(customPos.y) * IMAGE_SCALE
 
-        const tiny = new tinycolor(g_selectedColor)
-        const colorNum = parseInt(tiny.toHex(), 16);
-        setPixel(g_buffer, colorNum, customPos, worldSize);
-        let updatedTexture = buffer2Texture(g_buffer, worldSize)
-        g_frameSprite.texture = updatedTexture
-
+        try {
+          // this._store.placePixelAt({
+          //   placement,
+          //   bucket_index: this._store.latestStoredBucketIndex
+          // })
+          await this._store.placePixel(placement)
+          const tiny = new tinycolor(g_selectedColor)
+          const colorNum = parseInt(tiny.toHex(), 16);
+          setPixel(g_buffer, colorNum, customPos, worldSize);
+          let updatedTexture = buffer2Texture(g_buffer, worldSize)
+          g_frameSprite.texture = updatedTexture
+        } catch(e) {
+          console.error("Failed to place pixel: ", e)
+        }
         // await this.viewFuture(packPlacement(placement))
       }
     })
