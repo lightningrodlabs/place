@@ -170,8 +170,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         maybeLatestStored = this._store.getLatestStoredSnapshot()
       } while(maybeLatestStored!.timeBucketIndex != nowIndex)
 
-      ///** Update page every second */
-      //setInterval(() => {this.requestUpdate()}, 2000);
+      /** Update page every second */
+      setInterval(() => {this.requestUpdate()}, 1000);
 
       // TODO: should be offloaded to a different thread?
       await this.startRealTimePublishing();
@@ -200,9 +200,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
   /** */
-  private async publishNowSnapshot() {
-    const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
-    let nowSnapshot = await this._store.getSnapshotAt(nowIndex);
+  private async publishNowSnapshot(nowSec: number) {
+    const nowIndex = this._store.epochToBucketIndex(nowSec)
+    const nowSnapshot = await this._store.getSnapshotAt(nowIndex);
     console.log(`publishNowSnapshot() now = ${nowIndex} ; exists = ` + nowSnapshot != null);
     if (nowSnapshot) {
       console.log("publishNowSnapshot() aborted. Already exists | " + nowIndex)
@@ -212,34 +212,36 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const res = await this._store.publishNextSnapshot()
     console.log("publishNowSnapshot() " + nowIndex + ": " + (res? "SUCCEEDED" : "FAILED"));
     await this.refresh()
-    if (res) {
-      await this.viewFuture()
-      this.requestUpdate()
-    }
+    // if (res) {
+    //   await this.viewFuture()
+    //   this.requestUpdate()
+    // }
   }
 
 
   /** */
   private async startRealTimePublishing() {
-    await this.publishNowSnapshot()
+    const nowSec = Math.floor(Date.now() / 1000)
+    await this.publishNowSnapshot(nowSec)
     /** Init auto-publish loop */
     if (!this.debugMode) {
       const properties = await this._store.getProperties();
       /* Wait for next bucket start to launch loop */
-      const startSec = Math.ceil(Date.now() / 1000);
+      const startSec = Math.ceil(nowSec);
       const startIndexPlus = Math.ceil(startSec / properties.bucketSizeSec)
       const waitForSec = startIndexPlus * properties.bucketSizeSec - startSec
       console.log("Auto-publish loop starting in " + waitForSec + " secs")
       setTimeout(() => {
           setInterval(async () => {
+              //await delay(1000)
               g_lastRefreshMs = Date.now();
               console.log("auto calling publishNowSnapshot() - " + g_lastRefreshMs)
-              await this.publishNowSnapshot();
+              await this.publishNowSnapshot(g_lastRefreshMs / 1000);
             },
             properties.bucketSizeSec * 1000
           );
         },
-        waitForSec * 1000
+        (waitForSec - 2) * 1000
       )
     }
   }
@@ -442,6 +444,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           g_frameSprite.texture = updatedTexture
         } catch(e) {
           console.error("Failed to place pixel: ", e)
+          alert("Pixel already placed for this time unit")
         }
         // await this.viewFuture(packPlacement(placement))
       }
@@ -565,21 +568,26 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Normal render for real-time editing of frame */
   renderNormal() {
+    const nowMs = Date.now()
+    const nowSec = Math.floor(nowMs / 1000)
     console.log("place-controller renderNormal()");
+    const startIndex = this._store.getStartIndex()
+    const nowIndex = this._store.epochToBucketIndex(nowSec)
 
     /** Build Time UI */
-    let sinceLastPublishSec = Math.floor((Date.now() - g_lastRefreshMs) / 1000);
-    //sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
     let timeUi;
     if (this.debugMode) {
       timeUi = html`
-        <button class="" style="" @click=${async () => {await this.publishNowSnapshot()}}>Publish</button>
+        <button class="" style="" @click=${async () => {await this.publishNowSnapshot(Date.now() / 1000)}}>Publish</button>
         <br/>
       `
     } else {
+      //let sinceLastPublishSec = Math.floor((nowMs - g_lastRefreshMs) / 1000);
+      //sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
+      const nextIn = (nowIndex + 1) * this._store.getMaybeProperties()!.bucketSizeSec - nowSec
       timeUi = html`
-        <div>Time:</div>
-        <div>${sinceLastPublishSec} sec</div>
+        <div>Next in:</div>
+        <div>${nextIn} secs</div>
       `
     }
 
@@ -587,8 +595,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const stored = Object.values(this._store.snapshotStore);
     console.log({stored})
     let snapshotButtons: any[] = [];
-    const startIndex = this._store.getStartIndex()
-    const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
     let bucketCount = nowIndex - startIndex + 1;
     console.log(`Buttons: bucketCount: ${bucketCount} = ${nowIndex} - ${startIndex}`)
     for(let relBucketIndex = 0; relBucketIndex < bucketCount; relBucketIndex += 1) {
@@ -631,6 +637,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     let localBirthDate = new Date(maybeProperties!.startTime * 1000).toLocaleString()
     //localBirthDate.setUTCSeconds(g_startTime);
 
+    const myLatestRank = this._store.getMyRankAt(this._displayedIndex);
+
     /** render all */
     return html`
       <div style="display: flex;flex-direction: row">
@@ -662,6 +670,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         ${snapshotButtons}
         <button class="" style="" @click=${async () => {await this.viewFuture()}}>now</button>
       </div>
+      <div>My render rank: ${myLatestRank}</div>
       <div>
         <span>Placements:</span>
         <ol>${placementDetails}</ol>

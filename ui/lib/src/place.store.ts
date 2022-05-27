@@ -35,6 +35,7 @@ export class PlaceStore {
   //private placementStore: Writable<Dictionary<PlacementEntry[]>> = writable({});
   placementStore: Dictionary<PlacementDetails[]> = {};
 
+  myRankStore: Dictionary<number> = {};
 
   // public latestBucketIndex: number = 0;
   latestStoredBucketIndex: number = 0;
@@ -301,11 +302,17 @@ export class PlaceStore {
   }
 
   /** */
+  getMyRankAt(bucketIndex: number): number {
+    return this.myRankStore[bucketIndex]
+  }
+
+  /** */
   async getMyRenderTime(bucketIndex: number): Promise<number> {
     const bucketSize = this.getMaybeProperties()!.bucketSizeSec;
     const nextBucketTime = (bucketIndex + 1) * bucketSize;
     const rank = await this.service.getAuthorRank(this.myAgentPubKey, bucketIndex);
     console.log("MyRank for " + bucketIndex + ", is: " + rank)
+    this.myRankStore[bucketIndex] = rank
     if (rank == 0) {
       return nextBucketTime;
     }
@@ -330,7 +337,7 @@ export class PlaceStore {
 
 
   epochToBucketIndex(epochSec: number): number {
-    return Math.floor((epochSec) / this._dnaProperties!.bucketSizeSec);
+    return Math.floor(epochSec / this._dnaProperties!.bucketSizeSec);
   }
 
 
