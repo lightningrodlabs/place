@@ -69,7 +69,7 @@ export class PlaceStore {
 
   /** We assume that a snapshot at each bucket should be published */
   async searchLatestSnapshot(startRange: number, endRange: number, lastKnown: number): Promise<SnapshotEntry | null> {
-    console.log(`searchLatestSnapshot(): ${startRange} - ${endRange} | ${lastKnown}`)
+    //console.log(`searchLatestSnapshot(): ${startRange} - ${endRange} | ${lastKnown}`)
     /* End condition: No range left */
     if (startRange == endRange) {
       if (lastKnown == 0) {
@@ -273,33 +273,42 @@ export class PlaceStore {
   /**  FIGURE OUT SNAPSHOT RENDER ORDER */
 
   /** */
-  async publishNextSnapshot(): Promise<HeaderHashB64 | null> {
+  async publishNextSnapshot(nowSecInput?:number): Promise<HeaderHashB64 | null> {
     console.log("publishNextSnapshot() called")
-    const nowSec = Date.now() / 1000;
+    const nowSec = nowSecInput? nowSecInput : Date.now() / 1000;
     const nowIndex = this.epochToBucketIndex(nowSec)
     const myRenderTime = await this.getMyRenderTime(nowIndex)
-    const latestSnapshot = await this.getLatestSnapshot();
+    let latestSnapshot = await this.getLatestSnapshot();
     /* Must not already by published */
     if (latestSnapshot.timeBucketIndex >= nowIndex) {
       console.warn(`publishNextSnapshot() Aborted: latest snapshot already published.`)
       return null;
     }
     /* Make sure previous is published */
-    if (latestSnapshot.timeBucketIndex < nowIndex - 1) {
-      let res = await this.service.publishNextSnapshotAt(nowIndex - 1);
-      console.log("publishNextSnapshot() publish (nowIndex - 1) succeeded = " + res != null)
+    while (latestSnapshot.timeBucketIndex < nowIndex - 1) {
+      let res = await this.service.publishNextSnapshotAt(latestSnapshot.timeBucketIndex);
+      console.log(`publishNextSnapshot() publish (${latestSnapshot.timeBucketIndex}) succeeded = ` + (res != null))
+      if (!res) {
+        console.warn(`publishNextSnapshot() Aborted. Failed to publish: ${latestSnapshot.timeBucketIndex}`)
+        return null;
+      }
+      latestSnapshot = await this.getLatestSnapshot();
     }
     /*  Must be past our render time to publish */
-    if (latestSnapshot.timeBucketIndex == nowIndex - 1 && nowSec > myRenderTime) {
-      let res = await this.service.publishNextSnapshotAt(latestSnapshot.timeBucketIndex);
-      console.log("publishNextSnapshot() succeeded = " + res != null)
+    // assert(latestSnapshot.timeBucketIndex == nowIndex - 1)
+    if (nowSec >= myRenderTime) {
+      let res = await this.service.publishNextSnapshotAt(nowIndex - 1);
+      console.log("publishNextSnapshot() succeeded = " + (res != null))
       await this.pullDht();
       return res;
     } else {
-      console.warn(`publishNextSnapshot() Aborted: too soon. Index: ${nowIndex}\n -         now = ${nowSec}\n - myRenderTime: ${myRenderTime} | wait: ${myRenderTime - nowSec}`)
+      console.warn(`publishNextSnapshot() Aborted: too soon. Index: ${this.getRelativeBucketIndex(nowIndex)}
+       -          now: ${nowSec}
+       - myRenderTime: ${myRenderTime} (wait: ${myRenderTime - nowSec})`)
     }
     return null;
   }
+
 
   /** */
   getMyRankAt(bucketIndex: number): number {
@@ -310,14 +319,18 @@ export class PlaceStore {
   async getMyRenderTime(bucketIndex: number): Promise<number> {
     const bucketSize = this.getMaybeProperties()!.bucketSizeSec;
     const nextBucketTime = (bucketIndex + 1) * bucketSize;
-    const rank = await this.service.getAuthorRank(this.myAgentPubKey, bucketIndex);
-    console.log("MyRank for " + bucketIndex + ", is: " + rank)
+    const rank = await this.service.getAuthorRank(this.myAgentPubKey, bucketIndex - 1); // Must get rank of previous bucket to determine this bucket's render time
+    const offset = (rank - 1) * (bucketSize / 10)
+    console.log("MyRank for " + this.getRelativeBucketIndex(bucketIndex) + ", is: " + rank + "; offset = " + offset + " secs")
+    if (rank == 0) {
+      return nextBucketTime - 2;
+    }
     this.myRankStore[bucketIndex] = rank
     if (rank == 0) {
       return nextBucketTime;
     }
-    const rankTime = bucketIndex * bucketSize + (rank - 1) * (bucketSize / 10)
-    return Math.min(nextBucketTime, rankTime)
+    const rankTime = bucketIndex * bucketSize + offset
+    return Math.min(nextBucketTime - 2, rankTime)
   }
 
 

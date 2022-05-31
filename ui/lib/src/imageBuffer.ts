@@ -71,8 +71,8 @@ function intoDoublePixel(packed: number): DoublePixel {
  * return Array of rgba
  */
 export function snapshotIntoFrame(imageData: Uint8Array, worldSize: number): Uint8Array {
-  if(imageData.length != worldSize * worldSize / 2) {
-    console.error("snapshotIntoFrame() error: invalid imageData length: " + imageData.length)
+  if(imageData.length != Math.floor(worldSize * worldSize / 2)) {
+    console.error(`snapshotIntoFrame(${worldSize}) error: invalid imageData length: ` + imageData.length)
     return new Uint8Array();
   }
   let frame = new Uint8Array(worldSize * worldSize * 4);
