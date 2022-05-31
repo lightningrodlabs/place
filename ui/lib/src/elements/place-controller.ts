@@ -56,7 +56,8 @@ let g_cursor: any = undefined;
 
 let g_buffer: Uint8Array = new Uint8Array();
 
-let g_lastRefreshMs: number = Date.now();
+let g_canViewLive = false;
+
 let g_localSnapshotIndexes: any = [];
 
 
@@ -184,7 +185,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       } while(maybeLatestStored!.timeBucketIndex != nowIndex)
 
       /** Update page every second */
-      setInterval(() => {this.requestUpdate()}, 10 * 1000);
+      setInterval(() => {this.requestUpdate()}, 1 * 1000);
 
       // TODO: should be offloaded to a different thread?
       //await this.startRealTimePublishing();
@@ -217,15 +218,20 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   private async publishNowSnapshot(nowSec: number) {
     const nowIndex = this._store.epochToBucketIndex(nowSec)
     const nowSnapshot = await this._store.getSnapshotAt(nowIndex);
-    console.log(`publishNowSnapshot() now = ${nowIndex} ; exists = ` + (nowSnapshot != null));
+    //console.log(`publishNowSnapshot() now = ${nowIndex} ; exists = ` + (nowSnapshot != null));
     if (nowSnapshot) {
-      console.log("publishNowSnapshot() aborted. Already exists | " + nowIndex)
+      let myRank = this._store.getMyRankAt(nowIndex)
+      if (!myRank) {
+        await this._store.getMyRenderTime(nowIndex)
+        myRank = this._store.getMyRankAt(nowIndex)
+      }
+      console.log("publishNowSnapshot() aborted. Already exists | " + nowIndex + " | my rank : " + myRank)
       return;
     }
     //const res = await this._store.publishNextSnapshotAt(nowIndex - 1)
     const res = await this._store.publishNextSnapshot(nowSec)
     console.log("publishNowSnapshot() " + nowIndex + ": " + (res? "SUCCEEDED" : "FAILED"));
-    if (res) {
+    if (res && g_canViewLive) {
       await this.refresh()
     //   await this.viewLive()
     //   this.requestUpdate()
@@ -236,6 +242,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** Set frame to now snapshot + placements in future bucket */
   async viewLive(currentPlacement?: PlacementEntry) {
     console.log("viewLive()...")
+    g_canViewLive = true;
     /* pixi must be initiazed */
     if (!g_frameSprite) {
       this.requestUpdate();
@@ -568,11 +575,16 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const nowIndex = this._store.epochToBucketIndex(nowSec)
     const bucketCount = nowIndex - startIndex + 1
     const stored = Object.values(this._store.snapshotStore);
-    console.log({stored})
+    //console.log({stored})
 
-    /** Try publish now */
+    /* Try publish now */
     if (!this.debugMode) {
       this.publishNowSnapshot(nowSec);
+    }
+
+    /* Follow latest live view */
+    if(g_canViewLive && nowIndex > this._displayedIndex) {
+      this.viewLive();
     }
 
     /** Build Time UI */
@@ -583,7 +595,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         <br/>
       `
     } else {
-      //let sinceLastPublishSec = Math.floor((nowMs - g_lastRefreshMs) / 1000);
       //sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
       const nextIn = (nowIndex + 1) * this._store.getMaybeProperties()!.bucketSizeSec - nowSec
       timeUi = html`
@@ -595,7 +606,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** Build snapshot button list */
     let snapshotButtons: any[] = [];
-    console.log(`Buttons: timeframeCount: ${bucketCount} = ${nowIndex} - ${startIndex} + 1`)
+    //console.log(`Buttons: timeframeCount: ${bucketCount} = ${nowIndex} - ${startIndex} + 1`)
     for(let relBucketIndex = 0; relBucketIndex < bucketCount; relBucketIndex += 1) {
       const iBucketIndex = startIndex + relBucketIndex
       //const maybeSnapshot = this._store.snapshotStore[iBucketIndex]
@@ -608,6 +619,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       const button = html`<button class="" style=""
                         @click=${async () => {
                           g_cursor.visible = false;
+                          g_canViewLive = false;
                           const placements = await this._store.getPlacementsAt(iBucketIndex)
                           const maybeSnapshot = await this._store.getSnapshotAt(iBucketIndex)
                           if (maybeSnapshot) {
@@ -634,6 +646,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     /** Build placement logs */
     let displayedDetails = this._store.placementStore[this._displayedIndex]
     if (!displayedDetails) {
+      this._store.getPlacementsAt(this._displayedIndex).then(() => this.requestUpdate())
       displayedDetails = [];
     }
     let placementDetails = displayedDetails.map((detail) => {
@@ -656,6 +669,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const timeDiff = nowSec - maybeProperties!.startTime
 
     const myRank = this._store.getMyRankAt(this._displayedIndex);
+    const publishers = this._store.getPublishersAt(this._displayedIndex);
 
 
     /** render all */
@@ -690,10 +704,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         ${snapshotButtons}
       </div>
       <div id="displayedIndexInfoDiv">
-        <div>Displaying: ${this._store.getRelativeBucketIndex(this._displayedIndex)}</div>
+        <div>Displaying: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${g_canViewLive? " (now)" :""}</div>
         <div> - My render rank: ${myRank}</div>
+        <div> - Publishers: ${publishers}</div>
         <span> - Placements:</span>
         <ol>${placementDetails}</ol>
+        <br/>
       </div>
     `;
   }

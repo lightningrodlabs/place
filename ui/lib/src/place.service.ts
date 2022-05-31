@@ -48,6 +48,10 @@ export class PlaceService {
     return this.callPlaceZome('get_snapshot_at', bucket_index);
   }
 
+  async getPublishersAt(bucket_index: number): Promise<AgentPubKeyB64[]> {
+    return this.callPlaceZome('get_publishers_at', bucket_index);
+  }
+
   async getLocalSnapshots(): Promise<number[]> {
     return this.callPlaceZome('get_local_snapshots', null);
   }

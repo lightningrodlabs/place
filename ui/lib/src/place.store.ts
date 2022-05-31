@@ -36,6 +36,7 @@ export class PlaceStore {
   placementStore: Dictionary<PlacementDetails[]> = {};
 
   myRankStore: Dictionary<number> = {};
+  publisherStore: Dictionary<AgentPubKeyB64[]> = {};
 
   // public latestBucketIndex: number = 0;
   latestStoredBucketIndex: number = 0;
@@ -143,8 +144,9 @@ export class PlaceStore {
           console.error("Failed to get snapshot at " + latestIndex + 1)
           break;
         }
+        const authors = await this.service.getPublishersAt(latestIndex + 1)
         console.log("Attempting to store " + snapshot_to_str(newSnapshot!))
-        await this.storeSnapshot(newSnapshot!)
+        await this.storeSnapshot(newSnapshot!, authors)
         cb(newSnapshot!, cbData)
         count += 1;
       }
@@ -166,7 +168,8 @@ export class PlaceStore {
 
       if (!this.snapshotStore[latestSnapshot.timeBucketIndex]) {
         console.log("pullDht(): Adding latest snapshot found at " + latestSnapshot.timeBucketIndex)
-        await this.storeSnapshot(latestSnapshot)
+        const authors = await this.service.getPublishersAt(latestSnapshot.timeBucketIndex)
+        await this.storeSnapshot(latestSnapshot, authors)
       } else {
         // n/a
       }
@@ -191,15 +194,17 @@ export class PlaceStore {
     if (snapshot == null) {
       return null;
     }
-    await this.storeSnapshot(snapshot);
+    const authors = await this.service.getPublishersAt(bucketIndex)
+    await this.storeSnapshot(snapshot, authors);
     return snapshot;
   }
 
 
   /** */
-  async storeSnapshot(snapshot: SnapshotEntry) {
+  async storeSnapshot(snapshot: SnapshotEntry, authors: AgentPubKeyB64[]) {
     console.log(`storeSnapshot() called for ${snapshot.timeBucketIndex}`)
     this.snapshotStore[snapshot.timeBucketIndex] = snapshot
+    this.publisherStore[snapshot.timeBucketIndex] = authors
     // this.snapshotStore.update(store => {
     //   store[snapshot.timeBucketIndex] = snapshot
     //   return store
@@ -316,18 +321,20 @@ export class PlaceStore {
   }
 
   /** */
+  getPublishersAt(bucketIndex: number): AgentPubKeyB64[] {
+    return this.publisherStore[bucketIndex]
+  }
+
+  /** */
   async getMyRenderTime(bucketIndex: number): Promise<number> {
     const bucketSize = this.getMaybeProperties()!.bucketSizeSec;
     const nextBucketTime = (bucketIndex + 1) * bucketSize;
     const rank = await this.service.getAuthorRank(this.myAgentPubKey, bucketIndex - 1); // Must get rank of previous bucket to determine this bucket's render time
+    this.myRankStore[bucketIndex] = rank
     const offset = (rank - 1) * (bucketSize / 10)
     console.log("MyRank for " + this.getRelativeBucketIndex(bucketIndex) + ", is: " + rank + "; offset = " + offset + " secs")
     if (rank == 0) {
       return nextBucketTime - 2;
-    }
-    this.myRankStore[bucketIndex] = rank
-    if (rank == 0) {
-      return nextBucketTime;
     }
     const rankTime = bucketIndex * bucketSize + offset
     return Math.min(nextBucketTime - 2, rankTime)
