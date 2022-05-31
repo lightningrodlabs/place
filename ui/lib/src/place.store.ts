@@ -332,7 +332,7 @@ export class PlaceStore {
     const rank = await this.service.getAuthorRank(this.myAgentPubKey, bucketIndex - 1); // Must get rank of previous bucket to determine this bucket's render time
     this.myRankStore[bucketIndex] = rank
     const offset = (rank - 1) * (bucketSize / 10)
-    console.log("MyRank for " + this.getRelativeBucketIndex(bucketIndex) + ", is: " + rank + "; offset = " + offset + " secs")
+    //console.log("MyRank for " + this.getRelativeBucketIndex(bucketIndex) + ", is: " + rank + "; offset = " + offset + " secs")
     if (rank == 0) {
       return nextBucketTime - 2;
     }

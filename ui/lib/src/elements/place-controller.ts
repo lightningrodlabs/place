@@ -56,7 +56,7 @@ let g_cursor: any = undefined;
 
 let g_buffer: Uint8Array = new Uint8Array();
 
-let g_canViewLive = false;
+let g_canViewLive = true;
 
 let g_localSnapshotIndexes: any = [];
 
@@ -190,7 +190,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       // TODO: should be offloaded to a different thread?
       //await this.startRealTimePublishing();
     }
-    //await this.viewLive()
+    await this.viewLive()
     this._postInitDone = true;
     console.log("place-controller.postInit() - DONE");
     this.requestUpdate()
@@ -201,7 +201,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   private onPublish(snapshot: SnapshotEntry, cbData?: any): void {
     console.log("onPublish() called: " + snapshot.timeBucketIndex)
     cbData.setFrame(snapshot, cbData._store.getMaybeProperties()!.canvasSize)
-    cbData.requestUpdate()
+    cbData.requestUpdate();
   }
 
   /** Get snapshot from DHT or publish it yourself */
@@ -225,15 +225,19 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         await this._store.getMyRenderTime(nowIndex)
         myRank = this._store.getMyRankAt(nowIndex)
       }
-      console.log("publishNowSnapshot() aborted. Already exists | " + nowIndex + " | my rank : " + myRank)
+      //console.log("publishNowSnapshot() aborted. Already exists | " + this._store.getRelativeBucketIndex(nowIndex) + " | my rank : " + myRank)
+      if (g_canViewLive && nowIndex > this._displayedIndex) {
+        // await this.refresh()
+        await this.viewLive()
+      }
       return;
     }
     //const res = await this._store.publishNextSnapshotAt(nowIndex - 1)
     const res = await this._store.publishNextSnapshot(nowSec)
     console.log("publishNowSnapshot() " + nowIndex + ": " + (res? "SUCCEEDED" : "FAILED"));
     if (res && g_canViewLive) {
-      await this.refresh()
-    //   await this.viewLive()
+      // await this.refresh()
+      await this.viewLive()
     //   this.requestUpdate()
     }
   }
@@ -242,20 +246,21 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** Set frame to now snapshot + placements in future bucket */
   async viewLive(currentPlacement?: PlacementEntry) {
     console.log("viewLive()...")
-    g_canViewLive = true;
     /* pixi must be initiazed */
     if (!g_frameSprite) {
       this.requestUpdate();
       return;
     }
+    g_cursor.visible = false;
+
+    await this.refresh()
+
     /* Reload latest */
     let latest = this._store.getLatestStoredSnapshot();
     if (!latest) {
       console.warn("viewLive() aborting: no latest snapshot stored")
       return;
     }
-    g_cursor.visible = false;
-
 
     /* Latest must correspond to 'now' */
     const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
@@ -274,7 +279,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       return;
     }
 
-    /* Create updated frame */
+    /* Create future frame */
     let placements = await this._store.getPlacementsAt(latest.timeBucketIndex);
     if (currentPlacement) {
       placements.push(currentPlacement)
@@ -286,7 +291,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** */
   async viewUpdatedSnapshot(snapshot: SnapshotEntry, placements: PlacementEntry[]) {
-    console.log(`viewUpdatedSnapshot() adding ${placements.length} placements to index ` + snapshot.timeBucketIndex)
+    console.log(`viewUpdatedSnapshot() adding ${placements.length} placements to index ` + this._store.getRelativeBucketIndex(snapshot.timeBucketIndex))
     /* Update frame with current bucket placements */
     const properties = await this._store.getProperties()
     g_buffer = snapshotIntoFrame(snapshot.imageData, properties.canvasSize);
@@ -320,7 +325,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** */
   setFrame(snapshot: SnapshotEntry, worldSize: number) {
     this._displayedIndex = snapshot.timeBucketIndex
-    console.log("frame set to: " + snapshot_to_str(snapshot));
+    console.log("frame set to: " + this._store.getRelativeBucketIndex(snapshot.timeBucketIndex));
     g_buffer = snapshotIntoFrame(snapshot.imageData, worldSize);
     if (g_frameSprite) g_frameSprite.texture = buffer2Texture(g_buffer, worldSize);
   }
@@ -509,17 +514,19 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** */
   async refresh() {
     console.log("refresh(): Pulling data from DHT")
-    const properties =  await this._store.getProperties();
     await this._store.pullDht()
     g_localSnapshotIndexes = await this._store.getLocalSnapshots();
-    const latestStored = this._store.getLatestStoredSnapshot();
-    if (!latestStored) {
-      return;
-    }
-    if (latestStored.timeBucketIndex > 0) {
-      this.setFrame(latestStored, properties.canvasSize);
-    }
-    await this.viewLive()
+    // const latestStored = this._store.getLatestStoredSnapshot();
+    // if (!latestStored) {
+    //   return;
+    // }
+    // const properties =  await this._store.getProperties();
+    // if (latestStored.timeBucketIndex > 0) {
+    //   this.setFrame(latestStored, properties.canvasSize);
+    // }
+    // if(g_canViewLive) {
+    //   await this.viewLive()
+    // }
     this.requestUpdate();
   }
 
@@ -583,7 +590,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
 
     /* Follow latest live view */
-    if(g_canViewLive && nowIndex > this._displayedIndex) {
+    if(g_canViewLive && this._displayedIndex <= nowIndex) {
       this.viewLive();
     }
 
@@ -688,7 +695,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             this.requestUpdate();
           }}>Fit</button>
           <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
-          <button style="margin:5px;" @click=${() => {this.refresh()}}>Refresh</button>
+          <button style="margin:5px;" @click=${async() => {
+            await this.refresh()
+            if(g_canViewLive) {
+              await this.viewLive()
+            }
+            }}>Refresh</button>
           ${timeUi}
           <div> local: ${g_localSnapshotIndexes.length}</div>
           <div>stored: ${stored.length}</div>
@@ -700,11 +712,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       <div>Age: ${toHHMMSS(timeDiff.toString())}</div>
       <div id="timeTravelDiv">
         <div>Latest stored: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>
-        <button class="" style="" @click=${async () => {await this.viewLive()}}>now</button>
+        <button class="" style="" @click=${async () => {g_canViewLive = true; await this.viewLive()}}>Live</button>
         ${snapshotButtons}
       </div>
       <div id="displayedIndexInfoDiv">
-        <div>Displaying: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${g_canViewLive? " (now)" :""}</div>
+        <!--<div>Now: ${this._store.getRelativeBucketIndex(nowIndex)}</div>-->
+        <div>Displaying: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${g_canViewLive? " (live)" :""}</div>
         <div> - My render rank: ${myRank}</div>
         <div> - Publishers: ${publishers}</div>
         <span> - Placements:</span>
