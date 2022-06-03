@@ -1,15 +1,6 @@
 # place
 
-
-## DEBUG MODE
-
-No real-time
-List of pixels per bucket
-
-## PRODUCTION MODE
-
 Starting time set in DNA as a dna property.
-
 
 # Implementation
 
