@@ -60,6 +60,7 @@ let g_canViewLive = true;
 
 let g_localSnapshotIndexes: any = [];
 
+let g_loopMutex = true; // Crappy mutex
 
 let pixiApp: any = undefined;
 let pixelCount: number = 0;
@@ -184,8 +185,24 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         maybeLatestStored = this._store.getLatestStoredSnapshot()
       } while(maybeLatestStored!.timeBucketIndex != nowIndex)
 
-      /** Update page every second */
-      setInterval(() => {this.requestUpdate()}, 1 * 1000);
+      /** Try update page every second */
+      setInterval(async () => {
+        if (!g_loopMutex) {
+          return;
+        }
+        console.log("Try publishing snapshot...")
+        g_loopMutex = false;
+        /* Try publish now */
+        if (!this.debugMode) {
+          await this.publishNowSnapshot(Date.now() / 1000);
+        }
+        /* Follow latest live view */
+        if(g_canViewLive /*&& this._displayedIndex <= nowIndex*/) {
+          await this.viewLive();
+        }
+        this.requestUpdate()
+        g_loopMutex = true;
+      }, 1 * 1000);
 
       // TODO: should be offloaded to a different thread?
       //await this.startRealTimePublishing();
@@ -204,6 +221,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     cbData.requestUpdate();
   }
 
+
   /** Get snapshot from DHT or publish it yourself */
   private async syncToNow(nowIndex?: number) {
     const nowIndex2 = nowIndex? nowIndex: this._store.epochToBucketIndex(Date.now() / 1000)
@@ -220,7 +238,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const nowSnapshot = await this._store.getSnapshotAt(nowIndex);
     //console.log(`publishNowSnapshot() now = ${nowIndex} ; exists = ` + (nowSnapshot != null));
     if (nowSnapshot) {
-      let myRank = this._store.getMyRankAt(nowIndex)
+      let myRank = this._store.myRankStore[nowIndex]
       if (!myRank) {
         await this._store.getMyRenderTime(nowIndex)
         myRank = this._store.getMyRankAt(nowIndex)
@@ -245,7 +263,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Set frame to now snapshot + placements in future bucket */
   async viewLive(currentPlacement?: PlacementEntry) {
-    console.log("viewLive()...")
+    //console.log("viewLive()...")
     /* pixi must be initiazed */
     if (!g_frameSprite) {
       this.requestUpdate();
@@ -284,14 +302,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     if (currentPlacement) {
       placements.push(currentPlacement)
     }
-    console.log(`viewLive() adding ${placements.length} placements to index ` + latest.timeBucketIndex)
+    //console.log(`viewLive() adding ${placements.length} placements to index ` + latest.timeBucketIndex)
     this.viewUpdatedSnapshot(latest, placements)
   }
 
 
   /** */
   async viewUpdatedSnapshot(snapshot: SnapshotEntry, placements: PlacementEntry[]) {
-    console.log(`viewUpdatedSnapshot() adding ${placements.length} placements to index ` + this._store.getRelativeBucketIndex(snapshot.timeBucketIndex))
+    //console.log(`viewUpdatedSnapshot() adding ${placements.length} placements to index ` + this._store.getRelativeBucketIndex(snapshot.timeBucketIndex))
     /* Update frame with current bucket placements */
     const properties = await this._store.getProperties()
     g_buffer = snapshotIntoFrame(snapshot.imageData, properties.canvasSize);
@@ -513,7 +531,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** */
   async refresh() {
-    console.log("refresh(): Pulling data from DHT")
+    //console.log("refresh(): Pulling data from DHT")
     await this._store.pullDht()
     g_localSnapshotIndexes = await this._store.getLocalSnapshots();
     // const latestStored = this._store.getLatestStoredSnapshot();
@@ -542,6 +560,49 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   // }
 
 
+  buildSnapshotButtons(nowIndex: number): any[] {
+    const startIndex = this._store.getStartIndex()
+    const bucketCount = nowIndex - startIndex + 1
+    console.log(`Buttons: timeframeCount: ${bucketCount} = ${nowIndex} - ${startIndex} + 1`)
+    let snapshotButtons: any[] = []
+    for (let relBucketIndex = 0; relBucketIndex < bucketCount; relBucketIndex += 1) {
+      const iBucketIndex = startIndex + relBucketIndex
+      //const maybeSnapshot = this._store.snapshotStore[iBucketIndex]
+      // if (!maybeSnapshot) {
+      //   //console.log(`Buttons: no snapshot found at ${relBucketIndex}`)
+      //   continue;
+      // }
+      //const disabled = maybeSnapshot? null : "disabled";
+      let label = "" + relBucketIndex
+      const button = html`
+          <button class="" style=""
+                  @click=${async () => {
+        g_cursor.visible = false;
+        g_canViewLive = false;
+        const placements = await this._store.getPlacementsAt(iBucketIndex)
+        const maybeSnapshot = await this._store.getSnapshotAt(iBucketIndex)
+        if (maybeSnapshot) {
+          this.setFrame(maybeSnapshot, this._store.getMaybeProperties()!.canvasSize);
+          this.requestUpdate();
+        } else {
+          /* Try constructing from previous snapshot */
+          const maybePreviousSnapshot = await this._store.getSnapshotAt(iBucketIndex - 1)
+          if (maybePreviousSnapshot) {
+            await this.viewUpdatedSnapshot(maybePreviousSnapshot, placements)
+          } else {
+            alert("No snapshot found at this timeframe")
+          }
+        }
+      }
+      }>${label}
+          </button>`
+      snapshotButtons[relBucketIndex] = button
+    }
+    //console.log("snapshotButtons: " + snapshotButtons.length)
+    return snapshotButtons
+  }
+
+
   /** */
   render() {
     //console.log("place-controller render() - " + this._store.latestStoredBucketIndex);
@@ -551,22 +612,22 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       `;
     }
     if (!this._postInitDone) {
-      return this.renderSyncing()
+      return this.renderPublishToNow()
     }
     return this.renderNormal();
   }
 
 
   /** Render to do when syncing to latest frame */
-  renderSyncing() {
-    console.log("place-controller renderSyncing()");
+  renderPublishToNow() {
+    console.log("place-controller renderPublishToNow()");
     let localBirthDate = new Date(this._store.getMaybeProperties()!.startTime * 1000).toLocaleString()
     const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
 
     /** */
     return html`
       <canvas id="playfield" class="appCanvas"></canvas>
-      <h2>SYNCING... ${this._store.getRelativeBucketIndex(this._displayedIndex)} / ${this._store.getRelativeBucketIndex(nowIndex)}</h2>
+      <h2>Publishing snapshots up to current time... ${this._store.getRelativeBucketIndex(this._displayedIndex)} / ${this._store.getRelativeBucketIndex(nowIndex)}</h2>
       <div>Birthdate: ${localBirthDate}</div>
     `;
   }
@@ -578,21 +639,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     /** Frame consts */
     const nowMs: number = Date.now()
     const nowSec = Math.floor(nowMs / 1000)
-    const startIndex = this._store.getStartIndex()
     const nowIndex = this._store.epochToBucketIndex(nowSec)
-    const bucketCount = nowIndex - startIndex + 1
     const stored = Object.values(this._store.snapshotStore);
     //console.log({stored})
-
-    /* Try publish now */
-    if (!this.debugMode) {
-      this.publishNowSnapshot(nowSec);
-    }
-
-    /* Follow latest live view */
-    if(g_canViewLive && this._displayedIndex <= nowIndex) {
-      this.viewLive();
-    }
 
     /** Build Time UI */
     let timeUi;
@@ -610,44 +659,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       `
     }
 
-
     /** Build snapshot button list */
-    let snapshotButtons: any[] = [];
-    //console.log(`Buttons: timeframeCount: ${bucketCount} = ${nowIndex} - ${startIndex} + 1`)
-    for(let relBucketIndex = 0; relBucketIndex < bucketCount; relBucketIndex += 1) {
-      const iBucketIndex = startIndex + relBucketIndex
-      //const maybeSnapshot = this._store.snapshotStore[iBucketIndex]
-      // if (!maybeSnapshot) {
-      //   //console.log(`Buttons: no snapshot found at ${relBucketIndex}`)
-      //   continue;
-      // }
-      //const disabled = maybeSnapshot? null : "disabled";
-      let label = "" + relBucketIndex
-      const button = html`<button class="" style=""
-                        @click=${async () => {
-                          g_cursor.visible = false;
-                          g_canViewLive = false;
-                          const placements = await this._store.getPlacementsAt(iBucketIndex)
-                          const maybeSnapshot = await this._store.getSnapshotAt(iBucketIndex)
-                          if (maybeSnapshot) {
-                            this.setFrame(maybeSnapshot, this._store.getMaybeProperties()!.canvasSize);
-                            this.requestUpdate();
-                          } else {
-                            /* Try constructing from previous snapshot */
-                            const maybePreviousSnapshot = await this._store.getSnapshotAt(iBucketIndex - 1)
-                            if (maybePreviousSnapshot) {
-                              await this.viewUpdatedSnapshot(maybePreviousSnapshot, placements)
-                            } else {
-                              alert("No snapshot found at this timeframe")
-                            }
-                          }
-                        }
-      }>${label}</button>`
-      snapshotButtons[relBucketIndex] = button
-    }
-    /* Special case for latest snapshot since we are waiting for someone else to publish it */
-    //console.log("snapshotButtons: " + snapshotButtons.length)
+    let snapshotButtons: any[] = [] //this.buildSnapshotButtons(nowIndex)
 
+    /** Build TimeTravel UI */
+    //let snapshotButtons: any[] = this.buildSnapshotButtons(nowIndex)
 
 
     /** Build placement logs */
@@ -702,7 +718,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             }
             }}>Refresh</button>
           ${timeUi}
-          <div> local: ${g_localSnapshotIndexes.length}</div>
+          <div> latest local: ${g_localSnapshotIndexes.length > 0 ? g_localSnapshotIndexes[0] : 0}</div>
           <div>stored: ${stored.length}</div>
             <!--<div>Pixels: ${pixelCount}</div>-->
         </div>

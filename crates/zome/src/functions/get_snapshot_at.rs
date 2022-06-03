@@ -9,34 +9,26 @@ use crate::utils::*;
 /// Zome Function
 /// Return Snapshot at given bucket, if any
 #[hdk_extern]
-pub fn get_snapshot_at(time_bucket_index: u32) -> ExternResult<Option<Snapshot>> {
+pub fn get_snapshot_at(bucket_index: u32) -> ExternResult<Option<Snapshot>> {
    std::panic::set_hook(Box::new(zome_panic_hook));
-   debug!("*** get_snapshot_at() CALLED - bucket: {}", time_bucket_index);
-   if time_bucket_index < sec_to_bucket(get_dna_properties().start_time) {
+   debug!("*** get_snapshot_at() CALLED - bucket: {}", bucket_index);
+   if bucket_index < sec_to_bucket(get_dna_properties().start_time) {
       warn!("get_snapshot_at() aborted: requested time_bucket is older than starting time.");
       return Ok(None)
    }
-   let bucket_path = get_bucket_path((time_bucket_index * get_dna_properties().bucket_size_sec) as u64);
+   let bucket_path =
+     get_bucket_path((bucket_index * get_dna_properties().bucket_size_sec) as u64);
    debug!("get_snapshot_at() at path: {}", path_to_str(&bucket_path));
    let pairs = get_typed_from_links::<Snapshot>(
       bucket_path.path_entry_hash()?,
       PlaceLinkKind::Snapshot.as_tag_opt(),
    )?;
    if pairs.is_empty() {
-      warn!("Snapshot not found for bucket: {}", time_bucket_index);
+      warn!("Snapshot not found for bucket: {}", bucket_index);
       return Ok(None);
       //return error(&format!("Snapshot not found for bucket: {}", time_bucket_index));
    }
    Ok(Some(pairs[0].0.clone()))
-}
-
-/// Zome Function
-/// Return bucket index of all snapshots stored locally
-#[hdk_extern]
-pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<u32>> {
-   let all: Vec<Snapshot> = get_all_typed_local::<Snapshot>(entry_type!(Snapshot)?)?;
-   let indexes = all.iter().map(|snapshot| snapshot.time_bucket_index).collect();
-   Ok(indexes)
 }
 
 

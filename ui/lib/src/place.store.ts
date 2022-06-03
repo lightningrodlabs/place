@@ -93,20 +93,24 @@ export class PlaceStore {
 
   /** */
   async getLatestSnapshot(): Promise<SnapshotEntry> {
-    console.log("getLatestSnapshot(): called")
+    //console.log("getLatestSnapshot(): called")
     const startIndex = this.epochToBucketIndex((await this.getProperties()).startTime)
     let nowIndex = this.epochToBucketIndex(Date.now() / 1000);
     let maybeNow = await this.getSnapshotAt(nowIndex);
     if (maybeNow) {
       return maybeNow;
     }
-    let maybeSnapshot = await this.searchLatestSnapshot(startIndex, nowIndex, 0);
+    let maybeNow1 = await this.getSnapshotAt(nowIndex - 1);
+    if (maybeNow1) {
+      return maybeNow1;
+    }
+    let maybeSnapshot = await this.searchLatestSnapshot(startIndex, nowIndex, this.latestStoredBucketIndex);
     if (maybeSnapshot == null) {
       console.warn("getLatestSnapshot(): No snapshot found. Creating first one.")
       let res = await this.PublishStartingSnapshot();
       return res;
     }
-    console.log("getLatestSnapshot(): result = " + maybeSnapshot.timeBucketIndex)
+    //console.log("getLatestSnapshot(): result = " + maybeSnapshot.timeBucketIndex)
     return maybeSnapshot;
   }
 
@@ -162,7 +166,7 @@ export class PlaceStore {
    * Get latest entries of each type for current time bucket and update local store accordingly
    */
   async pullDht() {
-    console.log("pullDht() - START")
+    //console.log("pullDht() - START")
     //try {
       const latestSnapshot = await this.getLatestSnapshot();
 
@@ -179,7 +183,7 @@ export class PlaceStore {
     //   console.error("No snapshot found")
     //   console.error({e})
     // }
-    console.log("pullDht() - DONE")
+    //console.log("pullDht() - DONE")
   }
 
 

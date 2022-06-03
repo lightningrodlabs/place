@@ -100,12 +100,18 @@ export class PlaceService {
 
 
   private callPlaceZome(fn_name: string, payload: any): Promise<any> {
-    //console.info("callZome: " + fn_name)
+    console.log("callZome: " + fn_name + "() ", payload)
     //console.info({payload})
-    const result = this.cellClient.callZome("place", fn_name, payload);
-    //console.info("callZome: " + fn_name + "() result")
-    //console.info({result})
-    return result;
+    try {
+      const result = this.cellClient.callZome("place", fn_name, payload);
+      //console.log("callZome: " + fn_name + "() result")
+      //console.info({result})
+      return result;
+    } catch (e) {
+      console.error("Calling zome " + fn_name + "() failed: ")
+      console.error({e})
+    }
+    return Promise.reject("callZome failed")
   }
 
   /** -- Conversions -- */
