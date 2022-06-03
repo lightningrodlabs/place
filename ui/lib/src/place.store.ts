@@ -100,10 +100,6 @@ export class PlaceStore {
     if (maybeNow) {
       return maybeNow;
     }
-    let maybeNow1 = await this.getSnapshotAt(nowIndex - 1);
-    if (maybeNow1) {
-      return maybeNow1;
-    }
     let maybeSnapshot = await this.searchLatestSnapshot(startIndex, nowIndex, this.latestStoredBucketIndex);
     if (maybeSnapshot == null) {
       console.warn("getLatestSnapshot(): No snapshot found. Creating first one.")

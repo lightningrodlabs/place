@@ -33,6 +33,7 @@ import {
 } from "../imageBuffer";
 import tinycolor from "tinycolor2";
 import {unpack_destructuring} from "svelte/types/compiler/compile/nodes/shared/Context";
+import 'lit-flatpickr';
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
@@ -103,6 +104,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return this.shadowRoot!.getElementById("playfield") as HTMLCanvasElement;
   }
 
+  get datePickerElem(): any {
+    return this.shadowRoot!.getElementById("my-date-picker");
+  }
+
 
   /** Launch init when myProfile has been set */
   private async subscribeSnapshots() {
@@ -154,8 +159,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     this._initialized = true
     this._initializing = false
     this._canPostInit = true;
-
-    //initPixiApp(this.playfieldElem)
 
     this.requestUpdate();
     console.log("place-controller.init() - DONE");
@@ -560,6 +563,34 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   // }
 
 
+  async onDatePicked(date:Date) {
+    console.log("onDatePicked called: ", date)
+    const bucketIndex = this._store.epochToBucketIndex(date.getTime() / 1000)
+    console.log("onDatePicked bucketIndex: ", this._store.getRelativeBucketIndex(bucketIndex), bucketIndex)
+    await this.viewSnapshotAt(bucketIndex)
+  }
+
+
+  async viewSnapshotAt(iBucketIndex: number) {
+    g_cursor.visible = false;
+    g_canViewLive = false;
+    const placements = await this._store.getPlacementsAt(iBucketIndex)
+    const maybeSnapshot = await this._store.getSnapshotAt(iBucketIndex)
+    if (maybeSnapshot) {
+      this.setFrame(maybeSnapshot, this._store.getMaybeProperties()!.canvasSize);
+      this.requestUpdate();
+    } else {
+      /* Try constructing from previous snapshot */
+      const maybePreviousSnapshot = await this._store.getSnapshotAt(iBucketIndex - 1)
+      if (maybePreviousSnapshot) {
+        await this.viewUpdatedSnapshot(maybePreviousSnapshot, placements)
+      } else {
+        alert("No snapshot found at this timeframe")
+      }
+    }
+  }
+
+
   buildSnapshotButtons(nowIndex: number): any[] {
     const startIndex = this._store.getStartIndex()
     const bucketCount = nowIndex - startIndex + 1
@@ -575,26 +606,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //const disabled = maybeSnapshot? null : "disabled";
       let label = "" + relBucketIndex
       const button = html`
-          <button class="" style=""
-                  @click=${async () => {
-        g_cursor.visible = false;
-        g_canViewLive = false;
-        const placements = await this._store.getPlacementsAt(iBucketIndex)
-        const maybeSnapshot = await this._store.getSnapshotAt(iBucketIndex)
-        if (maybeSnapshot) {
-          this.setFrame(maybeSnapshot, this._store.getMaybeProperties()!.canvasSize);
-          this.requestUpdate();
-        } else {
-          /* Try constructing from previous snapshot */
-          const maybePreviousSnapshot = await this._store.getSnapshotAt(iBucketIndex - 1)
-          if (maybePreviousSnapshot) {
-            await this.viewUpdatedSnapshot(maybePreviousSnapshot, placements)
-          } else {
-            alert("No snapshot found at this timeframe")
-          }
-        }
-      }
-      }>${label}
+          <button class="" style="" @click=${() => {this.viewSnapshotAt(iBucketIndex)}}>
+            ${label}
           </button>`
       snapshotButtons[relBucketIndex] = button
     }
@@ -637,9 +650,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   renderNormal() {
     //console.log("place-controller renderNormal()");
     /** Frame consts */
+    const maybeProperties = this._store.getMaybeProperties()
     const nowMs: number = Date.now()
     const nowSec = Math.floor(nowMs / 1000)
     const nowIndex = this._store.epochToBucketIndex(nowSec)
+    const nowDate = new Date(nowIndex * maybeProperties!.bucketSizeSec * 1000)
+    const startDate = new Date(maybeProperties!.startTime * 1000)
+    const localBirthDate = startDate.toLocaleString()
+    //console.log({nowDate})
+    const timeDiff = nowSec - maybeProperties!.startTime
     const stored = Object.values(this._store.snapshotStore);
     //console.log({stored})
 
@@ -652,7 +671,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       `
     } else {
       //sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
-      const nextIn = (nowIndex + 1) * this._store.getMaybeProperties()!.bucketSizeSec - nowSec
+      const nextIn = (nowIndex + 1) * maybeProperties!.bucketSizeSec - nowSec
       timeUi = html`
         <div>Next in:</div>
         <div>${nextIn} secs</div>
@@ -660,10 +679,20 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
 
     /** Build snapshot button list */
-    let snapshotButtons: any[] = [] //this.buildSnapshotButtons(nowIndex)
+    //let snapshotButtons: any[] = [] //this.buildSnapshotButtons(nowIndex)
 
     /** Build TimeTravel UI */
-    //let snapshotButtons: any[] = this.buildSnapshotButtons(nowIndex)
+    let timeTravelUi =
+      html`
+        <lit-flatpickr id="my-date-picker" enableTime dateFormat="Y-m-d H:i" theme="dark"
+                       placeHolder="Select Date..."
+                       minuteIncrement=${Math.floor(maybeProperties!.bucketSizeSec / 60)}
+                       .minDate=${startDate} .maxDate=${nowDate}
+                       .onOpen="${() => {console.log("my-date-picker onOpen!") ; g_loopMutex = false;}}"
+                       .onClose="${() => {console.log("my-date-picker onClose!") ; g_loopMutex = true;}}"
+                       .onChange=${(dates:any) => {this.onDatePicked(dates[0])}}
+        ></lit-flatpickr>`
+      //html`<input id="dateInput" type="text" placeholder="Select Date..." readonly="readonly">`
 
 
     /** Build placement logs */
@@ -684,12 +713,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       return html`<button class="${extraClass}" style="background-color: ${color}"
                           @click=${() => {g_selectedColor = color; this.requestUpdate()}}></button>`
     })
-
-    const maybeProperties = this._store.getMaybeProperties()
-    const startDate = new Date(maybeProperties!.startTime * 1000)
-    const localBirthDate = startDate.toLocaleString()
-    //localBirthDate.setUTCSeconds(g_startTime);
-    const timeDiff = nowSec - maybeProperties!.startTime
 
     const myRank = this._store.getMyRankAt(this._displayedIndex);
     const publishers = this._store.getPublishersAt(this._displayedIndex);
@@ -718,22 +741,23 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             }
             }}>Refresh</button>
           ${timeUi}
-          <div> latest local: ${g_localSnapshotIndexes.length > 0 ? g_localSnapshotIndexes[0] : 0}</div>
-          <div>stored: ${stored.length}</div>
+            <!--<div> latest local: ${g_localSnapshotIndexes.length > 0 ? g_localSnapshotIndexes[0] : 0}</div>>-->
+           <!--<div>stored: ${stored.length}</div>>-->
             <!--<div>Pixels: ${pixelCount}</div>-->
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>
       </div>
       <div>Birthdate: ${localBirthDate}</div>
-      <div>Age: ${toHHMMSS(timeDiff.toString())}</div>
+      <!--<div>Age: ${toHHMMSS(timeDiff.toString())}</div>-->
       <div id="timeTravelDiv">
-        <div>Latest stored: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>
-        <button class="" style="" @click=${async () => {g_canViewLive = true; await this.viewLive()}}>Live</button>
-        ${snapshotButtons}
+        <div>View:</div>
+          <!--<div>Latest stored: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>-->
+        ${timeTravelUi}
+        <button class="" style="" @click=${async () => {g_canViewLive = true; this.datePickerElem.clear(); await this.viewLive()}}>Live</button>
       </div>
-      <div id="displayedIndexInfoDiv">
+      <div>Displaying bucket: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${g_canViewLive? " (live)" :""}</div>
+      <div id="displayedIndexInfoDiv" style="min-height: 200px; margin-left: 20px;">
         <!--<div>Now: ${this._store.getRelativeBucketIndex(nowIndex)}</div>-->
-        <div>Displaying: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${g_canViewLive? " (live)" :""}</div>
         <div> - My render rank: ${myRank}</div>
         <div> - Publishers: ${publishers}</div>
         <span> - Placements:</span>
