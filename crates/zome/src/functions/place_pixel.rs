@@ -3,7 +3,7 @@ use zome_utils::*;
 
 use crate::entries::*;
 use crate::{get_current_bucket_path, PlaceLinkKind};
-use crate::functions::{get_author_rank, GetAuthorRankInput};
+use crate::functions::{get_dna_properties, get_placements_count_at};
 use crate::utils::*;
 
 /// Zome Function
@@ -15,13 +15,14 @@ pub fn place_pixel(input: DestructuredPlacement) -> ExternResult<HeaderHash> {
    /// Make sure not already placed
    let now = now();
    let now_index = sec_to_bucket(now);
-   let rank = get_author_rank(GetAuthorRankInput{
-      author: agent_info()?.agent_latest_pubkey.into(),
-      bucket_index: now_index
-   })?;
-   if rank != 0 {
-      warn!("Me has already placed pixel at current bucket");
-      return error("Me has already placed pixel at current bucket")
+   let placed_count = get_placements_count_at(
+      now_index,
+      agent_info()?.agent_latest_pubkey.into(),
+
+   )?;
+   if placed_count >= get_dna_properties().pixels_per_bucket {
+      warn!("Pixel placement limit reached for current bucket");
+      return error("Pixel placement limit reached for current bucket")
    }
    /// Prepare placement
    let placement = Placement::from_destructured(input);

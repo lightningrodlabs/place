@@ -4,6 +4,14 @@ use zome_utils::*;
 use crate::{path_kind, functions::*};
 
 
+pub fn get_start_bucket() -> u32 {
+   let bucket_index = sec_to_bucket(get_dna_properties().start_time);
+   let minus = bucket_index % get_dna_properties().snapshot_interval_in_buckets as u32;
+   let corrected_bucket_index = bucket_index - minus;
+   corrected_bucket_index
+}
+
+
 pub fn sec_to_bucket(now: u64) -> u32 {
    let div = now / get_dna_properties().bucket_size_sec as u64;
    assert!(div < u32::MAX as u64);

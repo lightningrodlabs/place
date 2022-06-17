@@ -7,8 +7,12 @@ use crate::{bucket_index_to_path, path_to_str, PlaceLinkKind};
 
 /// Render next snapshot iteration and publish it to DHT
 pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<HeaderHash> {
-   /// Grab all current bucket placements
-   let placements = get_placements_at(snapshot.time_bucket_index)?;
+   /// Grab all placements
+   let mut placements= Vec::new();
+   for n in  0..get_dna_properties().snapshot_interval_in_buckets as u32 {
+      let mut cur_placements = get_placements_at(snapshot.time_bucket_index + n)?;
+      placements.append(&mut cur_placements)
+   }
    /// Filter duplicates
    // FIXME (CRDT magic?)
    /// Merge

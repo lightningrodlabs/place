@@ -15,8 +15,10 @@ export interface HoloHashed<T> {
 
 export interface PlaceProperties {
   startTime: number,
-  bucketSizeSec: number,
   canvasSize: number,
+  bucketSizeSec: number,
+  pixelsPerBucket: number
+  snapshotIntervalInBuckets: number,
 }
 
 export interface DestructuredPlacement {

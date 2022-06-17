@@ -30,10 +30,12 @@ impl Snapshot {
       /// Update canvas with starting placements
       apply_pixels_to_canvas(&mut image_data, starting_placements);
       let time_bucket_index =(properties.start_time / properties.bucket_size_sec as u64) as u32;
-      debug!("Creating first snapshot. Starting time bucket is: {}", time_bucket_index);
+      let minus = time_bucket_index % properties.snapshot_interval_in_buckets as u32;
+      let corrected_bucket_index = time_bucket_index - minus;
+      debug!("Creating first snapshot. Starting time bucket is: {}", corrected_bucket_index);
       Self {
          image_data,
-         time_bucket_index,
+         time_bucket_index: corrected_bucket_index,
       }
    }
 
@@ -51,7 +53,7 @@ impl Snapshot {
    /// Increment Snapshot to next time bucket with the given new placements
    pub fn increment(&mut self, placements: Vec<Placement>) {
       //assert!(self.image_data.len() == (CANVAS_SIZE * CANVAS_SIZE / 2) as usize);
-      self.update_to(1, placements)
+      self.update_to(get_dna_properties().snapshot_interval_in_buckets, placements)
    }
 
    /// Increment Snapshot to a futur time bucket with the given new placements

@@ -1,5 +1,7 @@
 use hdk::prelude::*;
 use hdk::prelude::holo_hash::AgentPubKeyB64;
+use zome_utils::*;
+
 use crate::functions::{get_placement_author, get_placements_at, GetPlacementAuthorInput};
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -14,6 +16,8 @@ pub struct GetAuthorRankInput {
 /// Return 0 if author has not published a pixel
 #[hdk_extern]
 pub fn get_author_rank(input: GetAuthorRankInput) -> ExternResult<u16> {
+  std::panic::set_hook(Box::new(zome_panic_hook));
+  //debug!("*** get_author_rank() CALLED");
   let placements = get_placements_at(input.bucket_index)?;
   let mut i = 1;
   /// For each placement check if its author matchs input ; attribute rank according to the number

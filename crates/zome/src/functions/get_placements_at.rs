@@ -5,6 +5,8 @@ use crate::PlaceLinkKind;
 use crate::functions::get_properties::get_dna_properties;
 use crate::utils::*;
 
+use crate::functions::{get_placement_author, GetPlacementAuthorInput};
+use crate::holo_hash::AgentPubKeyB64;
 
 /// Zome Function
 /// Return all placements at given bucket
@@ -33,4 +35,27 @@ pub fn get_placements_at(time_bucket_index: u32) -> ExternResult<Vec<Placement>>
    /// Done
    debug!("*** get_placements_at() END - {}", placements.len());
    Ok(placements)
+}
+
+
+
+//#[hdk_extern]
+pub fn get_placements_count_at(bucket_index: u32, input_author: AgentPubKeyB64) -> ExternResult<u16> {
+   //std::panic::set_hook(Box::new(zome_panic_hook));
+   //debug!("*** get_placements_count_at() CALLED - {}", bucket_index);
+   let placements = get_placements_at(bucket_index)?;
+   let mut i = 0;
+   for placement in placements.iter() {
+      let get_input = GetPlacementAuthorInput {
+         placement: placement.pixel,
+         bucket_index: bucket_index,
+      };
+      let maybe_author = get_placement_author(get_input)?;
+      if let Some(author) = maybe_author {
+         if author == input_author {
+            i += 1;
+         }
+      }
+   }
+   Ok(i)
 }
