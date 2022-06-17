@@ -8,8 +8,8 @@ import {
   Signal, SnapshotEntry, PlacementDetails, destructurePlacement, PublishCallback,
 } from './types';
 
-import {CellId} from "@holochain/client/lib/types/common";
-import {delay} from "./elements/place-controller";
+//import {CellId} from "@holochain/client/lib/types/common";
+//import {delay} from "./elements/place-controller";
 
 
 const areEqual = (first: Uint8Array, second: Uint8Array) =>
@@ -233,6 +233,7 @@ export class PlaceStore {
     console.log(`Placements stored at bucket ${index} ; new placement(s): ${Object.keys(placements).length}`)
   }
 
+
   /** */
   async getProperties(): Promise<PlaceProperties> {
     if (!this._dnaProperties) {
@@ -240,33 +241,35 @@ export class PlaceStore {
     }
     return this._dnaProperties;
   }
+
+
+  /** */
   getMaybeProperties(): PlaceProperties | undefined {
     return this._dnaProperties;
   }
 
-  /** WTF */
+
+  /** */
   async getLocalSnapshots(): Promise<number[]> {
-    const localIndexes = await this.service.getLocalSnapshots();
-    // console.log("getLocalSnapshots(): storing " + localIndexes.length + " local snapshots")
-    // // await delay(100); // minor delay to avoid "source chain head has moved" error
-    // // for (const index of localIndexes) {
-    // //   const local = await this.service.getSnapshotAt(index);
-    // //   await this.storeSnapshot(local!)
-    // // }
-    // console.log("getLocalSnapshots() - DONE");
+      const localIndexes = await this.service.getLocalSnapshots();
     return localIndexes;
   }
 
+  /** */
   async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
     return this.service.placePixel(destructured);
   }
 
+
+  /** */
   async getPlacementsAt(bucketIndex: number): Promise<PlacementEntry[]> {
     let placements = await this.service.getPlacementsAt(bucketIndex);
     await this.storePlacements(placements, bucketIndex);
     return placements;
   }
 
+
+  /** */
   async publishNextSnapshotAt(bucket_index: number): Promise<HeaderHashB64 | null> {
     console.log("publishNextSnapshotAt() " + bucket_index)
     let res = await this.service.publishNextSnapshotAt(bucket_index);

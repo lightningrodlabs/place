@@ -34,6 +34,7 @@ import {
 import tinycolor from "tinycolor2";
 import {unpack_destructuring} from "svelte/types/compiler/compile/nodes/shared/Context";
 import 'lit-flatpickr';
+import {Application} from "@pixi/app";
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
@@ -63,9 +64,11 @@ let g_localSnapshotIndexes: any = [];
 
 let g_loopMutex = true; // Crappy mutex
 
-let pixiApp: any = undefined;
+let g_pixiApp: any = undefined;
 let pixelCount: number = 0;
 
+
+let g_hideOverlay = false;
 
 /**
  * @element place-controller
@@ -100,7 +103,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   private _firstNormalRender: boolean = true;
 
 
-  get playfieldElem() : HTMLCanvasElement {
+  get playfieldElem(): HTMLCanvasElement {
     return this.shadowRoot!.getElementById("playfield") as HTMLCanvasElement;
   }
 
@@ -108,6 +111,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return this.shadowRoot!.getElementById("my-date-picker");
   }
 
+  get loadingOverlayElem(): HTMLDivElement {
+    return this.shadowRoot!.getElementById("loading-overlay") as HTMLDivElement;
+  }
 
   /** Launch init when myProfile has been set */
   private async subscribeSnapshots() {
@@ -152,8 +158,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** Store all local snapshots */
     console.log("Calling getLocalSnapshots()...")
-    g_localSnapshotIndexes = await this._store.getLocalSnapshots();
-    console.log({g_localSnapshotIndexes})
+    try {
+      g_localSnapshotIndexes = await this._store.getLocalSnapshots();
+    } catch (e) {
+      console.log("Calling getLocalSnapshots() failed")
+    }
+    console.log("g_localSnapshotIndexes.length = ", g_localSnapshotIndexes.length)
+    //console.log({g_localSnapshotIndexes})
+
 
     /** Done */
     this._initialized = true
@@ -212,6 +224,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
     await this.viewLive()
     this._postInitDone = true;
+    //this.loadingOverlayElem.hidden = true;
+    g_hideOverlay = true;
+
     console.log("place-controller.postInit() - DONE");
     this.requestUpdate()
   }
@@ -332,7 +347,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** */
   takeScreenshot() {
-    pixiApp.renderer.extract.canvas(g_viewport).toBlob((b:any) => {
+    g_pixiApp.renderer.extract.canvas(g_viewport).toBlob((b:any) => {
       const a = document.createElement('a');
       document.body.append(a);
       a.download = 'screenshot';
@@ -352,11 +367,16 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
+  changeCursorMode(cursorMode: String) {
+    g_pixiApp.renderer.plugins.interaction.cursorStyles.default = cursorMode
+    g_pixiApp.renderer.plugins.interaction.setCursorMode(cursorMode)
+  }
+
   /** */
   initPixiApp(canvas: HTMLCanvasElement, worldSize: number) {
     console.log("Pixi canvas '" + canvas.id + "': " + canvas.offsetWidth + "x" + canvas.offsetHeight)
     /** Setup PIXI app */
-    pixiApp = new PIXI.Application({
+    g_pixiApp = new PIXI.Application({
       //antialias: true,
       view: canvas,
       backgroundColor: 0x111111,
@@ -366,9 +386,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //resolution: devicePixelRatio,
       //resizeTo: canvas
     })
-    pixiApp.view.style.textAlign = 'center'
-    //container.appendChild(pixiApp.view)
+    g_pixiApp.view.style.textAlign = 'center'
+    //container.appendChild(g_pixiApp.view)
 
+    g_pixiApp.renderer.plugins.interaction.cursorStyles.default = "grab";
+    g_pixiApp.renderer.plugins.interaction.cursorStyles.copy = "copy";
+    g_pixiApp.renderer.plugins.interaction.cursorStyles.grab = "grab";
 
     /** Setup viewport */
 
@@ -392,6 +415,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     g_viewport.interactive = true;
     g_viewport.interactiveChildren = true;
+
+
 
     //viewport.bounce({})
 
@@ -510,7 +535,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** Add all elements to stage */
 
-    pixiApp.stage.addChild(g_viewport)
+    g_pixiApp.stage.addChild(g_viewport)
     g_viewport.addChild(g_frameSprite)
     g_viewport.addChild(g_grid)
     g_viewport.addChild(g_cursor)
@@ -525,10 +550,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     g_viewport.fitWorld(true)
 
     /** DEBUG ; without viewport **/
-    // pixiApp.stage.addChild(g_frameSprite)
-    // //pixiApp.stage.addChild(grid)
-    // pixiApp.stage.addChild(g_cursor)
-    // pixiApp.stage.addChild(logText)
+    // g_pixiApp.stage.addChild(g_frameSprite)
+    // //g_pixiApp.stage.addChild(grid)
+    // g_pixiApp.stage.addChild(g_cursor)
+    // g_pixiApp.stage.addChild(logText)
   }
 
 
@@ -536,7 +561,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async refresh() {
     //console.log("refresh(): Pulling data from DHT")
     await this._store.pullDht()
-    g_localSnapshotIndexes = await this._store.getLocalSnapshots();
+    //g_localSnapshotIndexes = await this._store.getLocalSnapshots();
     // const latestStored = this._store.getLatestStoredSnapshot();
     // if (!latestStored) {
     //   return;
@@ -570,8 +595,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     await this.viewSnapshotAt(bucketIndex)
   }
 
-
+  /** */
   async viewSnapshotAt(iBucketIndex: number) {
+    g_hideOverlay = false;
     g_cursor.visible = false;
     g_canViewLive = false;
     const placements = await this._store.getPlacementsAt(iBucketIndex)
@@ -588,6 +614,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         alert("No snapshot found at this timeframe")
       }
     }
+    g_hideOverlay = true;
   }
 
 
@@ -711,7 +738,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     let palette = COLOR_PALETTE.map((color)=> {
       const extraClass = g_selectedColor == color? "selected" : "colorButton"
       return html`<button class="${extraClass}" style="background-color: ${color}"
-                          @click=${() => {g_selectedColor = color; this.requestUpdate()}}></button>`
+                          @click=${() => {
+                            g_selectedColor = color;
+                            this.changeCursorMode("copy")
+                            this.requestUpdate();
+                          }}></button>`
     })
 
     const myRank = this._store.getMyRankAt(this._displayedIndex);
@@ -723,7 +754,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       <div style="display: flex;flex-direction: row">
         <div style="width:80px;display: flex;flex-direction: column">
           <button class=" ${g_selectedColor? "colorButton" : "selected"} " style=""
-                  @click=${() => {g_selectedColor = null; g_cursor.visible = false; this.requestUpdate()}}>None</button>
+                  @click=${() => {
+                    g_selectedColor = null;
+                    g_cursor.visible = false;
+                    this.changeCursorMode("grab")
+                    this.requestUpdate();
+                  }}>None</button>
           ${palette}
           <br/>
           <div>Zoom:</div>
@@ -739,6 +775,13 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             if(g_canViewLive) {
               await this.viewLive()
             }
+            console.log("Calling getLocalSnapshots()...")
+            try {
+              g_localSnapshotIndexes = await this._store.getLocalSnapshots();
+            } catch (e) {
+              console.log("Calling getLocalSnapshots() failed")
+            }
+            console.log("g_localSnapshotIndexes.length = ", g_localSnapshotIndexes.length)
             }}>Refresh</button>
           ${timeUi}
             <!--<div> latest local: ${g_localSnapshotIndexes.length > 0 ? g_localSnapshotIndexes[0] : 0}</div>>-->
@@ -753,7 +796,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         <div>View:</div>
           <!--<div>Latest stored: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>-->
         ${timeTravelUi}
-        <button class="" style="" @click=${async () => {g_canViewLive = true; this.datePickerElem.clear(); await this.viewLive()}}>Live</button>
+        <button class="" style="" @click=${async () => {
+          g_canViewLive = true;
+          //this.loadingOverlayElem.hidden = false;
+          g_hideOverlay = false;
+          this.datePickerElem.clear();
+          await this.viewLive();
+          g_hideOverlay = true;
+          //this.loadingOverlayElem.hidden = true;
+        }}>Live</button>
       </div>
       <div>Displaying bucket: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${g_canViewLive? " (live)" :""}</div>
       <div id="displayedIndexInfoDiv" style="min-height: 200px; margin-left: 20px;">
@@ -764,6 +815,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         <ol>${placementDetails}</ol>
         <br/>
       </div>
+      <div id="loading-overlay" class="loading style-2" .hidden=${g_hideOverlay}><div class="loading-wheel"></div></div>
     `;
   }
 
@@ -781,6 +833,43 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return [
       sharedStyles,
       css`
+        .loading {
+          width: 100%;
+          height: 100%;
+          position: fixed;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          background-color: rgba(0,0,0,.5);
+        }
+        .loading-wheel {
+          width: 20px;
+          height: 20px;
+          margin-top: -40px;
+          margin-left: -40px;
+
+          position: absolute;
+          top: 50%;
+          left: 50%;
+
+          border-width: 30px;
+          border-radius: 50%;
+          -webkit-animation: spin 1s linear infinite;
+        }
+        .style-2 .loading-wheel {
+          border-style: double;
+          border-color: #ccc transparent;
+        }
+        @-webkit-keyframes spin {
+          0% {
+            -webkit-transform: rotate(0);
+          }
+          100% {
+            -webkit-transform: rotate(-360deg);
+          }
+        }
+
         .appCanvas {
           /*position: relative;*/
           cursor: inherit;

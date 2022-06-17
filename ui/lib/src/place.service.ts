@@ -8,7 +8,7 @@ import {
   Signal,
   Dictionary, DestructuredPlacement, PlaceProperties, PlaceAtInput, PlacementAuthorInput,
 } from './types';
-import {CellId} from "@holochain/client/lib/types/common";
+//import {CellId} from "@holochain/client/lib/types/common";
 
 
 export class PlaceService {
