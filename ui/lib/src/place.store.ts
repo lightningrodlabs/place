@@ -8,9 +8,6 @@ import {
   Signal, SnapshotEntry, PlacementDetails, destructurePlacement, PublishCallback,
 } from './types';
 
-//import {CellId} from "@holochain/client/lib/types/common";
-//import {delay} from "./elements/place-controller";
-
 
 const areEqual = (first: Uint8Array, second: Uint8Array) =>
       first.length === second.length && first.every((value, index) => value === second[index]);
