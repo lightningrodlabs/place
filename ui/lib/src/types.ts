@@ -8,6 +8,18 @@ export const placeContext : Context<PlaceStore> = createContext('place/service')
 
 export type Dictionary<T> = { [key: string]: T };
 
+
+export enum PlaceState {
+  Uninitialized,
+  Initializing,
+  Initialized,
+  //PostInitialized,
+  Live,
+  Publishing,
+  Retrospection,
+  Loading,
+}
+
 export interface HoloHashed<T> {
   hash: HoloHashB64;
   content: T;

@@ -98,7 +98,7 @@ export class PlaceService {
 
 
   private callPlaceZome(fn_name: string, payload: any): Promise<any> {
-    console.log("callZome: " + fn_name + "() ", payload)
+    //console.log("callZome: " + fn_name + "() ", payload)
     //console.info({payload})
     try {
       const result = this.cellClient.callZome("place", fn_name, payload);
