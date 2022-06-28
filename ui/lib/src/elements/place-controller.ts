@@ -68,17 +68,17 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   _cursor: any = undefined;
 
   /** Private properties */
+  _state: PlaceState = PlaceState.Uninitialized;
   _transitioning = false;
   //_latestStoredBucketIndex: number = 0;
   _canAutoRefresh = true;
   _displayedIndex: number = 0;
   _selectedColor: string | null = null;
   _hideOverlay = false;
-  _state: PlaceState = PlaceState.Uninitialized;
 
   _localSnapshotIndexes: any = [];
 
-  _firstNormalRender: boolean = true;
+  _mustInitPixi: boolean = true;
 
   _requestingSnapshotIndex: number | null = null; // 0 = Live, otherwise the actual snapshot index
 
@@ -122,11 +122,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
     /* Init canvas for normal render */
     if (this._state == PlaceState.Live) {
-      if (this._firstNormalRender) {
+      if (this._mustInitPixi) {
         const properties = await this._store.getProperties()
         this.initPixiApp(this.playfieldElem, properties.canvasSize)
-        this._firstNormalRender = false;
-      }
+        this._mustInitPixi = false;
+     }
     }
   }
 
@@ -135,6 +135,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   private async init() {
     console.log("place-controller.init() - START!");
     await this.changeState(PlaceState.Initializing)
+
+    /** Wait a second for pixi to startup? */
+    await delay(1 * 1000);
 
     /** Get latest snapshot from DHT and store it */
     await this._store.pullLatestSnapshotFromDht();
@@ -230,6 +233,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       console.log("Starting latest: " + snapshot_to_str(snapshot));
       this._frameBuffer = snapshotIntoFrame(snapshot.imageData, worldSize);
     } else {
+      console.log("Starting random image");
       //let buffer = randomBuffer(1);
       let buf = randomSnapshotData(worldSize);
       this._frameBuffer = snapshotIntoFrame(buf, worldSize);
@@ -487,17 +491,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       this.viewSnapshot(maybeSnapshot, this._store.getMaybeProperties()!.canvasSize);
       this.requestUpdate();
     }
-    // else {
-    //   /* Try constructing from previous snapshot */
-    //   const maybePreviousSnapshot = await this._store.getSnapshotAt(iBucketIndex - 1)
-    //   if (maybePreviousSnapshot) {
-    //     await this.viewFutureSnapshot(maybePreviousSnapshot, placements)
-    //     this._requestingSnapshotIndex = null;
-    //   } else {
-    //     alert("No snapshot found at this timeframe");
-    //     return false;
-    //   }
-    // }
     this._hideOverlay = true;
     return true;
   }
@@ -692,10 +685,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async transitionToLive(currentPlacement?: PlacementEntry): Promise<boolean> {
     //console.log("transitionToLive()...")
     // /* pixi must be initiazed */
-    // if (!g_frameSprite) {
-    //   this.requestUpdate();
-    //   return;
-    // }
 
     this._cursor.visible = false;
 
@@ -733,12 +722,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** */
   transitionToLoading() {
     this._hideOverlay = false;
+    this._mustInitPixi = true;
   }
 
 
   /** */
   async transitionToRetrospection() {
     await this.viewSnapshotAt(this._requestingSnapshotIndex!)
+    this.disableCursor();
     this._requestingSnapshotIndex = null;
     //this.loadingOverlayElem.hidden = true;
     this._hideOverlay = true;
@@ -795,12 +786,18 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
+  disableCursor() {
+    this._selectedColor = null;
+    this._cursor.visible = false;
+    this.changeCursorMode("grab")
+  }
+
   /** */
   renderStartup() {
     return html`
         <span>Loading...</span>
-        <span>${this._state}</span>
-        <canvas id="playfield" class="appCanvas"></canvas>
+        <!--<span>${this._state}</span>-->
+        <!--<canvas id="playfield" class="appCanvas"></canvas>-->
       `;
   }
 
@@ -815,7 +812,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       <h2>Publishing snapshots up to current time... ${Math.max(0, this._store.getRelativeBucketIndex(this._displayedIndex))} / ${this._store.getRelativeBucketIndex(nowIndex)}</h2>
       <div>Birthdate: ${localBirthDate}</div>
       <span>${this._state}</span>
-      <div>${Date.now()}</div>
+      <!--<div>${Date.now()}</div>-->
     `;
   }
 
@@ -910,9 +907,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         <div style="width:80px;display: flex;flex-direction: column">
           <button class=" ${this._selectedColor? "colorButton" : "selected"} " style=""
                   @click=${() => {
-                    this._selectedColor = null;
-                    this._cursor.visible = false;
-                    this.changeCursorMode("grab")
+                    this.disableCursor()
                     this.requestUpdate();
                   }}>None</button>
           ${palette}
