@@ -48,7 +48,7 @@ export default {
     builtins(),
     typescript({ experimentalDecorators: true, outDir: DIST_FOLDER }),
     commonjs({}),
-    globals(),
+    //globals(), // removed because it cause build error
     /** Minify JS */
     terser(),
     /** Bundle assets references via import.meta.url */
