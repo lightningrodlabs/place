@@ -38,9 +38,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
   _placeCellId: CellId | null = null;
 
 
-  /**
-   *
-   */
+  /** */
   async firstUpdated() {
     const wsUrl = `ws://localhost:${HC_PORT}`
     const installed_app_id = NETWORK_ID == null || NETWORK_ID == ''
@@ -50,7 +48,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
 
     const hcClient = await HolochainClient.connect(wsUrl, installed_app_id);
     console.log({hcClient})
-    // Place
+    /** Place */
     let place_cell = hcClient.cellDataByRoleId("place");
     if (!place_cell) {
       alert("Place Cell not found in happ")
@@ -59,7 +57,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
     const placeClient = hcClient.forCell(place_cell!);
     console.log({placeClient})
 
-    // Send dnaHash to electron
+    /** Send dnaHash to electron */
     if (IS_ELECTRON) {
       const ipc = window.require('electron').ipcRenderer;
       const dnaHashB64 = serializeHash(placeClient.cellId[0])

@@ -19,7 +19,6 @@ import {color2index, COLOR_PALETTE, IMAGE_SCALE} from "../constants";
 import {buffer2Texture, randomSnapshotData, setPixel, snapshotIntoFrame} from "../imageBuffer";
 
 
-
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
 const toHHMMSS = function (str: string) {
@@ -73,6 +72,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   _selectedColor: string | null = null;
   _hideOverlay = false;
 
+  _canMouseDown: boolean = true;
   _mustInitPixi: boolean = true;
 
   _requestingSnapshotIndex: number | null = null; // 0 = Live, otherwise the actual snapshot index
@@ -130,7 +130,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
         /** Publishing if latest snapshot is older than now */
         let maybeLatestStored = this._store.getLatestStoredSnapshot()
-        console.log({maybeLatestStored})
+        //console.log({maybeLatestStored})
         if (!maybeLatestStored) {
           break;
         }
@@ -269,8 +269,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     this._frameSprite.interactive = true;
 
     /** On pixel click (can't declare elsewhere because we need defined variables) */
-    this._frameSprite.on('pointerdown', async (event:any) => {
-      //console.log({event})
+    this._frameSprite.on('mousedown', async (event:any) => {
+      //console.log(" !! mouse event !! ", event.type)
+      if (event && event.type != "mousedown" || !this._canMouseDown) {
+        //console.warn("Not a mouse down event")
+        return;
+      }
+      this._canMouseDown = false;
+
       let custom = new PIXI.Point(event.data.global.x, event.data.global.y)
       //custom.x -= this.playfieldElem.offsetLeft
       custom.y -= this.playfieldElem.offsetTop
@@ -281,15 +287,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         + "custom:" + customPos + "\n"
       //+ canvas.offsetLeft + " ; " + canvas.offsetTop
 
-      /** get buffer */
-      // const latest = this._store.getLatestStoredSnapshot();
-      // if (latest) {
-      //   buffer = snapshotIntoFrame(latest.imageData);
-      // }
 
       /** Set & store clicked placement */
-      if (this._selectedColor && this._displayedIndex > this._store.latestStoredBucketIndex) {
-        this._cursor.visible = true;
+      if (this._selectedColor && this._state == PlaceState.Live) {
         const placement = {
           x: Math.floor(customPos.x),
           y: Math.floor(customPos.y),
@@ -300,23 +300,24 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         this._cursor.y = Math.floor(customPos.y) * IMAGE_SCALE
 
         try {
-          // this._store.placePixelAt({
-          //   placement,
-          //   bucket_index: this._store.latestStoredBucketIndex
-          // })
           await this._store.placePixel(placement)
           const tiny = new tinycolor(this._selectedColor)
           const colorNum = parseInt(tiny.toHex(), 16);
           setPixel(this._frameBuffer, colorNum, customPos, worldSize);
           let updatedTexture = buffer2Texture(this._frameBuffer, worldSize)
           this._frameSprite.texture = updatedTexture
+          this._cursor.visible = true;
         } catch(e) {
           console.error("Failed to place pixel: ", e)
           this.disableCursor()
           alert("Pixel already placed for this time unit")
         }
-        // await this.transitionToLive(packPlacement(placement))
       }
+      if (this._selectedColor && this._state == PlaceState.Retrospection) {
+        this.disableCursor()
+        alert("Pixel can't be placed when viewing older canvas")
+      }
+      this._canMouseDown = true;
     })
 
     /** Quadrillage */
@@ -381,7 +382,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** Display latest stored snapshot */
     let maybeLatestStored = this._store.getLatestStoredSnapshot()
-    console.log({maybeLatestStored})
+    //console.log({maybeLatestStored})
     if (maybeLatestStored) {
       this.viewSnapshot(maybeLatestStored, properties.canvasSize);
     }
@@ -392,8 +393,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         return;
       }
       this._canAutoRefresh = false;
-      console.log("Try publishing snapshot...")
-      if (!this.debugMode) {
+      if (!this.debugMode && this._state != PlaceState.Publishing) {
+        console.log("Try publishing snapshot...")
         try {
           await this.publishNowSnapshot(Date.now() / 1000);
         } catch(e) {
