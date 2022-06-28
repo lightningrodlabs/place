@@ -121,27 +121,24 @@ export class PlaceStore {
   async publishUpTo(nowIndex: number, cb: PublishCallback, cbData?: any) {
     console.log("publishUpTo() called")
     try {
+      const interval = this._dnaProperties!.snapshotIntervalInBuckets;
+      const nowSnapshotIndex =  nowIndex - (nowIndex % interval);
       const latestSnapshot = await this.getLatestSnapshot();
-      console.log(`publishUpTo()\n - latest: ${latestSnapshot.timeBucketIndex}\n - now: ${nowIndex}`)
+      console.log(`publishUpTo()\n - latest: ${latestSnapshot.timeBucketIndex}\n - now: ${nowSnapshotIndex}`)
       let count = 0;
-      /** Publish all snapshots since lastest until 'now' */
-      for (let latestIndex = latestSnapshot.timeBucketIndex; latestIndex < nowIndex; latestIndex += 1) {
-        // const snapshot = await this.service.getSnapshotAt(latestChainedIndex)
-        // if (!snapshot) {
-        //   console.log("Snapshot not found at " + latestChainedIndex)
-        //   break;
-        // }
+      /** Publish all snapshots since latest until 'now' */
+      for (let latestIndex = latestSnapshot.timeBucketIndex; latestIndex < nowSnapshotIndex; latestIndex += interval) {
         const res = await this.service.publishNextSnapshotAt(latestIndex)
         if (res == null) {
-          console.error("Failed to publish snapshot " + latestIndex + 1)
+          console.error("Failed to publish snapshot " + latestIndex + interval)
           break;
         }
-        const newSnapshot = await this.service.getSnapshotAt(latestIndex + 1)
+        const newSnapshot = await this.service.getSnapshotAt(latestIndex + interval)
         if (newSnapshot == null) {
-          console.error("Failed to get snapshot at " + latestIndex + 1)
+          console.error("Failed to get snapshot at " + latestIndex + interval)
           break;
         }
-        const authors = await this.service.getPublishersAt(latestIndex + 1)
+        const authors = await this.service.getPublishersAt(latestIndex + interval)
         console.log("Attempting to store " + snapshot_to_str(newSnapshot!))
         await this.storeSnapshot(newSnapshot!, authors)
         cb(newSnapshot!, cbData)
@@ -154,6 +151,7 @@ export class PlaceStore {
       console.error({e})
     }
   }
+
 
   /**
    * Get latest entries of each type for current time bucket and update local store accordingly

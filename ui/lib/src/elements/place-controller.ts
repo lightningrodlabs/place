@@ -5,6 +5,9 @@ import * as PIXI from 'pixi.js'
 //import {SCALE_MODES} from 'pixi.js'
 import {Viewport} from 'pixi-viewport'
 
+import tinycolor from "tinycolor2";
+import 'lit-flatpickr';
+
 import {contextProvided} from "@holochain-open-dev/context";
 
 import {sharedStyles} from "../sharedStyles";
@@ -14,9 +17,7 @@ import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
 import {color2index, COLOR_PALETTE, IMAGE_SCALE} from "../constants";
 import {buffer2Texture, randomSnapshotData, setPixel, snapshotIntoFrame} from "../imageBuffer";
-import tinycolor from "tinycolor2";
 
-import 'lit-flatpickr';
 
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
@@ -54,10 +55,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   _store!: PlaceStore;
 
 
-  //_snapshots = new StoreSubscriber(this, () => this._store?.snapshots);
-  //_placements = new StoreSubscriber(this, () => this._store?.placements);
-
-
   /** PIXI Elements */
 
   _pixiApp: any = undefined;
@@ -75,8 +72,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   _displayedIndex: number = 0;
   _selectedColor: string | null = null;
   _hideOverlay = false;
-
-  _localSnapshotIndexes: any = [];
 
   _mustInitPixi: boolean = true;
 
@@ -97,41 +92,71 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return this.shadowRoot!.getElementById("loading-overlay") as HTMLDivElement;
   }
 
-  /** Launch init when myProfile has been set */
-  // private async subscribeSnapshots() {
-  //   this._store.snapshots.subscribe(async (snapshots) => {
-  //     if (g_state != PlaceState.Initializing && g_state != PlaceState.Initialized) {
-  //      await this.init();
-  //     }
-  //   });
-  // }
-
 
   /** After first render only */
   async firstUpdated() {
     console.log("place-controller first update done!")
-    //await this.subscribeSnapshots();
     await this.init();
   }
 
 
   /** After each render */
   async updated(changedProperties: any) {
-    if (this._state == PlaceState.Initialized) {
-      this.postInit();
+    console.log("*** updated() called !")
+
+    if (this._mustInitPixi) {
+      const properties = await this._store.getProperties()
+      this.initPixiApp(this.playfieldElem, properties.canvasSize)
+      this._mustInitPixi = false;
     }
-    /* Init canvas for normal render */
-    if (this._state == PlaceState.Live) {
-      if (this._mustInitPixi) {
-        const properties = await this._store.getProperties()
-        this.initPixiApp(this.playfieldElem, properties.canvasSize)
-        this._mustInitPixi = false;
-     }
+
+    switch(this._state) {
+      case PlaceState.Initialized: {
+        await this.postInit();
+        break;
+      }
+      case PlaceState.Publishing:
+      case PlaceState.Live: {
+        break;
+      }
+      case PlaceState.Loading: {
+        /** Figure out if we must transition to Publishing, Live or Retrospection */
+
+        /** Retrospection if requestingSnapshotIndex has been set */
+        if (this._requestingSnapshotIndex && this._requestingSnapshotIndex != 0) {
+          await this.changeState(PlaceState.Retrospection);
+          break;
+        }
+
+        /** Publishing if latest snapshot is older than now */
+        let maybeLatestStored = this._store.getLatestStoredSnapshot()
+        console.log({maybeLatestStored})
+        if (!maybeLatestStored) {
+          break;
+        }
+        let nowIndex = this._store.epochToBucketIndex(Date.now() / 1000);
+        nowIndex -=  nowIndex % this._store.getMaybeProperties()!.snapshotIntervalInBuckets;
+        if (maybeLatestStored!.timeBucketIndex < nowIndex) {
+          await this.changeState(PlaceState.Publishing);
+          break;
+        }
+        /** Live otherwise */
+        const succeeded = await this.changeState(PlaceState.Live)
+        /** If Live failed, fallback to Publishing */
+        if (!succeeded) {
+          await this.changeState(PlaceState.Publishing);
+        }
+        break;
+      }
+      default: break;
     }
   }
 
 
-  /** Called once subscribed to stores */
+  /**
+   * Called after first update
+   * Get local snapshots and latest from DHT
+   */
   private async init() {
     console.log("place-controller.init() - START!");
     await this.changeState(PlaceState.Initializing)
@@ -146,13 +171,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     /** Store all local snapshots */
     console.log("Calling getLocalSnapshots()...")
     try {
-      this._localSnapshotIndexes = await this._store.getLocalSnapshots();
+      const localSnapshots = await this._store.getLocalSnapshots();
+      console.log("localSnapshots.length = ", localSnapshots.length)
     } catch (e) {
       console.log("Calling getLocalSnapshots() failed")
     }
-    console.log("g_localSnapshotIndexes.length = ", this._localSnapshotIndexes.length)
-    //console.log({g_localSnapshotIndexes})
-
 
     /** Done */
     await this.changeState(PlaceState.Initialized);
@@ -289,6 +312,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           this._frameSprite.texture = updatedTexture
         } catch(e) {
           console.error("Failed to place pixel: ", e)
+          this.disableCursor()
           alert("Pixel already placed for this time unit")
         }
         // await this.transitionToLive(packPlacement(placement))
@@ -347,7 +371,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   }
 
 
-  /** Called once after first update after init is done */
+  /** Called once after init is done and canvas has been rendered */
   private async postInit() {
     console.log("place-controller.postInit() - START!");
     const properties = await this._store.getProperties()
@@ -370,31 +394,29 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       this._canAutoRefresh = false;
       console.log("Try publishing snapshot...")
       if (!this.debugMode) {
-        await this.publishNowSnapshot(Date.now() / 1000);
+        try {
+          await this.publishNowSnapshot(Date.now() / 1000);
+        } catch(e) {
+          console.error("publishNowSnapshot() failed", e)
+        }
       }
       this.requestUpdate()
       this._canAutoRefresh = true;
     }, 1 * 1000);
 
-
+    /** Transition to Live */
     this._requestingSnapshotIndex = 0
     const succeeded = await this.changeState(PlaceState.Loading);
     console.log("place-controller.postInit() - DONE");
   }
 
 
-  /** Get snapshot from DHT or publish it yourself */
+  /** Get now snapshot from DHT or publish it yourself */
   private async publishToNow(nowIndex?: number) {
     const nowIndex2 = nowIndex? nowIndex: this._store.epochToBucketIndex(Date.now() / 1000)
     let nowSnapshot = await this._store.getSnapshotAt(nowIndex2);
     if (!nowSnapshot) {
       await this._store.publishUpTo(nowIndex2, this.onPublish, this);
-      //const succeeded = await this.transitionToLive();
-      //if (!succeeded) {
-        //this._requestingSnapshotIndex = nowIndex2 - 1
-        //await this.changeState(PlaceState.Loading)
-      //}
-      //this._requestingSnapshotIndex = 0;
     }
   }
 
@@ -414,12 +436,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const nowIndex = this._store.epochToBucketIndex(nowSec)
     const nowSnapshot = await this._store.getSnapshotAt(nowIndex);
     //console.log(`publishNowSnapshot() now = ${nowIndex} ; exists = ` + (nowSnapshot != null));
+    /** Now snapshot found ; just get my rank */
     if (nowSnapshot) {
       let myRank = this._store.myRankStore[nowIndex]
       if (!myRank) {
         await this._store.getMyRenderTime(nowIndex)
         myRank = this._store.getMyRankAt(nowIndex)
       }
+      /** When in Live make sure we are displaying latest */
       //console.log("publishNowSnapshot() aborted. Already exists | " + this._store.getRelativeBucketIndex(nowIndex) + " | my rank : " + myRank)
       if (this._state == PlaceState.Live && nowIndex > this._displayedIndex) {
         // await this.refresh()
@@ -427,9 +451,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       }
       return;
     }
+    /** Not found: try to publish */
     //const res = await this._store.publishNextSnapshotAt(nowIndex - 1)
     const res = await this._store.publishNextSnapshot(nowSec)
     console.log("publishNowSnapshot() " + nowIndex + ": " + (res? "SUCCEEDED" : "FAILED"));
+    /** When in Live make sure we are displaying latest */
     if (res && this._state == PlaceState.Live) {
       // await this.refresh()
       await this.transitionToLive()
@@ -483,6 +509,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** */
   async viewSnapshotAt(iBucketIndex: number): Promise<boolean> {
+    console.log("called viewSnapshotAt()", iBucketIndex)
     this._hideOverlay = false;
     this._cursor.visible = false;
     //const placements = await this._store.getPlacementsAt(iBucketIndex)
@@ -492,7 +519,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       this.requestUpdate();
     }
     this._hideOverlay = true;
-    return true;
+    return false;
   }
 
 
@@ -507,18 +534,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async refresh() {
     //console.log("refresh(): Pulling data from DHT")
     await this._store.pullLatestSnapshotFromDht()
-    //g_localSnapshotIndexes = await this._store.getLocalSnapshots();
-    // const latestStored = this._store.getLatestStoredSnapshot();
-    // if (!latestStored) {
-    //   return;
-    // }
-    // const properties =  await this._store.getProperties();
-    // if (latestStored.timeBucketIndex > 0) {
-    //   this.setFrame(latestStored, properties.canvasSize);
-    // }
-    // if(g_canViewLive) {
-    //   await this.transitionToLive()
-    // }
+    if(this._state == PlaceState.Live) {
+       await this.transitionToLive()
+     }
     this.requestUpdate();
   }
 
@@ -538,7 +556,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   async onDatePicked(date:Date) {
     //console.log("onDatePicked called: ", date)
     const bucketIndex = this._store.epochToBucketIndex(date.getTime() / 1000)
-    //console.log("onDatePicked bucketIndex: ", this._store.getRelativeBucketIndex(bucketIndex), bucketIndex)
+    console.log("onDatePicked bucketIndex: ", this._store.getRelativeBucketIndex(bucketIndex), bucketIndex)
     this._requestingSnapshotIndex = bucketIndex
   }
 
@@ -568,10 +586,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return snapshotButtons
   }
 
-  /** */
-  async requestSnapshot(index: number) {
-    this._requestingSnapshotIndex = index;
-  }
 
   /** */
   async changeState(newState: PlaceState): Promise<boolean> {
@@ -641,33 +655,13 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         }
         break;
       }
-      case PlaceState.Live: {
-        // if (newState == PlaceState.Publishing) {
-        //   this.publishToNow().then(_ => this.changeState(PlaceState.Loading))
-        // } else {
-          if (newState == PlaceState.Loading) {
-            this.transitionToLoading()
-          } else {
-            console.error("Invalid state transition request Live", this._state, newState);
-            return false;
-          }
-        //}
-        break;
-      }
-      case PlaceState.Retrospection: {
-        if (newState == PlaceState.Loading) {
-          this.transitionToLoading()
-        } else {
-          console.error("Invalid state transition request Retro", this._state, newState);
-          return false;
-        }
-        break;
-      }
+      case PlaceState.Live:
+      case PlaceState.Retrospection:
       case PlaceState.Publishing: {
         if (newState == PlaceState.Loading) {
           this.transitionToLoading()
         } else {
-          console.error("Invalid state transition request Publishing", this._state, newState);
+          console.error("Invalid state transition request", this._state, newState);
           return false;
         }
         break;
@@ -684,7 +678,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** Set frame to now snapshot + placements in future bucket */
   async transitionToLive(currentPlacement?: PlacementEntry): Promise<boolean> {
     //console.log("transitionToLive()...")
-    // /* pixi must be initiazed */
 
     this._cursor.visible = false;
 
@@ -698,6 +691,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
     const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
     const nowSnapshotIndex = nowIndex - (nowIndex % this._store.getMaybeProperties()!.snapshotIntervalInBuckets);
+    console.log("transitionToLive()", nowIndex, nowSnapshotIndex)
     if (latest.timeBucketIndex != nowSnapshotIndex) {
       console.warn("transitionToLive() latest.timeBucketIndex != nowSnapshotIndex", latest.timeBucketIndex, nowSnapshotIndex)
       return false;
@@ -722,19 +716,28 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** */
   transitionToLoading() {
     this._hideOverlay = false;
+    this.disableCursor();
     this._mustInitPixi = true;
   }
 
 
   /** */
   async transitionToRetrospection() {
-    await this.viewSnapshotAt(this._requestingSnapshotIndex!)
-    this.disableCursor();
+    //this.disableCursor();
+    const succeeded = await this.viewSnapshotAt(this._requestingSnapshotIndex!)
+    console.log("transitionToRetrospection() success = ", succeeded)
     this._requestingSnapshotIndex = null;
     //this.loadingOverlayElem.hidden = true;
     this._hideOverlay = true;
   }
 
+
+  /** */
+  disableCursor() {
+    this._selectedColor = null;
+    this._cursor.visible = false;
+    this.changeCursorMode("grab")
+  }
 
 
   /** Render the current state */
@@ -744,53 +747,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       case PlaceState.Uninitialized:
       case PlaceState.Initializing: return this.renderStartup(); break;
       case PlaceState.Initialized:
-      //case PlaceState.PostInitialized:
       case PlaceState.Publishing: return this.renderPublishToNow(); break;
       case PlaceState.Live: return this.renderNormal(); break;
       case PlaceState.Retrospection: return this.renderNormal(); break;
-      case PlaceState.Loading: {
-
-        let maybeLatestStored = this._store.getLatestStoredSnapshot()
-        console.log({maybeLatestStored})
-        if (!maybeLatestStored) {
-          return;
-        }
-
-        /** Check if we need to sync. Also we may need to sync again after a sync if a sync takes too long */
-        let nowIndex = 0
-        //do {
-          nowIndex = this._store.epochToBucketIndex(Date.now() / 1000);
-          nowIndex -=  nowIndex % this._store.getMaybeProperties()!.snapshotIntervalInBuckets;
-
-          if (maybeLatestStored!.timeBucketIndex < nowIndex) {
-            this.changeState(PlaceState.Publishing);
-            return;
-            //await this.publishToNow(nowIndex);
-          }
-          //maybeLatestStored = this._store.getLatestStoredSnapshot()
-        //} while(maybeLatestStored!.timeBucketIndex != nowIndex)
-
-        if (this._requestingSnapshotIndex == null || this._requestingSnapshotIndex == 0) {
-          this.changeState(PlaceState.Live).then(succeeded => {
-            if (!succeeded) {
-              this.changeState(PlaceState.Publishing);
-            }
-          })
-        } else {
-          this.changeState(PlaceState.Retrospection)
-        }
-      }
+      case PlaceState.Loading: return this.renderNormal(); break;
       default: break;
     }
     return this.renderNormal();
   }
 
-
-  disableCursor() {
-    this._selectedColor = null;
-    this._cursor.visible = false;
-    this.changeCursorMode("grab")
-  }
 
   /** */
   renderStartup() {
@@ -920,17 +885,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             this.requestUpdate();
           }}>Fit</button>
           <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
-          <button style="margin:5px;" @click=${async() => {
-            await this.refresh()
-            try {
-              this._localSnapshotIndexes = await this._store.getLocalSnapshots();
-            } catch(e) {
-              console.log("Calling getLocalSnapshots() failed", e)
-            }
-            console.log("g_localSnapshotIndexes.length = ", this._localSnapshotIndexes.length)
-            }}>Refresh</button>
+          <button style="margin:5px;" @click=${async() => {await this.refresh()}}>Refresh</button>
           ${timeUi}
-            <!--<div> latest local: ${this._localSnapshotIndexes.length > 0 ? this._localSnapshotIndexes[0] : 0}</div>>-->
            <!--<div>stored: ${stored.length}</div>>-->
         </div>
         <canvas id="playfield" class="appCanvas"></canvas>

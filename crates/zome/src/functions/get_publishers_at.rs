@@ -22,6 +22,7 @@ pub fn get_publishers_at(time_bucket_index: u32) -> ExternResult<Vec<AgentPubKey
       publishers.push(author.to_owned().into());
     }
   }
+  publishers.sort();
   debug!("*** get_publishers_at() END - found: {}", publishers.len());
   Ok(publishers)
 }
