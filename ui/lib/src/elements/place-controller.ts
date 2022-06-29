@@ -762,11 +762,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
     /** */
     return html`
-      <canvas id="playfield" class="appCanvas"></canvas>
       <h2>Publishing snapshots up to current time... ${Math.max(0, this._store.getRelativeBucketIndex(this._displayedIndex))} / ${this._store.getRelativeBucketIndex(nowIndex)}</h2>
       <div>Birthdate: ${localBirthDate}</div>
-      <span>${this._state}</span>
+      <!--<span>${this._state}</span>-->
       <!--<div>${Date.now()}</div>-->
+      <canvas id="playfield" class="appCanvas"></canvas>
     `;
   }
 
