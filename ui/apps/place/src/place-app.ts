@@ -1,12 +1,12 @@
 import {ContextProvider} from "@holochain-open-dev/context";
-import {EntryHashB64, serializeHash} from '@holochain-open-dev/core-types';
+import {serializeHash} from '@holochain-open-dev/core-types';
 import { state } from "lit/decorators.js";
 import {
   PlaceController,
   PlaceStore,
   placeContext,
 } from "@place/elements";
-import {BaseClient, HolochainClient} from "@holochain-open-dev/cell-client";
+import {HolochainClient} from "@holochain-open-dev/cell-client";
 import { ScopedElementsMixin } from "@open-wc/scoped-elements";
 import { LitElement, html } from "lit";
 import {CellId} from "@holochain/client";
@@ -78,7 +78,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
       return html`<span>Loading...</span>`;
     }
     return html`
-       <place-controller></place-controller>
+       <place-controller style="height:100vh"></place-controller>
     `;
   }
 

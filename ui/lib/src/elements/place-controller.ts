@@ -49,29 +49,26 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   debugMode: boolean = false;
 
   /** Dependencies */
-
   @contextProvided({ context: placeContext })
   _store!: PlaceStore;
 
-
   /** PIXI Elements */
-
   _pixiApp: any = undefined;
   _grid: any = undefined;
   _viewport: any = undefined;
   _frameSprite: any = undefined;
-  _frameBuffer: Uint8Array = new Uint8Array();
   _cursor: any = undefined;
+  _frameBuffer: Uint8Array = new Uint8Array();
 
   /** Private properties */
   _state: PlaceState = PlaceState.Uninitialized;
   _transitioning = false;
-  //_latestStoredBucketIndex: number = 0;
   _canAutoRefresh = true;
   _displayedIndex: number = 0;
   _selectedColor: string | null = null;
   _hideOverlay = false;
 
+  _canFullscreen: boolean = false;
   _canMouseDown: boolean = true;
   _mustInitPixi: boolean = true;
 
@@ -195,8 +192,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       width: canvas.offsetWidth,
       height: canvas.offsetHeight,
       preserveDrawingBuffer: true,
-      //resolution: devicePixelRatio,
-      //resizeTo: canvas
+      //resolution: window.devicePixelRatio,
+      resizeTo: canvas
     })
     this._pixiApp.view.style.textAlign = 'center'
     //container.appendChild(g_pixiApp.view)
@@ -212,10 +209,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
       //screenHeight: canvas.offsetHeight            // screen height used by viewport (eg, size of canvas)
     })
-
     // TODO: remove this workaround (otherwise we get an error on undefined object)
     this._viewport.trackedPointers = []
-
     this._viewport
       .moveCenter(worldSize * IMAGE_SCALE / 2, worldSize * IMAGE_SCALE / 2)
       .drag({
@@ -224,16 +219,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //.pinch()
       .decelerate()
       .wheel({})
-
     this._viewport.interactive = true;
     this._viewport.interactiveChildren = true;
-
-
-
     //viewport.bounce({})
-
     // viewport.clamp({direction: 'all'})
-
     this._viewport.clampZoom({
       minWidth: 50,
       minHeight: 50,
@@ -349,7 +338,6 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
 
     /** Add all elements to stage */
-
     this._pixiApp.stage.addChild(this._viewport)
     this._viewport.addChild(this._frameSprite)
     this._viewport.addChild(this._grid)
@@ -365,10 +353,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     this._viewport.fitWorld(true)
 
     /** DEBUG ; without viewport **/
-    // g_pixiApp.stage.addChild(g_frameSprite)
-    // //g_pixiApp.stage.addChild(grid)
-    // g_pixiApp.stage.addChild(g_cursor)
-    // g_pixiApp.stage.addChild(logText)
+    //this._pixiApp.stage.addChild(this._frameSprite)
+    //this._pixiApp.stage.addChild(this._grid)
+    //this._pixiApp.stage.addChild(this._cursor)
+    //this._pixiApp.stage.addChild(logText)
   }
 
 
@@ -810,8 +798,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
       const nextIn = (nowIndex + 1) * maybeProperties!.bucketSizeSec - nowSec
       timeUi = html`
-        <div>Next in:</div>
-        <div>${nextIn} secs</div>
+        <div class="center">Next in</div>
+        <div class="center">${nextIn} secs</div>
       `
     }
 
@@ -821,7 +809,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     /** Build TimeTravel UI */
     let timeTravelUi =
       html`
-        <lit-flatpickr id="my-date-picker" enableTime dateFormat="Y-m-d H:i" theme="dark"
+        <lit-flatpickr id="my-date-picker" enableTime dateFormat="m-d H:i" theme="dark" style="font-size:small; margin-top:3px;"
                        placeHolder="Select Date..."
                        minuteIncrement=${Math.floor(maybeProperties!.bucketSizeSec / 60)}
                        .minDate=${startDate} .maxDate=${nowDate}
@@ -836,9 +824,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
                          this.changeState(PlaceState.Loading);
                        }}"
         ></lit-flatpickr>`
-      //html`<input id="dateInput" type="text" placeholder="Select Date..." readonly="readonly">`
 
-    //                        .onChange=${(dates:any) => {this.onDatePicked(dates[0])}}
+    // .onChange=${(dates:any) => {this.onDatePicked(dates[0])}}
 
     /** Build placement logs */
     let displayedDetails = this._store.placementStore[this._displayedIndex]
@@ -866,55 +853,75 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const myRank = this._store.getMyRankAt(this._displayedIndex);
     const publishers = this._store.getPublishersAt(this._displayedIndex);
 
+    let footer = html`<div style="min-height:10px;"></div>`;
+    if (!this._canFullscreen) {
+      footer = html`
+        <div style="min-height:300px; overflow:scroll">
+          <div>Birthdate: ${localBirthDate}</div>
+          <!--<div>Age: ${toHHMMSS(timeDiff.toString())}</div>-->
+          <span>State: ${this._state}</span>
+          <div>Displaying bucket: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${this._state == PlaceState.Live? " (live)" :""}</div>
+          <div id="displayedIndexInfoDiv" style="min-height: 200px; margin-left: 20px;">
+            <!--<div>Now: ${this._store.getRelativeBucketIndex(nowIndex)}</div>-->
+            <div> - My render rank: ${myRank}</div>
+            <div> - Publishers: ${publishers}</div>
+            <span> - Placements:</span>
+            <ol>${placementDetails}</ol>
+            <br/>
+          </div>
+        </div>
+      `
+    }
+
+    // return html`
+    //   <!-- <div class="appCanvas"></div>-->
+    //   <canvas id="playfield" class="appCanvas"></canvas>
+    //   <div id="loading-overlay" class="loading style-2" .hidden=${this._hideOverlay}><div class="loading-wheel"></div></div>
+    // `;
 
     /** render all */
     return html`
-      <div style="display: flex;flex-direction: row">
-        <div style="width:80px;display: flex;flex-direction: column">
-          <button class=" ${this._selectedColor? "colorButton" : "selected"} " style=""
-                  @click=${() => {
-                    this.disableCursor()
-                    this.requestUpdate();
-                  }}>None</button>
-          ${palette}
-          <br/>
-          <div>Zoom:</div>
-          <div>${Math.round(this._viewport?.scale.x * 100)}%</div>
-          <button style="margin:5px;" @click=${() => {
-            this._viewport?.fitWorld(false);
-            this._viewport?.moveCenter(maybeProperties!.canvasSize * IMAGE_SCALE / 2, maybeProperties!.canvasSize * IMAGE_SCALE / 2);
-            this.requestUpdate();
-          }}>Fit</button>
-          <button style="margin:5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
-          <button style="margin:5px;" @click=${async() => {await this.refresh()}}>Refresh</button>
-          ${timeUi}
-           <!--<div>stored: ${stored.length}</div>>-->
+      <div id="vertical-div" style="display:flex; flex-direction:column; height: 100%;">
+        <div id="horizontal-div" style="display:flex; flex-direction:row;">
+          <div style="width:84px; display:flex; flex-direction:column">
+            <button class=" ${this._selectedColor? "colorButton" : "selected"} " style=""
+                    @click=${() => {
+                      this.disableCursor()
+                      this.requestUpdate();
+                    }}>None</button>
+            ${palette}
+            <hr>
+            <div class="center" style="margin-bottom: 4px;">Zoom<div>${Math.round(this._viewport?.scale.x * 100)}%</div></div>
+            <button style="margin:5px;" @click=${() => {
+              this._viewport?.fitWorld(false);
+              this._viewport?.moveCenter(maybeProperties!.canvasSize * IMAGE_SCALE / 2, maybeProperties!.canvasSize * IMAGE_SCALE / 2);
+              this.requestUpdate();
+            }}>Fit</button>
+            <hr>
+            ${timeUi}
+            <hr>
+            <div class="center">View</div>
+              <!--<div>Latest stored: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>-->
+            ${timeTravelUi}
+            <button style="margin:5px;"
+                    .disabled=${this._state == PlaceState.Live}
+                    @click=${async () => {
+                      this.datePickerElem.clear();
+                      this._requestingSnapshotIndex = 0
+                      await this.changeState(PlaceState.Loading)
+                    }}>
+              Live
+            </button>
+            <button style="margin:0px 5px 5px 5px" @click=${async() => {await this.refresh()}}>Refresh</button>
+            <button style="margin:0px 5px 5px 5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
+            <button style="margin:0px 5px 5px 5px;" @click=${() => {
+              this._canFullscreen = !this._canFullscreen;
+              this._mustInitPixi = true;
+              this.requestUpdate();}}>Details</button>
+          </div>
+          <canvas id="playfield" class="appCanvas" style="height: ${this._canFullscreen? '100%' : 980 - 300}"></canvas>
         </div>
-        <canvas id="playfield" class="appCanvas"></canvas>
-      </div>
-      <div>Birthdate: ${localBirthDate}</div>
-      <!--<div>Age: ${toHHMMSS(timeDiff.toString())}</div>-->
-      <div id="timeTravelDiv">
-        <div>View:</div>
-          <!--<div>Latest stored: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>-->
-        ${timeTravelUi}
-        <button class="" style=""
-                .disabled=${this._state == PlaceState.Live}
-                @click=${async () => {
-          this.datePickerElem.clear();
-          this._requestingSnapshotIndex = 0
-          await this.changeState(PlaceState.Loading)
-        }}>Live</button>
-      </div>
-      <span>State: ${this._state}</span>
-      <div>Displaying bucket: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${this._state == PlaceState.Live? " (live)" :""}</div>
-      <div id="displayedIndexInfoDiv" style="min-height: 200px; margin-left: 20px;">
-        <!--<div>Now: ${this._store.getRelativeBucketIndex(nowIndex)}</div>-->
-        <div> - My render rank: ${myRank}</div>
-        <div> - Publishers: ${publishers}</div>
-        <span> - Placements:</span>
-        <ol>${placementDetails}</ol>
-        <br/>
+        ${footer}
       </div>
       <div id="loading-overlay" class="loading style-2" .hidden=${this._hideOverlay}><div class="loading-wheel"></div></div>
     `;
@@ -934,6 +941,19 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     return [
       sharedStyles,
       css`
+        hr {
+          /*border: 0;*/
+          /*border-top: 1px solid #01091f;*/
+          width: 60px;
+          margin: 8px 10px 5px 8px;
+          border: 0.1em solid gray;
+        }
+
+        .center {
+          margin-left: auto;
+          margin-right: auto;
+        }
+
         .loading {
           width: 100%;
           height: 100%;
@@ -942,8 +962,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           right: 0;
           bottom: 0;
           left: 0;
-          background-color: rgba(0,0,0,.5);
+          background-color: rgba(0, 0, 0, .5);
         }
+
         .loading-wheel {
           width: 20px;
           height: 20px;
@@ -958,10 +979,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           border-radius: 50%;
           -webkit-animation: spin 1s linear infinite;
         }
+
         .style-2 .loading-wheel {
           border-style: double;
           border-color: #ccc transparent;
         }
+
         @-webkit-keyframes spin {
           0% {
             -webkit-transform: rotate(0);
@@ -988,16 +1011,16 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           border-width: 4px;
           border-color: coral;
           min-height: 30px;
-          max-width:  50px;
-          margin-top:  5px;
-          margin-left:15px;
+          max-width: 50px;
+          margin-top: 5px;
+          margin-left: 15px;
         }
 
         .colorButton {
           min-height: 30px;
-          max-width:  50px;
-          margin-top:  5px;
-          margin-left:15px;
+          max-width: 50px;
+          margin-top: 5px;
+          margin-left: 15px;
           border-radius: 15px;
           border: 3px solid gray;
         }
