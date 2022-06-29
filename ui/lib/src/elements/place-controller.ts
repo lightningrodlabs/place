@@ -68,7 +68,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   _selectedColor: string | null = null;
   _hideOverlay = false;
 
-  _canFullscreen: boolean = false;
+  _canFullscreen: boolean = true;
   _canMouseDown: boolean = true;
   _mustInitPixi: boolean = true;
 
@@ -856,7 +856,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     let footer = html`<div style="min-height:10px;"></div>`;
     if (!this._canFullscreen) {
       footer = html`
-        <div style="min-height:300px; overflow:scroll">
+        <div style="min-height:300px;">
           <div>Birthdate: ${localBirthDate}</div>
           <!--<div>Age: ${toHHMMSS(timeDiff.toString())}</div>-->
           <span>State: ${this._state}</span>
@@ -881,8 +881,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** render all */
     return html`
-      <div id="vertical-div" style="display:flex; flex-direction:column; height: 100%;">
-        <div id="horizontal-div" style="display:flex; flex-direction:row;">
+        <div id="horizontal-div" style="display:flex; flex-direction:row;; height: 100%;">
           <div style="width:84px; display:flex; flex-direction:column">
             <button class=" ${this._selectedColor? "colorButton" : "selected"} " style=""
                     @click=${() => {
@@ -916,12 +915,13 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             <button style="margin:0px 5px 5px 5px;" @click=${() => {this.takeScreenshot()}}>Save</button>
             <button style="margin:0px 5px 5px 5px;" @click=${() => {
               this._canFullscreen = !this._canFullscreen;
-              this._mustInitPixi = true;
+              //this._mustInitPixi = true;
               this.requestUpdate();}}>Details</button>
           </div>
-          <canvas id="playfield" class="appCanvas" style="height: ${this._canFullscreen? '100%' : 980 - 300}"></canvas>
+          <div id="vertical-div" style="display:flex; flex-direction:column; height: 100%;">
+            <canvas id="playfield" class="appCanvas" style=""></canvas>
+            ${footer}
         </div>
-        ${footer}
       </div>
       <div id="loading-overlay" class="loading style-2" .hidden=${this._hideOverlay}><div class="loading-wheel"></div></div>
     `;
