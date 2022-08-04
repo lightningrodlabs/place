@@ -32,7 +32,7 @@ pub fn place_pixel(input: DestructuredPlacement) -> ExternResult<HeaderHash> {
    /// Link to current bucket path
    let eh = hash_entry(placement)?;
    debug!("*** place_pixel() path: {} ({})", path_to_str(&path), sec_to_bucket(now));
-   let _ = create_link(path.path_entry_hash()?, eh, PlaceLinkKind::Placements.as_tag())?;
+   let _ = create_link(path.path_entry_hash()?, eh, HdkLinkType::Paths, PlaceLinkKind::Placements.as_tag())?;
    /// Done
    Ok(hh)
 }
@@ -59,7 +59,7 @@ pub fn place_pixel_at(input: PlaceAtInput) -> ExternResult<HeaderHash> {
    /// Link to current bucket path
    let eh = hash_entry(placement)?;
    debug!("*** place_pixel_at() path: {} ({})", path_to_str(&path), sec_to_bucket(now()));
-   let _ = create_link(path.path_entry_hash()?, eh, PlaceLinkKind::Placements.as_tag())?;
+   let _ = create_link(path.path_entry_hash()?, eh, HdkLinkType::Paths, PlaceLinkKind::Placements.as_tag())?;
    /// Done
    Ok(hh)
 }
