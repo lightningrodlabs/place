@@ -15,7 +15,7 @@ use crate::entries::Snapshot;
 //
 //   let query_args = ChainQueryFilter::default()
 //     .include_entries(true)
-//     .header_type(HeaderType::Create)
+//     .action_type(ActionType::Create)
 //     .entry_type(entry_type!(Snapshot)?);
 //   let els = query(query_args)?;
 //   debug!("*** get_local_snapshots() query done");
@@ -33,14 +33,14 @@ pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<u32>> {
   //debug!("*** get_local_snapshots() CALLED");
   let query_args = ChainQueryFilter::default()
     .include_entries(false)
-    .header_type(HeaderType::Create)
+    .action_type(ActionType::Create)
     .entry_type(entry_type!(Snapshot)?);
   let els = query(query_args)?;
   //debug!("*** get_local_snapshots() els: {}", els.len());
   let mut creates: Vec<Create> = els.iter()
     .map(|el| {
-      let header = el.header();
-      if let Header::Create(create) = header {
+      let action = el.action();
+      if let Action::Create(create) = action {
         return Some(create);
       }
       None
@@ -49,7 +49,7 @@ pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<u32>> {
     .map(|maybe_create| maybe_create.unwrap().to_owned())
     .collect();
   //debug!("*** get_local_snapshots() creates: {}", creates.len());
-  //creates.sort_by(|a, b| a.header_seq.cmp(&b.header_seq));
+  //creates.sort_by(|a, b| a.action_seq.cmp(&b.action_seq));
   let maybe_latest = creates.pop();
   if maybe_latest.is_none() {
     return Ok(Vec::new());

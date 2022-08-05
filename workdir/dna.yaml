@@ -3,7 +3,7 @@ manifest_version: "1"
 name: place
 uuid: 00000000-0000-0000-0000-000000000000
 properties: # startTime MUST stay on line 6 !
-  startTime: 1656969026
+  startTime: 1659658209
   canvasSize: 30
   bucketSizeSec: 60
   pixelsPerBucket: 900

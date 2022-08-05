@@ -14,7 +14,7 @@ use crate::publish_snapshot::*;
 /// Zome Function
 /// Publish next snapshot if not already created
 #[hdk_extern]
-pub fn publish_next_snapshot_at(current_bucket: u32) -> ExternResult<Option<HeaderHash>> {
+pub fn publish_next_snapshot_at(current_bucket: u32) -> ExternResult<Option<ActionHash>> {
    debug!("*** publish_next_snapshot_at({}) CALLED", current_bucket);
    std::panic::set_hook(Box::new(zome_panic_hook));
 
@@ -43,7 +43,7 @@ pub fn publish_starting_snapshot(_: ()) -> ExternResult<Snapshot> {
 
 
 // ///
-// pub fn publish_snapshot_at(current_bucket: u32) -> ExternResult<Vec<HeaderHash>> {
+// pub fn publish_snapshot_at(current_bucket: u32) -> ExternResult<Vec<ActionHash>> {
 //    debug!("*** publish_snapshot_at({}) CALLED", current_bucket);
 //    std::panic::set_hook(Box::new(zome_panic_hook));
 //

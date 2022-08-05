@@ -2,7 +2,8 @@
 resolver = "2"
 members = [
   #"crates/types",
-  "crates/zome",
+  "zomes/place_model",
+  "zomes/place",
   #"sweettest",
 ]
 

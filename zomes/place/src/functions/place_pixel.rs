@@ -9,7 +9,7 @@ use crate::utils::*;
 /// Zome Function
 /// Add placement to current bucket
 #[hdk_extern]
-pub fn place_pixel(input: DestructuredPlacement) -> ExternResult<HeaderHash> {
+pub fn place_pixel(input: DestructuredPlacement) -> ExternResult<ActionHash> {
    debug!("*** place_pixel() CALLED: {:?}", input);
    std::panic::set_hook(Box::new(zome_panic_hook));
    /// Make sure not already placed
@@ -49,7 +49,7 @@ pub struct PlaceAtInput {
 /// Zome Function
 /// Add placement to given bucket
 #[hdk_extern]
-pub fn place_pixel_at(input: PlaceAtInput) -> ExternResult<HeaderHash> {
+pub fn place_pixel_at(input: PlaceAtInput) -> ExternResult<ActionHash> {
    debug!("*** place_pixel_at() CALLED: {:?}", input);
    std::panic::set_hook(Box::new(zome_panic_hook));
    let placement = Placement::from_destructured(input.placement);

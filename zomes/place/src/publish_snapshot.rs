@@ -6,7 +6,7 @@ use crate::{bucket_index_to_path, path_to_str, PlaceLinkKind};
 
 
 /// Render next snapshot iteration and publish it to DHT
-pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<HeaderHash> {
+pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<ActionHash> {
    /// Grab all placements
    let mut placements= Vec::new();
    for n in  0..get_dna_properties().snapshot_interval_in_buckets as u32 {
@@ -24,8 +24,8 @@ pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<HeaderHash
 
 //
 // /// Zome Function
-// /// Return HeaderHash of the commit Rendering entry
-// pub fn render_snapshot(bucket_index: u32) -> ExternResult<HeaderHash> {
+// /// Return ActionHash of the commit Rendering entry
+// pub fn render_snapshot(bucket_index: u32) -> ExternResult<ActionHash> {
 //    assert!(bucket_index > 0);
 //    /// Grab previous bucket rendering
 //    let mut snapshot = get_snapshot(bucket_index - 1)?;
@@ -34,7 +34,7 @@ pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<HeaderHash
 
 
 
-pub fn publish_snapshot(snapshot: &Snapshot) -> ExternResult<HeaderHash> {
+pub fn publish_snapshot(snapshot: &Snapshot) -> ExternResult<ActionHash> {
    /// Commit new rendering
    let hh = create_entry(snapshot)?;
    let eh = hash_entry(snapshot)?;
