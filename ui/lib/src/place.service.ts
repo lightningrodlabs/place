@@ -9,27 +9,51 @@ import {
   Dictionary, DestructuredPlacement, PlaceProperties, PlaceAtInput, PlacementAuthorInput,
 } from './types';
 
+
+export type ZomeCallResult =
+// Returned if Holochain returned an error response, or if the host encountered an error with handling the request.
+  | { type: 'error'; data: string }
+  // Returned if successful. `data` should be the value returned by the DNA
+  | { type: 'ok'; data: unknown }
+
+export interface AnyClient {
+  agentPubKey: AgentPubKeyB64,
+  roleId: string,
+  zomeName: string,
+  zomeCall(args: {
+    fnName: string
+    payload: unknown,
+  }): Promise<ZomeCallResult>
+}
+
+
 export class PlaceService {
 
   /** Ctor */
-  constructor(public hcClient: BaseClient, protected roleId: string) {
-    let maybe_cell = hcClient.cellDataByRoleId(roleId);
-    if (!maybe_cell) {
-      throw new Error("Cell not found for role: " + roleId);
-    }
-    this.cellClient = hcClient.forCell(maybe_cell)
+  // constructor(public hcClient: BaseClient, protected roleId: string) {
+  //   let maybe_cell = hcClient.cellDataByRoleId(roleId);
+  //   if (!maybe_cell) {
+  //     throw new Error("Cell not found for role: " + roleId);
+  //   }
+  //   this.cellClient = hcClient.forCell(maybe_cell)
+  // }
+
+  constructor(client: AnyClient) {
+    this.client = client
   }
 
 
   /** Fields */
 
-  cellClient: CellClient
+  //cellClient: CellClient
+  client: AnyClient
 
 
   /** Methods */
 
   get myAgentPubKey() : AgentPubKeyB64 {
-    return serializeHash(this.cellClient.cellId[1]);
+    //return serializeHash(this.cellClient.cellId[1]);
+    return this.client.agentPubKey;
   }
 
   /** Zome API */
@@ -97,20 +121,37 @@ export class PlaceService {
   // }
 
 
-  private callPlaceZome(fn_name: string, payload: any): Promise<any> {
+  private callPlaceZome(fnName: string, payload: any): Promise<any> {
     //console.log("callZome: " + fn_name + "() ", payload)
     //console.info({payload})
     try {
-      const result = this.cellClient.callZome("place", fn_name, payload);
+      const result = await this.client.zomeCall({fnName, payload});
       //console.log("callZome: " + fn_name + "() result")
       //console.info({result})
-      return result;
+      return result.ok;
     } catch (e) {
-      console.error("Calling zome " + fn_name + "() failed: ")
+      console.error("Calling zome " + fnName + "() failed: ")
       console.error({e})
     }
     return Promise.reject("callZome failed")
   }
+
+
+  // private callPlaceZome(fn_name: string, payload: any): Promise<any> {
+  //   //console.log("callZome: " + fn_name + "() ", payload)
+  //   //console.info({payload})
+  //   try {
+  //     const result = this.cellClient.callZome("place", fn_name, payload);
+  //     //console.log("callZome: " + fn_name + "() result")
+  //     //console.info({result})
+  //     return result;
+  //   } catch (e) {
+  //     console.error("Calling zome " + fn_name + "() failed: ")
+  //     console.error({e})
+  //   }
+  //   return Promise.reject("callZome failed")
+  // }
+
 
   /** -- Conversions -- */
   //
