@@ -1,7 +1,7 @@
 import {EntryHashB64, HeaderHashB64, AgentPubKeyB64, serializeHash} from '@holochain-open-dev/core-types';
 import {BaseClient, CellClient} from '@holochain-open-dev/cell-client';
 import { writable, Writable, derived, Readable, get } from 'svelte/store';
-import {AnyClient, PlaceService} from './place.service';
+import {PlaceService} from './place.service';
 import {
   DestructuredPlacement,
   Dictionary, PlaceAtInput, PlacementEntry, PlaceProperties, snapshot_to_str,
@@ -50,8 +50,8 @@ export class PlaceStore {
 
 
   /** Ctor */
-  constructor(protected hcClient: AnyClient) {
-    this.service = new PlaceService(hcClient);
+  constructor(protected hcClient: BaseClient) {
+    this.service = new PlaceService(hcClient, "place");
     //let cellClient = this.service.cellClient
     this.myAgentPubKey = this.service.myAgentPubKey;
 

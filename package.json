@@ -25,6 +25,7 @@
     "package": "npm run build:happ && npm run build && bash scripts/copy-binaries.sh && npm run build:webapp",
     "build": "bash scripts/build.sh",
     "build:ui": "npm run build -w @place/elements && npm run package -w place-ui",
+    "build:chaperone": "npm run build -w @place/elements && npm run package -w place-ui-chaperone",
     "build:webapp": "hc web-app pack workdir",
     "build:happ": "npm run build:dna && hc app pack workdir",
     "build:dna": "npm run build:zome && bash scripts/pack-dna.sh",
