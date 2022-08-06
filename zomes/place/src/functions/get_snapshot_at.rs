@@ -1,8 +1,9 @@
 use hdk::prelude::*;
 use zome_utils::*;
-use crate::entries::Snapshot;
-use crate::functions::get_properties::get_dna_properties;
-use crate::PlaceLinkKind;
+#[allow(unused_imports)]
+use place_model::*;
+
+use crate::link_kind::*;
 use crate::utils::*;
 
 
@@ -22,10 +23,11 @@ pub fn get_snapshot_at(bucket_index: u32) -> ExternResult<Option<Snapshot>> {
 
    let bucket_path =
      get_bucket_path((corrected_bucket_index * dna_properties.bucket_size_sec) as u64);
-   debug!("get_snapshot_at() at path: {}", path_to_str(&bucket_path));
+   debug!("get_snapshot_at() at path: {}", path_to_str(&bucket_path.clone().typed(LinkKind::Snapshot)?));
    let pairs = get_typed_from_links::<Snapshot>(
       bucket_path.path_entry_hash()?,
-      PlaceLinkKind::Snapshot.as_tag_opt(),
+      LinkKind::Snapshot.try_into().unwrap(),
+      None,
    )?;
    if pairs.is_empty() {
       warn!("Snapshot not found for bucket: {}", corrected_bucket_index);

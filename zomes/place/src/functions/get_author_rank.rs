@@ -1,6 +1,8 @@
 use hdk::prelude::*;
 use hdk::prelude::holo_hash::AgentPubKeyB64;
 use zome_utils::*;
+#[allow(unused_imports)]
+use place_model::*;
 
 use crate::functions::{get_placement_author, get_placements_at, GetPlacementAuthorInput};
 

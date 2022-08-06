@@ -15,5 +15,8 @@ enum-ordinalize =  "3.1"
 bincode = "1.3"
 
 hdk = { version = "0.0.138", default-features = false }
+holo_hash = { version = "0.0.29", default-features = false }
 
 zome_utils = { git = "https://github.com/ddd-mtl/zome-utils", branch = "138" }
+
+place_model = { path = "../place_model" }

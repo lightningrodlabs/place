@@ -1,12 +1,13 @@
-use hdk::prelude::*;
-use crate::PlaceProperties;
+use holochain_deterministic_integrity::prelude::*;
+use crate::properties::PlaceProperties;
 
 /// Return the DNA properties
 #[hdk_extern]
 pub fn get_properties(_:()) -> ExternResult<PlaceProperties> {
   let props = dna_info()?.properties;
   //debug!("props = {:?}", props);
-  let properties: PlaceProperties = props.try_into()?;
+  let properties: PlaceProperties = props.try_into()
+     .expect("Should deserialize dna properties");
   Ok(properties)
 }
 

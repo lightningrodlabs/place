@@ -1,4 +1,4 @@
-use hdk::prelude::*;
+use holochain_deterministic_integrity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DoublePixel(u8);

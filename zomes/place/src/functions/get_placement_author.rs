@@ -1,6 +1,7 @@
 use hdk::prelude::*;
 use hdk::prelude::holo_hash::{AgentPubKeyB64};
-use crate::entries::Placement;
+#[allow(unused_imports)]
+use place_model::*;
 use zome_utils::*;
 use crate::utils::*;
 

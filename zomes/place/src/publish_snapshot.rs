@@ -1,8 +1,9 @@
 use hdk::prelude::*;
+#[allow(unused_imports)]
+use place_model::*;
 
-use crate::entries::*;
 use crate::functions::*;
-use crate::{bucket_index_to_path, path_to_str, PlaceLinkKind};
+use crate::{bucket_index_to_path, link_kind::*, path_to_str};
 
 
 /// Render next snapshot iteration and publish it to DHT
@@ -36,14 +37,14 @@ pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<ActionHash
 
 pub fn publish_snapshot(snapshot: &Snapshot) -> ExternResult<ActionHash> {
    /// Commit new rendering
-   let hh = create_entry(snapshot)?;
+   let hh = create_entry(PlaceEntry::Snapshot(snapshot.to_owned()))?;
    let eh = hash_entry(snapshot)?;
    /// Link to current bucket
    let path = bucket_index_to_path(snapshot.time_bucket_index);
    // assert!(path == get_current_bucket_path())
-   debug!("Publishing snapshot at index {}, path: {}", snapshot.time_bucket_index , path_to_str(&path));
+   debug!("Publishing snapshot at index {}, path: {}", snapshot.time_bucket_index , path_to_str(&path.clone().typed(LinkKind::Snapshot)?));
    let path_eh = path.path_entry_hash()?;
-   let _ = create_link(path_eh, eh, HdkLinkType::Paths, PlaceLinkKind::Snapshot.as_tag())?;
+   let _ = create_link(path_eh, eh,LinkKind::Snapshot, LinkTag::from(()))?;
    /// Done
    Ok(hh)
 }

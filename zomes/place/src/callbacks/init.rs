@@ -1,8 +1,9 @@
 use hdk::hash_path::path::Component;
 use hdk::prelude::*;
 use zome_utils::now;
+#[allow(unused_imports)]
+use place_model::*;
 use crate::*;
-use crate::functions::*;
 
 /// Zome Callback
 #[hdk_extern]
@@ -28,7 +29,10 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
       /// Set Global Anchors
       let mut origin_path = Path::from(path_kind::Days);
       origin_path.append_component(day);
-      origin_path.ensure()?;
+      let origin_snapshot_path = origin_path.clone().typed(LinkKind::Snapshot)?;
+      origin_snapshot_path.ensure()?;
+      let origin_placements_path = origin_path.typed(LinkKind::Placements)?;
+      origin_placements_path.ensure()?;
    }
 
    //// Setup initial capabilities

@@ -1,6 +1,8 @@
 use hdk::prelude::*;
 use zome_utils::zome_panic_hook;
-use crate::entries::Snapshot;
+#[allow(unused_imports)]
+use place_model::*;
+
 use crate::functions::get_snapshot_at;
 use crate::publish_snapshot::*;
 

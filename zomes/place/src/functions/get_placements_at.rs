@@ -1,12 +1,13 @@
 use hdk::prelude::*;
-use crate::entries::Placement;
 use zome_utils::*;
-use crate::PlaceLinkKind;
-use crate::functions::get_properties::get_dna_properties;
+#[allow(unused_imports)]
+use place_model::*;
+
+use crate::link_kind::*;
 use crate::utils::*;
 
 use crate::functions::{get_placement_author, GetPlacementAuthorInput};
-use crate::holo_hash::AgentPubKeyB64;
+use holo_hash::AgentPubKeyB64;
 
 /// Zome Function
 /// Return all placements at given bucket
@@ -16,11 +17,12 @@ pub fn get_placements_at(time_bucket_index: u32) -> ExternResult<Vec<Placement>>
    debug!("*** get_placements_at() CALLED - {}", time_bucket_index);
    let time: u64 = time_bucket_index as u64 * get_dna_properties().bucket_size_sec as u64;
    let bucket_path = get_bucket_path(time);
-   debug!("*** get_placements_at() bucket_path: {}", path_to_str(&bucket_path));
+   debug!("*** get_placements_at() bucket_path: {}", path_to_str(&bucket_path.clone().typed(LinkKind::Placements)?));
    /// Get placements at given bucket path
    let mut pairs = get_typed_from_links::<Placement>(
       bucket_path.path_entry_hash()?,
-      PlaceLinkKind::Placements.as_tag_opt(),
+      LinkKind::Placements.try_into().unwrap(),
+      None,
    )?;
    /// Sort by Link timestamp
    pairs.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp));

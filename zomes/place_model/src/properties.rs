@@ -1,4 +1,4 @@
-use hdk::prelude::*;
+use holochain_deterministic_integrity::prelude::*;
 
 /// Dna properties
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, SerializedBytes)]

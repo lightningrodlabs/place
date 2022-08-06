@@ -1,7 +1,10 @@
 use hdk::prelude::*;
 use zome_utils::*;
+#[allow(unused_imports)]
+use place_model::*;
+
 use crate::functions::get_snapshot_at;
-use crate::holo_hash::AgentPubKeyB64;
+use holo_hash::AgentPubKeyB64;
 
 /// Zome Function
 /// Return authors of snapshot of given bucket, if any

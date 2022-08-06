@@ -1,9 +1,13 @@
 use hdk::prelude::*;
-use hdk::hash_path::path::Component;
+use hdk::hash_path::path::{TypedPath, Component};
 use zome_utils::*;
-use crate::{path_kind, functions::*};
+#[allow(unused_imports)]
+use place_model::*;
+
+use crate::path_kind;
 
 
+///
 pub fn get_start_bucket() -> u32 {
    let bucket_index = sec_to_bucket(get_dna_properties().start_time);
    let minus = bucket_index % get_dna_properties().snapshot_interval_in_buckets as u32;
@@ -12,6 +16,7 @@ pub fn get_start_bucket() -> u32 {
 }
 
 
+///
 pub fn sec_to_bucket(now: u64) -> u32 {
    let div = now / get_dna_properties().bucket_size_sec as u64;
    assert!(div < u32::MAX as u64);
@@ -25,9 +30,10 @@ pub fn get_current_bucket_path() -> Path {
 }
 
 
-pub fn path_to_str(path: &Path) -> String {
+///
+pub fn path_to_str(path: &TypedPath) -> String {
    let mut res = String::from("");
-   let mut maybe_path: Option<Path> = Some(path.to_owned());
+   let mut maybe_path: Option<TypedPath> = Some(path.to_owned());
    while maybe_path.is_some() {
       let path = maybe_path.unwrap().to_owned();
       let comp: &Component  = path.leaf().unwrap();
@@ -38,7 +44,8 @@ pub fn path_to_str(path: &Path) -> String {
    res
 }
 
-/** */
+
+///
 pub fn bucket_index_to_path(bucket_index: u32) -> Path {
    let sec: u64 = bucket_index as u64  * get_dna_properties().bucket_size_sec as u64;
    return get_bucket_path(sec);
@@ -76,7 +83,6 @@ pub fn get_bucket_path(now: u64) -> Path {
       day_path.append_component(bucket_path);
       day_path
    };
-   current_path.ensure().unwrap();
    current_path
 }
 
