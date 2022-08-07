@@ -15,6 +15,8 @@ pub struct Placement {
    pub pixel: u32, // a DestructuredPlacement stored as an u32
 }
 
+
+///
 impl Placement {
 
    pub fn from(pixel: u32) -> Self {
@@ -68,4 +70,3 @@ impl Placement {
       color
    }
 }
-

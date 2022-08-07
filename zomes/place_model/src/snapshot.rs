@@ -13,6 +13,8 @@ pub struct Snapshot {
    pub time_bucket_index: u32, // Number of 'bucket_size_sec' since EPOCH.
 }
 
+
+///
 impl Snapshot {
    ///
    pub fn new(image_data: Vec<DoublePixel>, time_bucket_index: u32) -> Self {

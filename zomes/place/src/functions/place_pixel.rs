@@ -2,8 +2,11 @@ use hdk::prelude::*;
 use zome_utils::*;
 #[allow(unused_imports)]
 use place_model::*;
+use crate::{
+   PlaceEntry, LinkKind,
+};
 
-use crate::{get_current_bucket_path, link_kind::*};
+use crate::get_current_bucket_path;
 use crate::functions::get_placements_count_at;
 use crate::utils::*;
 

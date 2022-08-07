@@ -1,16 +1,11 @@
-use hdk::prelude::*;
-#[allow(unused_imports)]
-use place_model::*;
+use holochain_deterministic_integrity::prelude::*;
 
-pub const LinkSeparator: &'static str = "___";
-
-/// List of all Link kinds handled by this Zome
-#[hdk_link_types]
-#[derive(Serialize, Deserialize)]
-pub enum LinkKind {
-   Placements,
-   Snapshot,
-}
+// /// List of all Link kinds handled by this Zome
+// #[hdk_link_types]
+// pub enum LinkKind {
+//    Placements,
+//    Snapshot,
+// }
 
 
 //

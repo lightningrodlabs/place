@@ -2,8 +2,11 @@ use hdk::prelude::*;
 #[allow(unused_imports)]
 use place_model::*;
 
-use crate::functions::*;
-use crate::{bucket_index_to_path, link_kind::*, path_to_str};
+use crate::{
+   LinkKind, PlaceEntry,
+   functions::*,
+   bucket_index_to_path, path_to_str,
+};
 
 
 /// Render next snapshot iteration and publish it to DHT

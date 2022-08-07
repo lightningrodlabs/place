@@ -3,8 +3,9 @@ use zome_utils::*;
 #[allow(unused_imports)]
 use place_model::*;
 
-use crate::link_kind::*;
-use crate::utils::*;
+use crate::{
+   utils::*, LinkKind,
+};
 
 use crate::functions::{get_placement_author, GetPlacementAuthorInput};
 use holo_hash::AgentPubKeyB64;

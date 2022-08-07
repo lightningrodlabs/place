@@ -1,21 +1,20 @@
 ---
 manifest_version: "1"
 name: place
+uid: ~
 integrity:
-  origin_time: 1654092432130000
-  uid: ~
-  properties: # startTime MUST stay on line 8 !
-    startTime: 1659750892
+  zomes:
+    - name: place_model
+      bundled: '../target/wasm32-unknown-unknown/release/place_model.wasm'
+  properties: # startTime MUST stay on line 10 !
+    startTime: 1659810537
     canvasSize: 30
     bucketSizeSec: 60
     pixelsPerBucket: 900
     snapshotIntervalInBuckets: 1
-  zomes:
-    - name: place_model
-      bundled: ../target/wasm32-unknown-unknown/release/place_model.wasm
 coordinator:
   zomes:
     - name: place
-      bundled: ../target/wasm32-unknown-unknown/release/zome_place.wasm
+      bundled: '../target/wasm32-unknown-unknown/release/zome_place.wasm'
       dependencies:
         - name: place_model
