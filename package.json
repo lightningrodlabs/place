@@ -45,6 +45,7 @@
     "hc-host:run": "hc sandbox r 0 -p=8888",
     "serve:self-hosted": "PLACE_APP_CONTEXT='self-hosted' vue-cli-service serve",
     "serve:holo": "PLACE_APP_CONTEXT='holo-host' PLACE_CHAPERONE_SERVER_URL='http://localhost:24274/' vue-cli-service serve",
+    "version": "hc --version && holochain --version && lair-keystore --version",
     "self-host": "nix-shell --command 'holo-dev-server -p 24274 workdir/place.happ'"
   },
   "devDependencies": {
