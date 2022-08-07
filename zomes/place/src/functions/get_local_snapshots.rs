@@ -4,8 +4,6 @@ use zome_utils::*;
 #[allow(unused_imports)]
 use place_model::*;
 
-use crate::UnitEntryTypes;
-
 
 /// Zome Function
 /// Return bucket index of all snapshots stored locally

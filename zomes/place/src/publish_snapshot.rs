@@ -3,7 +3,6 @@ use hdk::prelude::*;
 use place_model::*;
 
 use crate::{
-   LinkKind, PlaceEntry,
    functions::*,
    bucket_index_to_path, path_to_str,
 };

@@ -4,7 +4,7 @@ use zome_utils::*;
 use place_model::*;
 
 use crate::{
-   utils::*, LinkKind,
+   utils::*,
 };
 
 use crate::functions::{get_placement_author, GetPlacementAuthorInput};

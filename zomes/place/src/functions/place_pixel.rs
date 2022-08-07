@@ -2,7 +2,7 @@ use hdk::prelude::*;
 use zome_utils::*;
 #[allow(unused_imports)]
 use place_model::*;
-use crate::{
+use place_model::{
    PlaceEntry, LinkKind,
 };
 

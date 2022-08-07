@@ -4,7 +4,6 @@ use zome_utils::*;
 use place_model::*;
 
 use crate::{
-   LinkKind,
    utils::*,
 };
 
