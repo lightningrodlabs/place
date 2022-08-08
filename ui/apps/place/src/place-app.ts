@@ -1,15 +1,18 @@
-import {ContextProvider} from "@holochain-open-dev/context";
-import {serializeHash} from '@holochain-open-dev/core-types';
+import { LitElement, html } from "lit";
 import { state } from "lit/decorators.js";
+import { ScopedElementsMixin } from "@open-wc/scoped-elements";
+import {CellId} from "@holochain/client";
+import {HolochainClient} from "@holochain-open-dev/cell-client";
+import {ContextProvider} from "@holochain-open-dev/context";
+import {serializeHash} from '@holochain-open-dev/utils';
+
 import {
   PlaceController,
   PlaceStore,
   placeContext,
 } from "@place/elements";
-import {HolochainClient} from "@holochain-open-dev/cell-client";
-import { ScopedElementsMixin } from "@open-wc/scoped-elements";
-import { LitElement, html } from "lit";
-import {CellId} from "@holochain/client";
+import {AppWebsocket} from "@holochain/client/lib/api/app/websocket";
+
 
 let APP_ID = 'place'
 let HC_PORT:any = process.env.HC_PORT;
@@ -47,26 +50,23 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
       : APP_ID + '-' + NETWORK_ID;
     console.log({installed_app_id})
 
-    const hcClient = await HolochainClient.connect(wsUrl, installed_app_id);
-    console.log({hcClient})
+    const appWebsocket = await AppWebsocket.connect(wsUrl);
+    console.log({appWebsocket})
+    const hcClient = new HolochainClient(appWebsocket)
     /** Place */
-    let place_cell = hcClient.cellDataByRoleId("place");
-    if (!place_cell) {
-      alert("Place Cell not found in happ")
-    }
-    this._placeCellId = place_cell!.cell_id;
-    const placeClient = hcClient.forCell(place_cell!);
-    console.log({placeClient})
+    const appInfo = await hcClient.appWebsocket.appInfo({installed_app_id});
+    this._placeCellId  = appInfo.cell_data[0].cell_id;
+
 
     /** Send dnaHash to electron */
     if (IS_ELECTRON) {
       const ipc = window.require('electron').ipcRenderer;
-      const dnaHashB64 = serializeHash(placeClient.cellId[0])
+      const dnaHashB64 = serializeHash(this._placeCellId[0])
       let _reply = ipc.sendSync('dnaHash', dnaHashB64);
     }
 
 
-    this._placeStore = new PlaceStore(hcClient);
+    this._placeStore = new PlaceStore(hcClient, this._placeCellId);
     new ContextProvider(this, placeContext, this._placeStore);
 
     this.loaded = true;

@@ -34,8 +34,9 @@
     "typescript": "4.3.5"
   },
   "dependencies": {
-    "@holochain-open-dev/cell-client": "^0.3.2",
-    "@holochain/client": "^0.3.2",
+    "@holo-host/web-sdk": "0.6.6-prerelease",
+    "@holochain-open-dev/cell-client": "0.7.0",
+    "@holochain/client": "^0.6.0",
     "@holochain-open-dev/context": "^0.0.3",
     "@place/elements": "file:../../lib",
     "lit": "^2.1.1"

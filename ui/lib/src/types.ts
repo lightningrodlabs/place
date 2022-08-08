@@ -1,6 +1,6 @@
 // TODO: add globally available interfaces for your elements
 
-import {AgentPubKeyB64, HeaderHashB64, EntryHashB64, HoloHashB64} from "@holochain-open-dev/core-types";
+import {AgentPubKeyB64, EntryHashB64, HoloHashB64} from "@holochain-open-dev/core-types";
 import { createContext, Context } from "@holochain-open-dev/context";
 import { PlaceStore } from "./place.store";
 

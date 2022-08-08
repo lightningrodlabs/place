@@ -1,5 +1,6 @@
-import {BaseClient, CellClient} from '@holochain-open-dev/cell-client';
-import { serializeHash, EntryHashB64, HeaderHashB64, AgentPubKeyB64 } from '@holochain-open-dev/core-types';
+import {AgnosticClient} from '@holochain-open-dev/cell-client';
+import { EntryHashB64, ActionHashB64, AgentPubKeyB64 } from '@holochain-open-dev/core-types';
+import { serializeHash } from '@holochain-open-dev/utils';
 
 import {
   PlacementEntry,
@@ -8,28 +9,30 @@ import {
   Signal,
   Dictionary, DestructuredPlacement, PlaceProperties, PlaceAtInput, PlacementAuthorInput,
 } from './types';
+import {CellId, InstalledAppInfo} from "@holochain/client";
 
 export class PlaceService {
 
   /** Ctor */
-  constructor(public hcClient: BaseClient, protected roleId: string) {
-    let maybe_cell = hcClient.cellDataByRoleId(roleId);
-    if (!maybe_cell) {
-      throw new Error("Cell not found for role: " + roleId);
-    }
-    this.cellClient = hcClient.forCell(maybe_cell)
+  constructor(public agnosticClient: AgnosticClient, public cellId: CellId /*, protected roleId: string*/) {
+    // let maybe_cell = hcClient.cellDataByRoleId(roleId);
+    // if (!maybe_cell) {
+    //   throw new Error("Cell not found for role: " + roleId);
+    // }
+    //this.agnosticClient = client
   }
 
 
   /** Fields */
 
-  cellClient: CellClient
+  //agnosticClient: AgnosticClient
 
 
   /** Methods */
 
   get myAgentPubKey() : AgentPubKeyB64 {
-    return serializeHash(this.cellClient.cellId[1]);
+    return serializeHash(this.cellId[1]);
+    //return this.agentId
   }
 
 
@@ -39,7 +42,7 @@ export class PlaceService {
     return this.callPlaceZome('get_properties', null);
   }
 
-  async publishNextSnapshotAt(bucket_index: number): Promise<HeaderHashB64 | null> {
+  async publishNextSnapshotAt(bucket_index: number): Promise<ActionHashB64 | null> {
     return this.callPlaceZome('publish_next_snapshot_at', bucket_index);
   }
 
@@ -72,18 +75,18 @@ export class PlaceService {
   }
 
 
-  async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
+  async placePixel(destructured: DestructuredPlacement): Promise<ActionHashB64> {
     return this.callPlaceZome('place_pixel', destructured);
   }
 
 
   /** DEBUG */
 
-  async placePixelAt(input: PlaceAtInput): Promise<HeaderHashB64> {
+  async placePixelAt(input: PlaceAtInput): Promise<ActionHashB64> {
     return this.callPlaceZome('place_pixel_at', input);
   }
 
-  // async publishSnapshotAt(bucket_index: number): Promise<HeaderHashB64[]> {
+  // async publishSnapshotAt(bucket_index: number): Promise<ActionHashB64[]> {
   //   return this.callPlaceZome('publish_snapshot_at', bucket_index);
   // }
 
@@ -103,7 +106,7 @@ export class PlaceService {
     //console.log("callZome: " + fn_name + "() ", payload)
     //console.info({payload})
     try {
-      const result = this.cellClient.callZome("place", fn_name, payload);
+      const result = this.agnosticClient.callZome(this.cellId, "place", fn_name, payload, 10 * 1000);
       //console.log("callZome: " + fn_name + "() result")
       //console.info({result})
       return result;

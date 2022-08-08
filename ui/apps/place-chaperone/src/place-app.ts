@@ -1,18 +1,21 @@
-import {ContextProvider} from "@holochain-open-dev/context";
-import {AgentPubKeyB64, serializeHash} from '@holochain-open-dev/core-types';
+import { LitElement, html } from "lit";
 import { state } from "lit/decorators.js";
+import { ScopedElementsMixin } from "@open-wc/scoped-elements";
+
+//@ts-ignore
+import WebSdk from "@holo-host/web-sdk/src/index";
+
+
+import {ContextProvider} from "@holochain-open-dev/context";
+import {HoloClient} from "@holochain-open-dev/cell-client";
+import {CellId} from "@holochain/client";
+
 import {
   PlaceController,
   PlaceStore,
   placeContext,
 } from "@place/elements";
-import {HolochainClient} from "@holochain-open-dev/cell-client";
-import { ScopedElementsMixin } from "@open-wc/scoped-elements";
-import { LitElement, html } from "lit";
-import {CellId} from "@holochain/client";
 
-import { HoloClient, Branding } from "@holochain-open-dev/cell-client";
-import { RoleId } from "@holochain/client";
 
 let APP_ID = 'place'
 let HC_PORT:any = process.env.HC_PORT;
@@ -38,25 +41,38 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
   /** */
   async firstUpdated() {
 
-    const branding: Branding = {
-      app_name: "Place",
-    };
-    const client: HoloClient = await HoloClient.connect(
-      'http://localhost:24274', // Connect to holo-dev-server
-      //"https://devnet-chaperone.holo.host",
-      "place",
-      branding
-    );
+    const url = 'http://localhost:24274' // Connect to holo-dev-server
+    //const url = "https://devnet-chaperone.holo.host"
+
+    console.log("WebSdk connecting to " + url)
+
+    const client = await WebSdk.connect({
+      chaperoneUrl: url,
+      authFormCustomization: {
+        //logoUrl: "my-logo.png",
+        appName: "Place",
+        requireRegistrationCode: false
+      }
+    });
+    console.log({client})
+
+    // We just started up, so we're still connecting. Let's wait for isAvailable == true
+    const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms))
+    while (!client.agent.isAvailable) {
+      await sleep(50)
+      // In a real UI, we would register an event handler for `client.on('agent-state')`
+      // and store the agent state in a reactive UI state so that our components can just branch on isAvailable.
+    }
+
 
     /* Sign in at application startup */
     await client.signIn();
 
-    /* Here you can use the WebSdk API, like: */
-    //const connection = client.connection;
-    //connection.on('agent-state', state => console.log(state));
+    const appInfo = await client.appInfo();
+    const holoClient = new HoloClient(client, appInfo);
 
     /** -- */
-    this._placeStore = new PlaceStore(client);
+    this._placeStore = new PlaceStore(holoClient, appInfo.cell_data[0].cell_id);
     new ContextProvider(this, placeContext, this._placeStore);
 
     this.loaded = true;

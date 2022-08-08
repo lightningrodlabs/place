@@ -1,5 +1,5 @@
-import {EntryHashB64, HeaderHashB64, AgentPubKeyB64, serializeHash} from '@holochain-open-dev/core-types';
-import {BaseClient, CellClient} from '@holochain-open-dev/cell-client';
+import {EntryHashB64, ActionHashB64, AgentPubKeyB64} from '@holochain-open-dev/core-types';
+import {AgnosticClient, CellClient} from '@holochain-open-dev/cell-client';
 import { writable, Writable, derived, Readable, get } from 'svelte/store';
 import {PlaceService} from './place.service';
 import {
@@ -7,6 +7,7 @@ import {
   Dictionary, PlaceAtInput, PlacementEntry, PlaceProperties, snapshot_to_str,
   Signal, SnapshotEntry, PlacementDetails, destructurePlacement, PublishCallback,
 } from './types';
+import {CellId} from "@holochain/client";
 
 
 const areEqual = (first: Uint8Array, second: Uint8Array) =>
@@ -50,8 +51,8 @@ export class PlaceStore {
 
 
   /** Ctor */
-  constructor(protected hcClient: BaseClient) {
-    this.service = new PlaceService(hcClient, "place");
+  constructor(protected client: AgnosticClient, cellId: CellId) {
+    this.service = new PlaceService(client, cellId);
     //let cellClient = this.service.cellClient
     this.myAgentPubKey = this.service.myAgentPubKey;
 
@@ -251,7 +252,7 @@ export class PlaceStore {
   }
 
   /** */
-  async placePixel(destructured: DestructuredPlacement): Promise<HeaderHashB64> {
+  async placePixel(destructured: DestructuredPlacement): Promise<ActionHashB64> {
     return this.service.placePixel(destructured);
   }
 
@@ -265,7 +266,7 @@ export class PlaceStore {
 
 
   /** */
-  async publishNextSnapshotAt(bucket_index: number): Promise<HeaderHashB64 | null> {
+  async publishNextSnapshotAt(bucket_index: number): Promise<ActionHashB64 | null> {
     console.log("publishNextSnapshotAt() " + bucket_index)
     let res = await this.service.publishNextSnapshotAt(bucket_index);
     console.log("publishNextSnapshotAt() succeeded = " + res != null)
@@ -276,7 +277,7 @@ export class PlaceStore {
   /**  FIGURE OUT SNAPSHOT RENDER ORDER */
 
   /** */
-  async publishNextSnapshot(nowSecInput?:number): Promise<HeaderHashB64 | null> {
+  async publishNextSnapshot(nowSecInput?:number): Promise<ActionHashB64 | null> {
     console.log("publishNextSnapshot() called")
     const nowSec = nowSecInput? nowSecInput : Date.now() / 1000;
     let nowIndex = this.epochToBucketIndex(nowSec)
@@ -342,7 +343,7 @@ export class PlaceStore {
 
   /** DEBUGGING */
 
-  async placePixelAt(input: PlaceAtInput): Promise<HeaderHashB64> {
+  async placePixelAt(input: PlaceAtInput): Promise<ActionHashB64> {
     return this.service.placePixelAt(input);
   }
 
