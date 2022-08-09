@@ -11,7 +11,7 @@ import {
   PlaceStore,
   placeContext,
 } from "@place/elements";
-import {AppWebsocket} from "@holochain/client/lib/api/app/websocket";
+import {AppWebsocket} from "@holochain/client";
 
 
 let APP_ID = 'place'
