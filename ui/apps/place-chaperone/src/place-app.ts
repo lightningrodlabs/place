@@ -27,6 +27,7 @@ let NETWORK_ID: any = null
 //const HC_PORT = 8889
 console.log("HC_PORT = " + HC_PORT + " || " + process.env.HC_PORT);
 
+console.log('PLACE_CHAPERONE_SERVER_URL : ', process.env.PLACE_CHAPERONE_SERVER_URL)
 
 /** */
 export class PlaceApp extends ScopedElementsMixin(LitElement) {
@@ -41,8 +42,11 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
   /** */
   async firstUpdated() {
 
-    const url = 'http://localhost:24274' // Connect to holo-dev-server
     //const url = "https://devnet-chaperone.holo.host"
+    let url = 'http://localhost:24274' // Connect to holo-dev-server
+    if (process.env.PLACE_CHAPERONE_SERVER_URL) {
+      url = process.env.PLACE_CHAPERONE_SERVER_URL
+    }
 
     console.log("WebSdk connecting to " + url)
 

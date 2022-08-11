@@ -12,6 +12,7 @@
     "network": "npm run build:happ && concurrently-repeat \"npm run start:agent\"",
     "network-proxied": "npm run build:happ && concurrently-repeat \"npm run start:agent-proxied\"",
     "network-playground": "npm run build:happ && concurrently-repeat \"npm run start:agent:playground\"",
+    "start:holo-mainnet": "PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run start:chaperone",
     "start:chaperone": "cross-env HC_PORT=33735 concurrently \"npm run dev:libs\" \"npm run start:happ\" \"sleep 5 && npm run start -w place-ui-chaperone\"",
     "start:agent": "cross-env HC_PORT=33735 concurrently \"npm run dev:libs\" \"npm run start:happ\" \"sleep 5 && npm run start -w place-ui\"",
     "start:agent-proxied": "cross-env HC_PORT=$(port) concurrently \"npm run dev:libs\" \"npm run start:happ-proxied\" \"sleep 5 && npm run start -w place-ui\"",

@@ -12,6 +12,7 @@ import { terser } from "rollup-plugin-terser";
 
 
 const HC_PORT = process.env.HC_PORT || 8888;
+const PLACE_CHAPERONE_SERVER_URL = process.env.PLACE_CHAPERONE_SERVER_URL || 'http://localhost:24274';
 const DIST_FOLDER = "dist"
 
 export default {
@@ -44,6 +45,7 @@ export default {
       "process.env.NODE_ENV": '"production"',
       "process.env.ENV": `"${process.env.ENV}"`,
       "process.env.HC_PORT": `"${HC_PORT}"`,
+      "process.env.PLACE_CHAPERONE_SERVER_URL": `"${PLACE_CHAPERONE_SERVER_URL}"`,
       preventAssignment: true
     }),
     builtins(),
