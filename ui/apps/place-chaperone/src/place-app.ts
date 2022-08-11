@@ -55,12 +55,12 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
       }
     });
     console.log({client})
-    // client.on('agent-state', (agent: any) => {
-    //   console.log("HoloClient agent-state >> " + agent)
-    // })
-    // client.on('signal', (signal: any) => {
-    //   console.log("HoloClient Signal >> " + signal)
-    // })
+    client.on('agent-state', (agent: any) => {
+      console.log("HoloClient agent-state >> ", agent)
+    })
+    client.on('signal', (signal: any) => {
+      console.log("HoloClient Signal >> ", signal)
+    })
 
     // We just started up, so we're still connecting. Let's wait for isAvailable == true
     const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms))
@@ -69,11 +69,12 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
       // In a real UI, we would register an event handler for `client.on('agent-state')`
       // and store the agent state in a reactive UI state so that our components can just branch on isAvailable.
     }
-    console.log("Agent available!")
+    console.log("Agent available! Anonymous:", client.agent.isAnonymous)
 
     /* Sign in at application startup */
-    await client.signIn();
-
+    if (client.agent.isAnonymous) {
+      await client.signIn();
+    }
     console.log("client signedIn!")
 
     const appInfo = await client.appInfo();
