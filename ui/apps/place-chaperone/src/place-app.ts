@@ -55,6 +55,12 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
       }
     });
     console.log({client})
+    // client.on('agent-state', (agent: any) => {
+    //   console.log("HoloClient agent-state >> " + agent)
+    // })
+    // client.on('signal', (signal: any) => {
+    //   console.log("HoloClient Signal >> " + signal)
+    // })
 
     // We just started up, so we're still connecting. Let's wait for isAvailable == true
     const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms))
@@ -63,10 +69,12 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
       // In a real UI, we would register an event handler for `client.on('agent-state')`
       // and store the agent state in a reactive UI state so that our components can just branch on isAvailable.
     }
-
+    console.log("Agent available!")
 
     /* Sign in at application startup */
     await client.signIn();
+
+    console.log("client signedIn!")
 
     const appInfo = await client.appInfo();
     const holoClient = new HoloClient(client, appInfo);
@@ -79,6 +87,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
   }
 
 
+  /** */
   render() {
     console.log("place-app render() called!")
     if (!this.loaded) {
@@ -90,6 +99,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
   }
 
 
+  /** */
   static get scopedElements() {
     return {
       "place-controller": PlaceController,

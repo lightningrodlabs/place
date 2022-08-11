@@ -77,8 +77,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Getters */
 
-  get playfieldElem(): HTMLCanvasElement {
-    return this.shadowRoot!.getElementById("playfield") as HTMLCanvasElement;
+  get playfieldElem(): HTMLCanvasElement | null {
+    const maybePlayfield = this.shadowRoot!.getElementById("playfield");
+    if (!maybePlayfield) {
+      return null;
+    }
+    return maybePlayfield as HTMLCanvasElement;
   }
 
   get datePickerElem(): any {
@@ -103,6 +107,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     if (this._mustInitPixi) {
       const properties = await this._store.getProperties()
+      console.log({properties})
       this.initPixiApp(this.playfieldElem, properties.canvasSize)
       this._mustInitPixi = false;
     }
@@ -182,7 +187,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
 
   /** */
-  initPixiApp(canvas: HTMLCanvasElement, worldSize: number) {
+  initPixiApp(canvas: HTMLCanvasElement | null, worldSize: number) {
+    if (!canvas) return;
     console.log("Pixi canvas '" + canvas.id + "': " + canvas.offsetWidth + "x" + canvas.offsetHeight)
     /** Setup PIXI app */
     this._pixiApp = new PIXI.Application({
@@ -268,7 +274,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
       let custom = new PIXI.Point(event.data.global.x, event.data.global.y)
       //custom.x -= this.playfieldElem.offsetLeft
-      custom.y -= this.playfieldElem.offsetTop
+      custom.y -= this.playfieldElem!.offsetTop
       let customPos;
       customPos = event.data.getLocalPosition(this._frameSprite, customPos, custom)
       logText.text = ""
@@ -784,7 +790,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const localBirthDate = startDate.toLocaleString()
     //console.log({nowDate})
     const timeDiff = nowSec - maybeProperties!.startTime
-    const stored = Object.values(this._store.snapshotStore);
+    //const stored = Object.values(this._store.snapshotStore);
     //console.log({stored})
 
     /** Build Time UI */

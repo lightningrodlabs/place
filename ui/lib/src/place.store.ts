@@ -91,7 +91,7 @@ export class PlaceStore {
 
   /** */
   async getLatestSnapshot(): Promise<SnapshotEntry> {
-    //console.log("getLatestSnapshot(): called")
+    console.log("getLatestSnapshot(): called")
     const startIndex = this.epochToBucketIndex((await this.getProperties()).startTime)
     let nowIndex = this.epochToBucketIndex(Date.now() / 1000);
     let maybeNow = await this.getSnapshotAt(nowIndex);
@@ -104,7 +104,7 @@ export class PlaceStore {
       let res = await this.PublishStartingSnapshot();
       return res;
     }
-    //console.log("getLatestSnapshot(): result = " + maybeSnapshot.timeBucketIndex)
+    console.log("getLatestSnapshot(): result = " + maybeSnapshot.timeBucketIndex)
     return maybeSnapshot;
   }
 
@@ -158,7 +158,7 @@ export class PlaceStore {
    * Get latest entries of each type for current time bucket and update local store accordingly
    */
   async pullLatestSnapshotFromDht() {
-    //console.log("pullLatestSnapshotFromDht() - START")
+    console.log("pullLatestSnapshotFromDht() - START")
     //try {
       const latestSnapshot = await this.getLatestSnapshot();
 
@@ -234,6 +234,7 @@ export class PlaceStore {
   async getProperties(): Promise<PlaceProperties> {
     if (!this._dnaProperties) {
       this._dnaProperties = await this.service.getProperties();
+      console.log({dnaProperties: this._dnaProperties})
     }
     return this._dnaProperties;
   }

@@ -103,8 +103,8 @@ export class PlaceService {
 
   /** */
   private callPlaceZome(fn_name: string, payload: any): Promise<any> {
-    //console.log("callZome: " + fn_name + "() ", payload)
-    //console.info({payload})
+    console.log("callPlaceZome: " + fn_name + "() ", payload)
+    console.info({payload})
     try {
       const result = this.agnosticClient.callZome(this.cellId, "place", fn_name, payload, 10 * 1000);
       //console.log("callZome: " + fn_name + "() result")
