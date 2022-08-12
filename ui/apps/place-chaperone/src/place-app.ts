@@ -61,6 +61,10 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
     console.log({client})
     client.on('agent-state', (agent: any) => {
       console.log("HoloClient agent-state >> ", agent)
+      // if (agent.isAvailable && ! agent.isAnonymous) {
+      //   this.loaded = true; // = isLoggedIn
+      //   this.requestUpdate()
+      // }
     })
     client.on('signal', (signal: any) => {
       console.log("HoloClient Signal >> ", signal)
@@ -68,7 +72,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
 
     // We just started up, so we're still connecting. Let's wait for isAvailable == true
     const sleep = (ms: any) => new Promise(resolve => setTimeout(resolve, ms))
-    while (!client.agent.isAvailable) {
+    while (!client.agent.isAvailable) { // isAvailable = i have an agent connected to a holoport (a read-only agent if anonymous)
       await sleep(50)
       // In a real UI, we would register an event handler for `client.on('agent-state')`
       // and store the agent state in a reactive UI state so that our components can just branch on isAvailable.
@@ -77,7 +81,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
 
     /* Sign in at application startup */
     if (client.agent.isAnonymous) {
-      await client.signIn();
+      await client.signIn(); // not blocking
     }
     console.log("client signedIn!")
 
@@ -87,6 +91,10 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
     /** -- */
     this._placeStore = new PlaceStore(holoClient, appInfo.cell_data[0].cell_id);
     new ContextProvider(this, placeContext, this._placeStore);
+
+    while (client.agent.isAnonymous) {
+      await sleep(50)
+    }
 
     this.loaded = true;
   }
