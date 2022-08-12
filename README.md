@@ -31,9 +31,18 @@ Holochain experimental app to mimic reddit-place (pixel wars)
 ### Electron
 `npm run electron`
 
+## Releasing (manual)
+
+### For Holo host
+After building the dna and chaperone app, the `*.happ` and `ui-chaperone.zip` files will be available in the `/workdir` folder.
+
+### For Launcher
+
+`npm run build:webapp`
+the `*.webhapp` file will be available in the `/workdir` folder.
+
+
 # DNA
-
-
 ### Properties
 
 ```
