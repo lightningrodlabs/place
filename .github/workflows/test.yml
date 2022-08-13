@@ -68,11 +68,22 @@ jobs:
 #        run: |
 #          npm run dist-linux
 #          gh release upload "manual-release" "electron/out/place-$PLACE_VERSION.tar.gz" --clobber
-      # upload installers and binaries
-      - name: list builds
+      # Check electron output folder
+      - name: Check electron output folder
         continue-on-error: true
         run: ls -R
         working-directory: electron/out
+      # Build chaperone app
+      - name: Build chaperone app (ubuntu only)
+        continue-on-error: true
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          npm run build:chaperone
+      # Check workdir folder
+      - name: Check workdir folder
+        continue-on-error: true
+        run: ls -R
+        working-directory: workdir
 #      #
 #      - name: list releases
 #        continue-on-error: true
@@ -87,8 +98,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "manual-release" "electron/out/Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "manual-release"  "workdir/place.happ" --clobber
-          gh release upload "manual-release"  "workdir/place.webhapp" --clobber
+          gh release upload "manual-release" "workdir/place.happ" --clobber
+          gh release upload "manual-release" "workdir/place.webhapp" --clobber
+          gh release upload "manual-release" "workdir/ui-chaperone.zip" --clobber
       - name: upload binary (macos only)
         if: ${{ runner.os == 'macOs' }}
         env:
