@@ -13,5 +13,9 @@ dist/
 dna/workdir/dna*/*.dna
 dna/workdir/happ*/*.happ
 workdir/*.webhapp
+workdir/*.dna
+workdir/*.happ
+workdir/*.zip
 *.tsbuildinfo
 .running
+hash_zome*
