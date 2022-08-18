@@ -81,7 +81,7 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
 
     /* Sign in at application startup */
     if (client.agent.isAnonymous) {
-      await client.signIn(); // not blocking
+      await client.signIn({ cancellable: false }); // not blocking
     }
     console.log("client signedIn!")
 
