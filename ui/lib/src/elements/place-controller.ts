@@ -74,6 +74,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   _requestingSnapshotIndex: number | null = null; // 0 = Live, otherwise the actual snapshot index
 
+  _pixelsPlaced: number = 0;
 
   /** Getters */
 
@@ -295,6 +296,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         this._cursor.y = Math.floor(customPos.y) * IMAGE_SCALE
 
         try {
+          this._pixelsPlaced += 1
           await this._store.placePixel(placement)
           const tiny = new tinycolor(this._selectedColor)
           const colorNum = parseInt(tiny.toHex(), 16);
@@ -303,9 +305,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           this._frameSprite.texture = updatedTexture
           this._cursor.visible = true;
         } catch(e) {
+          this._pixelsPlaced -= 1
           console.error("Failed to place pixel: ", e)
           this.disableCursor()
-          alert("Pixel already placed for this time unit")
+          alert("Max pixels already placed for this time unit")
         }
       }
       if (this._selectedColor && this._state == PlaceState.Retrospection) {
@@ -803,6 +806,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     } else {
       //sinceLastPublish = Math.round((sinceLastPublish / 1000) % 60)
       const nextIn = (nowIndex + 1) * maybeProperties!.bucketSizeSec - nowSec
+      if (nextIn === maybeProperties!.bucketSizeSec) {
+        this._pixelsPlaced = 0
+      }
       timeUi = html`
         <div class="center">Next in</div>
         <div class="center">${nextIn} secs</div>
@@ -904,6 +910,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             }}>Fit</button>
             <hr>
             ${timeUi}
+            <hr>
+            <div class="center">Pixels:</div>
+            <div class="center">${maybeProperties!.pixelsPerBucket - this._pixelsPlaced}</div>
             <hr>
             <div class="center">View</div>
               <!--<div>Latest stored: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>-->
