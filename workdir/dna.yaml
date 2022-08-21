@@ -7,9 +7,9 @@ integrity:
     - name: place_model
       bundled: '../target/wasm32-unknown-unknown/release/place_model.wasm'
   properties: # startTime MUST stay on line 10 !
-    startTime: 1660922777
+    startTime: 1661093774
     canvasSize: 200
-    bucketSizeSec: 60
+    bucketSizeSec: 120
     pixelsPerBucket: 20
     snapshotIntervalInBuckets: 5
 coordinator:

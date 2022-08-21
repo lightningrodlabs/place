@@ -400,7 +400,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       }
       this.requestUpdate()
       this._canAutoRefresh = true;
-    }, 1 * 1000);
+    }, 15 * 1000);
 
     /** Transition to Live */
     this._requestingSnapshotIndex = 0
