@@ -155,6 +155,45 @@ export class PlaceStore {
 
 
   /**
+   * Get latest snapshot and placements, publish next snapshot,
+   * then publish same snapshot until 'now'
+   */
+  async publishSameUpTo(nowIndex: number, cb: PublishCallback, cbData?: any) {
+    console.log("publishSameUpTo() called")
+    try {
+      const interval = this._dnaProperties!.snapshotIntervalInBuckets;
+      const nowSnapshotIndex =  nowIndex - (nowIndex % interval);
+      const latestSnapshot = await this.getLatestSnapshot();
+      console.log(`publishSameUpTo()\n - latest: ${latestSnapshot.timeBucketIndex}\n - now: ${nowSnapshotIndex}`)
+      /** Publish next snapshot */
+      const res = await this.service.publishNextSnapshotAt(latestSnapshot.timeBucketIndex)
+      if (res == null) {
+        console.error("Failed to publish snapshot " + latestSnapshot.timeBucketIndex + interval)
+        return;
+      }
+      /** Get snapshot and authors */
+      const newSnapshot = await this.service.getSnapshotAt(latestSnapshot.timeBucketIndex + interval)
+      if (newSnapshot == null) {
+        console.error("Failed to get snapshot at " + latestSnapshot.timeBucketIndex + interval)
+        return;
+      }
+      const authors = await this.service.getPublishersAt(latestSnapshot.timeBucketIndex + interval)
+      console.log("Attempting to store " + snapshot_to_str(newSnapshot!))
+      /** Store it */
+      await this.storeSnapshot(newSnapshot!, authors)
+      /** Publish same snapshot since latest until 'now' */
+      const vec = await this.publishSameSnapshotUpto(latestSnapshot.timeBucketIndex, nowSnapshotIndex)
+      cb(newSnapshot!, cbData)
+      console.log("publishSameUpTo() added to store: " + vec.length)
+      console.log("publishSameUpTo()    store count: " + Object.values(this.snapshotStore).length)
+    } catch (e) {
+      console.error("publishSameUpTo() failed:")
+      console.error({e})
+    }
+  }
+
+
+  /**
    * Get latest entries of each type for current time bucket and update local store accordingly
    */
   async pullLatestSnapshotFromDht() {
@@ -274,6 +313,17 @@ export class PlaceStore {
     await this.pullLatestSnapshotFromDht();
     return res;
   }
+
+
+  /** */
+  async publishSameSnapshotUpto(latestKnownBucket: number, nowBucket: number): Promise<ActionHashB64[]> {
+    console.log("publishSameSnapshotUpto() " + latestKnownBucket + " .. " + nowBucket);
+    let res = await this.service.publishSameSnapshotUpto(latestKnownBucket, nowBucket);
+    console.log("publishSameSnapshotUpto() succeeded = " + res != null)
+    await this.pullLatestSnapshotFromDht();
+    return res;
+  }
+
 
   /**  FIGURE OUT SNAPSHOT RENDER ORDER */
 

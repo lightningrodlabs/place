@@ -416,7 +416,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     const nowIndex2 = nowIndex? nowIndex: this._store.epochToBucketIndex(Date.now() / 1000)
     let nowSnapshot = await this._store.getSnapshotAt(nowIndex2);
     if (!nowSnapshot) {
-      await this._store.publishUpTo(nowIndex2, this.onPublish, this);
+      //await this._store.publishUpTo(nowIndex2, this.onPublish, this);
+      await this._store.publishSameUpTo(nowIndex2, this.onPublish, this);
     }
   }
 

@@ -42,6 +42,10 @@ export class PlaceService {
     return this.callPlaceZome('get_properties', null);
   }
 
+  async publishSameSnapshotUpto(latestKnownBucket: number, nowBucket: number): Promise<ActionHashB64[]> {
+    return this.callPlaceZome('publish_same_snapshot_upto', {latestKnownBucket, nowBucket});
+  }
+
   async publishNextSnapshotAt(bucket_index: number): Promise<ActionHashB64 | null> {
     return this.callPlaceZome('publish_next_snapshot_at', bucket_index);
   }
