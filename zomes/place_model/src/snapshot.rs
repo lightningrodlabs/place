@@ -29,7 +29,9 @@ impl Snapshot {
    pub fn create_first(starting_placements: Vec<Placement>) -> Self {
       let properties = get_dna_properties();
       /// Create starting canvas with colorIndex = 0
-      let mut image_data = vec![DoublePixel::new(0,0); (properties.canvas_size * properties.canvas_size / 2) as usize];
+      let canvas_size = u32::from(properties.canvas_size);
+      let length: u32 = canvas_size * canvas_size / 2;
+      let mut image_data = vec![DoublePixel::new(0,0); length as usize];
       /// Update canvas with starting placements
       apply_pixels_to_canvas(&mut image_data, starting_placements);
       let time_bucket_index =(properties.start_time / properties.bucket_size_sec as u64) as u32;
