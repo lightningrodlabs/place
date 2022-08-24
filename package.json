@@ -28,6 +28,7 @@
     "build": "bash scripts/build.sh",
     "build:ui": "npm run build -w @place/elements && npm run package -w place-ui",
     "build:chaperone": "npm run build -w @place/elements && npm run package -w place-ui-chaperone",
+    "build:chaperone-mainnet": "npm run build -w @place/elements && PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run package -w place-ui-chaperone",
     "build:webapp": "hc web-app pack workdir",
     "build:happ": "npm run build:dna && hc app pack workdir",
     "build:dna": "npm run build:zome && bash scripts/pack-dna.sh",

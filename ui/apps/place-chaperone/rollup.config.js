@@ -15,6 +15,8 @@ const HC_PORT = process.env.HC_PORT || 8888;
 const PLACE_CHAPERONE_SERVER_URL = process.env.PLACE_CHAPERONE_SERVER_URL || 'http://localhost:24274';
 const DIST_FOLDER = "dist"
 
+console.log("######## process.env.PLACE_CHAPERONE_SERVER_URL: " + process.env.PLACE_CHAPERONE_SERVER_URL + "\n\n")
+
 export default {
   input: "index.html",
   output: {
