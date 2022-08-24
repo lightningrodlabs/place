@@ -39,7 +39,7 @@ pub fn publish_next_snapshot(snapshot: &mut Snapshot) -> ExternResult<ActionHash
 
 pub fn publish_snapshot(snapshot: &Snapshot) -> ExternResult<ActionHash> {
    /// Commit new rendering
-   let hh = create_entry(PlaceEntry::Snapshot(snapshot.to_owned()))?;
+   let ah = create_entry(PlaceEntry::Snapshot(snapshot.to_owned()))?;
    let eh = hash_entry(snapshot)?;
    /// Link to current bucket
    let path = bucket_index_to_path(snapshot.time_bucket_index);
@@ -48,5 +48,5 @@ pub fn publish_snapshot(snapshot: &Snapshot) -> ExternResult<ActionHash> {
    let path_eh = path.path_entry_hash()?;
    let _ = create_link(path_eh, eh,LinkKind::Snapshot, LinkTag::from(()))?;
    /// Done
-   Ok(hh)
+   Ok(ah)
 }
