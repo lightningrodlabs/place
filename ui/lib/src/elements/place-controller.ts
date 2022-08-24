@@ -75,6 +75,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   _requestingSnapshotIndex: number | null = null; // 0 = Live, otherwise the actual snapshot index
 
   _pixelsPlaced: number = 0;
+  _loopCount: number = 0;
 
   /** Getters */
 
@@ -384,13 +385,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       this.viewSnapshot(maybeLatestStored, properties.canvasSize);
     }
 
-    /** Start refresh loop  and try to publish snapshot every second */
+    /** Start refresh loop and try to publish snapshot every x seconds */
     setInterval(async () => {
+      this._loopCount += 1
       if (!this._canAutoRefresh) {
         return;
       }
       this._canAutoRefresh = false;
-      if (!this.debugMode && this._state != PlaceState.Publishing) {
+      if (this._loopCount % 15 == 0 && !this.debugMode && this._state != PlaceState.Publishing) {
         console.log("Try publishing snapshot...")
         try {
           await this.publishNowSnapshot(Date.now() / 1000);
@@ -400,7 +402,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       }
       this.requestUpdate()
       this._canAutoRefresh = true;
-    }, 15 * 1000);
+    }, 1 * 1000);
 
     /** Transition to Live */
     this._requestingSnapshotIndex = 0
