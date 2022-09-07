@@ -1,10 +1,11 @@
 // TODO: add globally available interfaces for your elements
 
 import {AgentPubKeyB64, EntryHashB64, HoloHashB64} from "@holochain-open-dev/core-types";
-import { createContext, Context } from "@holochain-open-dev/context";
+//import { createContext, Context } from "@holochain-open-dev/context";
+import { createContext } from '@lit-labs/context';
 import { PlaceStore } from "./place.store";
 
-export const placeContext : Context<PlaceStore> = createContext('place/service');
+export const placeContext = createContext<PlaceStore>('place/service');
 
 export type Dictionary<T> = { [key: string]: T };
 

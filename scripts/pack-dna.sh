@@ -3,8 +3,10 @@
 NOW=`date +%s`
 
 LINE=`echo startTime: $NOW`
-echo \* Extract start_time from workdir/dna.yaml
 echo $LINE
+echo \* Update start_time im workdir/dna.yaml
 sed -i "10s/.*/    ${LINE}/" workdir/dna.yaml
+echo \* Update start_time im we-applet/workdir/dna.yaml
+sed -i "10s/.*/    ${LINE}/" we-applet/workdir/dna.yaml
 
 hc dna pack workdir

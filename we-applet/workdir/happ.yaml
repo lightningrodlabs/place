@@ -1,0 +1,14 @@
+---
+manifest_version: "1"
+name: place_applet
+description: ""
+roles:
+  - id: place
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "place-test.dna"
+      uid: ~
+      properties: ~
+      clone_limit: 0

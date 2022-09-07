@@ -4,6 +4,7 @@
   "workspaces": [
     "ui/apps/*",
     "ui/lib",
+    "we-applet",
     "electron",
     "tests"
   ],

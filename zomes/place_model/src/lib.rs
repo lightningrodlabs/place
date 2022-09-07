@@ -4,7 +4,7 @@
 #![allow(non_snake_case)]
 #![allow(unused_attributes)]
 
-use holochain_deterministic_integrity::prelude::*;
+use hdi::prelude::*;
 
 mod placement;
 mod snapshot;

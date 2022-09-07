@@ -7,4 +7,5 @@ export * from './elements/place-controller';
 export * from './place.service';
 export * from './place.store';
 export * from './types';
+export * from './sharedStyles';
 

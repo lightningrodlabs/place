@@ -8,7 +8,8 @@ import {Viewport} from 'pixi-viewport'
 import tinycolor from "tinycolor2";
 import 'lit-flatpickr';
 
-import {contextProvided} from "@holochain-open-dev/context";
+//import {contextProvided} from "@holochain-open-dev/context";
+import { contextProvided } from '@lit-labs/context';
 
 import {sharedStyles} from "../sharedStyles";
 import {destructurePlacement, placeContext, PlacementEntry, PlaceState, snapshot_to_str, SnapshotEntry} from "../types";

@@ -3,7 +3,7 @@ import { state } from "lit/decorators.js";
 import { ScopedElementsMixin } from "@open-wc/scoped-elements";
 import {CellId} from "@holochain/client";
 import {HolochainClient} from "@holochain-open-dev/cell-client";
-import {ContextProvider} from "@holochain-open-dev/context";
+import {ContextProvider} from "@lit-labs/context";
 import {serializeHash} from '@holochain-open-dev/utils';
 
 import {

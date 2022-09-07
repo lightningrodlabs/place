@@ -8,6 +8,6 @@ name = "place_model"
 crate-type = [ "cdylib", "rlib" ]
 
 [dependencies]
-chrono = "=0.4.6"
+#chrono = "=0.4.6"
 serde = { version = "1.0", default-features = false }
-holochain_deterministic_integrity = { version = "0.0.10", default-features = false }
+hdi = { version = "0.0.19", default-features = false }

@@ -6,7 +6,7 @@ import { ScopedElementsMixin } from "@open-wc/scoped-elements";
 import WebSdk from "@holo-host/web-sdk/src/index";
 
 
-import {ContextProvider} from "@holochain-open-dev/context";
+import {ContextProvider} from "@lit-labs/context";
 import {HoloClient} from "@holochain-open-dev/cell-client";
 import {CellId} from "@holochain/client";
 

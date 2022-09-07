@@ -5,7 +5,7 @@ use super::*;
 #[hdk_extern]
 fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
   match op {
-    Op::StoreEntry { entry, .. } => __validate_create_entry(entry),
+    Op::StoreEntry(store_entry) => __validate_create_entry(store_entry.entry),
     _ => Ok(ValidateCallbackResult::Valid),
   }
 }

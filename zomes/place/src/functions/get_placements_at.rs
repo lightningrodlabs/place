@@ -20,9 +20,9 @@ pub fn get_placements_at(time_bucket_index: u32) -> ExternResult<Vec<Placement>>
    let bucket_path = get_bucket_path(time);
    debug!("*** get_placements_at() bucket_path: {}", path_to_str(&bucket_path.clone().typed(LinkKind::Placements)?));
    /// Get placements at given bucket path
-   let mut pairs = get_typed_from_links::<Placement>(
+   let mut pairs: Vec<(Placement, Link)> = get_typed_from_links(
       bucket_path.path_entry_hash()?,
-      LinkKind::Placements.try_into().unwrap(),
+      LinkKind::Placements,
       None,
    )?;
    /// Sort by Link timestamp

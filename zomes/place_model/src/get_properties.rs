@@ -1,4 +1,4 @@
-use holochain_deterministic_integrity::prelude::*;
+use hdi::prelude::*;
 use crate::properties::PlaceProperties;
 
 /// Return the DNA properties

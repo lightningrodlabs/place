@@ -9,11 +9,10 @@ crate-type = [ "cdylib", "rlib" ]
 
 [dependencies]
 serde = { version = "1.0", default-features = false }
-chrono = "=0.4.6"
+#chrono = "=0.4.6"
 
-hdk = { version = "0.0.138", default-features = false }
-holo_hash = { version = "0.0.29", default-features = false }
+hdk = { version = "0.0.147", default-features = false }
 
-zome_utils = { git = "https://github.com/ddd-mtl/zome-utils", branch = "138" }
+zome_utils = { git = "https://github.com/ddd-mtl/zome-utils", branch = "147" }
 
 place_model = { path = "../place_model" }

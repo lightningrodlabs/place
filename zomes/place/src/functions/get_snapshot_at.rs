@@ -25,9 +25,9 @@ pub fn get_snapshot_at(bucket_index: u32) -> ExternResult<Option<Snapshot>> {
    let bucket_path =
      get_bucket_path((corrected_bucket_index * dna_properties.bucket_size_sec) as u64);
    debug!("get_snapshot_at() at path: {}", path_to_str(&bucket_path.clone().typed(LinkKind::Snapshot)?));
-   let pairs = get_typed_from_links::<Snapshot>(
+   let pairs: Vec<(Snapshot, Link)> = get_typed_from_links(
       bucket_path.path_entry_hash()?,
-      LinkKind::Snapshot.try_into().unwrap(),
+      LinkKind::Snapshot,
       None,
    )?;
    if pairs.is_empty() {

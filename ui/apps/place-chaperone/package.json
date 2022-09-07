@@ -37,7 +37,7 @@
     "@holo-host/web-sdk": "0.6.7-prerelease",
     "@holochain-open-dev/cell-client": "^0.7.2",
     "@holochain/client": "^0.7.0",
-    "@holochain-open-dev/context": "^0.0.3",
+    "@lit-labs/context": "^0.1.2",
     "@place/elements": "file:../../lib",
     "lit": "^2.1.1"
   }
