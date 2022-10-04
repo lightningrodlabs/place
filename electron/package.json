@@ -8,13 +8,12 @@
   },
   "main": "dist/index.js",
   "scripts": {
-    "start": "tsc && electron .",
-    "build": "tsc && npm run dist",
-    "tsc": "tsc",
-    "dist": "cp ../workdir/place.happ ./binaries && electron-builder build",
-    "dist-tar": "cp ../workdir/place.happ ./binaries && electron-builder --linux tar.gz",
-    "dist-linux": "cp ../workdir/place.happ ./binaries && electron-builder --linux AppImage",
     "lint": "eslint --ext .ts .",
+    "build": "tsc",
+    "start": "tsc && electron .",
+    "dist": "cp ../dna/workdir/place.happ ./bin && electron-builder build",
+    "dist-tar": "cp ../dna/workdir/place.happ ./bin && electron-builder --linux tar.gz",
+    "dist-linux": "cp ../dna/workdir/place.happ ./bin && electron-builder --linux AppImage",
     "clean": "rm -rf node_modules && rm -rf package-lock.json"
   },
   "keywords": [
@@ -32,7 +31,7 @@
     "files": [
       "dist/**/*",
       "web/**/*",
-      "binaries/**/*",
+      "bin/**/*",
       "node_modules/**/*",
       "package.json"
     ],
@@ -55,7 +54,7 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
-    "electron-holochain": "0.3.0",
+    "@lightningrodlabs/electron-holochain": "^0.3.0",
     "electron-prompt": "^1.7.0",
     "electron-log": "^4.4.6",
     "electron-notarize": "^1.1.1",

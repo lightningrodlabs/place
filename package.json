@@ -4,7 +4,8 @@
   "workspaces": [
     "webcomponents",
     "webapp",
-    "we-applet"
+    "we-applet",
+    "electron"
   ],
   "scripts": {
     "version"                : "hc --version && holochain --version && lair-keystore --version",

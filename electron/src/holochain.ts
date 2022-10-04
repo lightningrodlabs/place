@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { app } from 'electron'
-import { HolochainRunnerOptions, StateSignal, PathOptions } from 'electron-holochain'
+import { ElectronHolochainOptions, StateSignal, PathOptions } from '@lightningrodlabs/electron-holochain'
 import {MAIN_APP_ID, COMMUNITY_PROXY_URL} from './constants'
 
 // these messages get seen on the splash page
@@ -34,8 +34,8 @@ export function stateSignalToText(state: StateSignal): StateSignalText {
 }
 
 const whereDnaPath = app.isPackaged
-  ? path.join(app.getAppPath(), '../app/binaries/place.happ')
-  : path.join(app.getAppPath(), '../workdir/place.happ')
+  ? path.join(app.getAppPath(), '../app/bin/place.happ')
+  : path.join(app.getAppPath(), '../dna/workdir/place.happ')
 
 //console.log({whereDnaPath})
 
@@ -48,12 +48,12 @@ const BINARY_PATHS: PathOptions | undefined = app.isPackaged
   ? {
       holochainRunnerBinaryPath: path.join(
         __dirname,
-        `../../app/binaries/holochain-runner${fileExt}`
+        `../../app/bin/holochain-runner${fileExt}`
       ),
-      lairKeystoreBinaryPath: path.join(
-        __dirname,
-        `../../app/binaries/lair-keystore${fileExt}`,
-      ),
+      // lairKeystoreBinaryPath: path.join(
+      //   __dirname,
+      //   `../../app/bin/lair-keystore${fileExt}`,
+      // ),
     }
   : undefined
 
@@ -62,18 +62,19 @@ const BINARY_PATHS: PathOptions | undefined = app.isPackaged
 /**
  *
  */
-function createHolochainOptions(uid: string, storagePath: string): HolochainRunnerOptions {
-  const options: HolochainRunnerOptions = {
+function createHolochainOptions(uid: string, storagePath: string): ElectronHolochainOptions {
+  const options: ElectronHolochainOptions = {
     happPath: whereDnaPath,
     datastorePath: path.join(storagePath, 'databases-' + app.getVersion()),
+    keystorePath: path.join(storagePath, 'keystore-' + app.getVersion()),
     appId: MAIN_APP_ID + '-' + uid,
     //appId: MAIN_APP_ID,
     appWsPort: 0,
     adminWsPort: 1235,
-    keystorePath: path.join(storagePath, 'keystore-' + app.getVersion()),
     //proxyUrl: COMMUNITY_PROXY_URL,
     //bootstrapUrl: "",
-    uid,
+    //uid,
+    passphrase: "test-passphrase",
   }
   return options;
 }
