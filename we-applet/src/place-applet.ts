@@ -12,7 +12,7 @@ import {
   PlaceStore,
   placeContext,
 } from "@place/elements";
-import { sharedStyles } from "@place/elements";
+//import { sharedStyles } from "@place/elements";
 import { InstalledAppletInfo } from "@lightningrodlabs/we-applet";
 import {HolochainClient} from "@holochain-open-dev/cell-client";
 

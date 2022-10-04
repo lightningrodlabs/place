@@ -7,6 +7,7 @@
     "start:happ": "RUST_LOG=warn WASM_LOG=debug  echo \"pass\" | hc s --piped -f=$ADMIN_PORT generate ./workdir/place_applet.happ --run=$HC_PORT -a place-applet network mdns",
     "build": "rm -rf dist && tsc && rollup --config rollup.config.js",
     "build:watch": "tsc -w --preserveWatchOutput",
+    "clean:hc": "rm -rf .hc*",
     "package": "npm run build:happ && npm run package:ui && hc web-app pack ./workdir",
     "package:ui": "rm -rf ui.zip && npm run build && cd ./dist && bestzip ../ui.zip * ",
     "build:happ": "npm run build:dna && hc app pack ./workdir",

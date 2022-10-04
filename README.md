@@ -89,5 +89,6 @@ A snapshot stores the latest placements for each pixel at a given time bucket.
 4. `/ui/lib`: lit-element source code of the ui components
 5. `/ui/apps/place`: The "normal" app bundled in electron & web-happ
 6. `/ui/apps/place-chaperone`: The app for holo-hosting
-7. `/workdir`: dna, happ and web-happ yamls
-8. `/zomes`: Integrity and coordinator zomes source code
+6. `/we-applet`: The applet for We integration
+8. `/workdir`: dna, happ and web-happ yamls
+9. `/zomes`: Integrity and coordinator zomes source code

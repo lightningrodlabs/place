@@ -44,7 +44,7 @@ const placeApplet: WeApplet = {
           let appletElement = element.querySelector("place-applet") as any;
 
           appletElement.appWebsocket =  appWebsocket;
-          appletElement.profilesStore = weServices.profilesStore;
+          //appletElement.profilesStore = weServices.profilesStore;
           appletElement.appletAppInfo = appletAppInfo;
         }
       },
