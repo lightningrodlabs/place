@@ -1,5 +1,5 @@
 {
-  "name": "place-ui-chaperone",
+  "name": "place-chaperone",
   "version": "0.0.1",
   "scripts": {
     "build": "tsc",

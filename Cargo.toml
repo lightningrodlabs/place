@@ -1,10 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
-  #"crates/types",
-  "zomes/place_model",
-  "zomes/place",
-  #"sweettest",
+  "dna/zomes/place_model",
+  "dna/zomes/place",
 ]
 
 [profile.dev]

@@ -1,6 +1,6 @@
 {
-  "name": "place",
-  "version": "0.0.1",
+  "name": "place-app",
+  "version": "0.1.0",
   "description": "A playground for pixels",
   "repository": {
     "type": "git",
@@ -55,7 +55,7 @@
     "typescript": "^4.5.5"
   },
   "dependencies": {
-    "electron-holochain": "0.0.36",
+    "electron-holochain": "0.3.0",
     "electron-prompt": "^1.7.0",
     "electron-log": "^4.4.6",
     "electron-notarize": "^1.1.1",

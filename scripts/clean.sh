@@ -1,22 +1,26 @@
 #!/bin/bash
 
-rm -rf .hc*
-
-#rm -rf electron/binaries
-#rm -rf electron/node_modules
-#rm -rf electron/node_modules
-#rm -rf electron/dist
-#rm -rf electron/out
-#rm electron/package-lock.json
-
-rm -rf node_modules
-#rm -rf test/node_modules
-rm -rf ui/lib/node_modules
-
-rm -rf ui/apps/place/node_modules/
-rm -rf ui/apps/place/dist/
-rm -rf ui/apps/place/out-tsc/
-
-rm package-lock.json
-rm ui/lib/package-lock.json
-rm ui/apps/place/package-lock.json
+# TOP LEVEL
+#rm -rf submodules
+rm .hc_live*
+# WEBCOMPONENTS
+rm -rf webcomponents/dist
+rm webcomponents/tsconfig.tsbuildinfo
+# WEB-APP
+rm -rf webapp/dist
+rm -rf webapp/out-tsc
+rm webapp/tsconfig.tsbuildinfo
+rm webapp/*.zip
+# WEB-APP CHAPERONE
+rm -rf webapp-chaperone/dist
+rm -rf webapp-chaperone/out-tsc
+rm webapp-chaperone/tsconfig.tsbuildinfo
+rm webapp-chaperone/*.zip
+# ELECTRON
+rm -rf electron/out-tsc
+rm electron/bin/*
+rm electron/web/*.js
+rm electron/tsconfig.tsbuildinfo
+# WE APPLET
+rm -rf we-applet/out-tsc
+rm we-applet/.hc_live*

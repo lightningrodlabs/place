@@ -219,7 +219,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
       //screenHeight: canvas.offsetHeight            // screen height used by viewport (eg, size of canvas)
     })
     // TODO: remove this workaround (otherwise we get an error on undefined object)
-    this._viewport.trackedPointers = []
+    //this._viewport.trackedPointers = []
     this._viewport
       .moveCenter(worldSize * IMAGE_SCALE / 2, worldSize * IMAGE_SCALE / 2)
       .drag({
@@ -483,6 +483,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     //console.log(`viewFutureSnapshot() adding ${placements.length} placements to index ` + this._store.getRelativeBucketIndex(snapshot.timeBucketIndex))
     /* Update frame with current bucket placements */
     const properties = await this._store.getProperties()
+    console.log({properties})
     this._frameBuffer = snapshotIntoFrame(snapshot.imageData, properties.canvasSize);
     for (const placement of placements) {
       let destructed = destructurePlacement(placement)

@@ -1,7 +1,7 @@
 ---
 manifest_version: "1"
-name: place_applet
+name: place
 ui:
   bundled: "../ui.zip"
 happ_manifest:
-  bundled: "place_applet.happ"
+  bundled: "../../dna/workdir/place.happ"

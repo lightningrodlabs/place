@@ -82,13 +82,27 @@ A snapshot stores the latest placements for each pixel at a given time bucket.
  - **UI**: Typescript, Rollup, Lit, svelte-store, holochain-open-dev, pixijs
  - **Electron app**: Typescript, electron-holochain, electron-builder
 
-### Folder structure
-1. `/electron`: The electron app source code
-2. `/electron/web`: Final artifacts for the electron app (includes output from `ui`)
-3. `/electron/binaries`: All the binaries we are dependent on on must ship with the app
-4. `/ui/lib`: lit-element source code of the ui components
-5. `/ui/apps/place`: The "normal" app bundled in electron & web-happ
-6. `/ui/apps/place-chaperone`: The app for holo-hosting
-6. `/we-applet`: The applet for We integration
-8. `/workdir`: dna, happ and web-happ yamls
-9. `/zomes`: Integrity and coordinator zomes source code
+## Project structure
+
+| Directory                                  | Description                                                                                                                 |
+|:-------------------------------------------| :-------------------------------------------------------------------------------------------------------------------------- |
+| `/dna/`                                    | DNA source code
+| `/electron/`                               | Electron app directory
+| &nbsp;&nbsp;&nbsp;&nbsp;`bin/`             | All the binaries we are dependent on and must ship with the app
+| &nbsp;&nbsp;&nbsp;&nbsp;`src/`             | The electron app source code
+| &nbsp;&nbsp;&nbsp;&nbsp;`web/`             | Final artifacts for the electron app (includes output from `webapp`)
+| `/webapp/`                                 | The Place webapp source code
+| &nbsp;&nbsp;&nbsp;&nbsp;`webhapp.workdir/` | webhapp work directory
+| `/webapp-chaperone/`                       | The Place webapp source code for holo hosting
+| `/webcomponents/`                          | The web components source code
+| `/we-applet/`                              | The applet for We integration
+
+
+## License
+[![License: CAL 1.0](https://img.shields.io/badge/License-CAL%201.0-blue.svg)](https://github.com/holochain/cryptographic-autonomy-license)
+
+Copyright (C) 2021, Harris-Braun Enterprises, LLC
+
+This program is free software: you can redistribute it and/or modify it under the terms of the license
+provided in the LICENSE file (CAL-1.0).  This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
