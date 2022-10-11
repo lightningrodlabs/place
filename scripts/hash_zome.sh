@@ -6,9 +6,16 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
         fileext=""
 fi
+binary=./hash_zome$fileext
+
+# Check if tool needs to be installed
+if [ ! -f $binary ] ; then
+  echo $binary not found. Installing...
+  ./scripts/download-hash-zome.sh
+fi
 
 # Compute hash of the zome
-value=`./hash_zome$fileext ./target/wasm32-unknown-unknown/release/place_model.wasm`
+value=`$binary ./target/wasm32-unknown-unknown/release/place_model.wasm`
 if [ "$value" == "" ]
 then
   echo hash_zome failed
