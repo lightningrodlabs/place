@@ -6,7 +6,7 @@ on:
       - v[0-9]+.*
 
 env:
-  PLACE_VERSION: 0.0.1
+  PLACE_VERSION: 0.1.0-hc.165
   USE_HARD_LINKS: false
 
 jobs:
