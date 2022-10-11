@@ -35,7 +35,7 @@ pub fn publish_same_snapshot_upto(input: BucketRangeInput) -> ExternResult<Vec<A
   let ah = publish_next_snapshot(&mut current_snapshot)?;
   let mut res = Vec::new();
   res.push(ah);
-  /// Publish same image_data at all buckets until `now_bucket`
+  /* Publish same image_data at all buckets until `now_bucket` */
   for i in input.latest_known_bucket + 1..input.now_bucket + 1 {
     current_snapshot.time_bucket_index = i;
     let ah = publish_snapshot(&current_snapshot)?;

@@ -21,7 +21,7 @@ pub fn get_placement_author(input: GetPlacementAuthorInput) -> ExternResult<Opti
   let placementEh = hash_entry(Placement::from(input.placement))?;
   let maybe_details = get_details(placementEh, GetOptions::latest())?;
   if let Some(Details::Entry(entry_details)) = maybe_details {
-    /// Look for a action created during given bucket_index time interval
+    /* Look for a action created during given bucket_index time interval */
     for action in entry_details.actions {
       let current = action.hashed.content.timestamp().as_seconds_and_nanos().0;
       let current_index = sec_to_bucket(current as u64);

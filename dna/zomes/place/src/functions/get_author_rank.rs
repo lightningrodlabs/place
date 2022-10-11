@@ -22,8 +22,9 @@ pub fn get_author_rank(input: GetAuthorRankInput) -> ExternResult<u16> {
   //debug!("*** get_author_rank() CALLED");
   let placements = get_placements_at(input.bucket_index)?;
   let mut i = 1;
-  /// For each placement check if its author matchs input ; attribute rank according to the number
-  /// of placements we had to go through
+  /* For each placement check if its author matchs input ; attribute rank according to the number
+   * of placements we had to go through
+   */
   for placement in placements.iter() {
     let author_input = GetPlacementAuthorInput {
       placement: placement.pixel,
