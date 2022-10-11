@@ -11,6 +11,9 @@ node_modules/
 dist/
 .cargo/
 */*.tsbuildinfo
+electron/out-tsc/*
+electron/out-builder/**/*
+electron/web/*.js
 
 ## DNA files
 dna/workdir/*.dna
@@ -30,3 +33,4 @@ hash_zome*
 ## Specific files
 electron/web/index.html
 Cargo.lock
+package-lock.json
