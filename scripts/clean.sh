@@ -1,8 +1,11 @@
 #!/bin/bash
-
 # TOP LEVEL
 #rm -rf submodules
 rm .hc_live*
+rm hash_zome*
+# DNA
+rm dna/workdir/place.dna
+rm dna/workdir/place.happ
 # WEBCOMPONENTS
 rm -rf webcomponents/dist
 rm webcomponents/tsconfig.tsbuildinfo
@@ -20,8 +23,8 @@ rm webapp-chaperone/ui.zip
 rm -rf electron/out-builder
 rm -rf electron/out-tsc
 rm electron/bin/*
-#ls -d electron/web/* | grep -P ".*\.js" | xargs -d"\n" rm
-#ls -d electron/web/* | grep -P ".*map" | xargs -d"\n" rm
+rm electron/web/*.js
+rm electron/web/*.map
 rm electron/web/index.html
 rm electron/tsconfig.tsbuildinfo
 # WE APPLET

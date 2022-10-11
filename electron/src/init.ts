@@ -3,7 +3,7 @@ import * as path from "path";
 import {app, dialog} from "electron";
 
 import {log} from "./logger";
-import {APP_DATA_PATH, DNA_VERSION_FILENAME, RUNNING_ZOME_HASH_FILEPATH, USER_DATA_PATH} from "./constants";
+import {APP_DATA_PATH, DNA_VERSION_FILENAME, MODEL_ZOME_HASH_FILEPATH, USER_DATA_PATH} from "./constants";
 
 const UID_LIST_FILENAME = 'uid-list.txt';
 
@@ -29,9 +29,9 @@ function fatalError(message: string, error?: any) {
  *
  */
 export function initApp() {
-  /** Read where_zome_hash.txt in app folder */
-  const runningDnaHash = loadRunningZomeHash();
-  log('info', "PLACE ZOME HASH: " + runningDnaHash);
+  /** Read hash file in app folder */
+  const modelZomeHash = loadModelZomeHash();
+  log('info', "PLACE MODEL ZOME HASH: " + modelZomeHash);
 
   /** --  Create missing dirs -- **/
   try {
@@ -58,7 +58,7 @@ export function initApp() {
   /** -- Setup storage folder -- **/
   const sessionDataPath = path.join(USER_DATA_PATH, sessionId);
   log('info', {sessionDataPath});
-  setupSessionStorage(sessionDataPath, runningDnaHash)
+  setupSessionStorage(sessionDataPath, modelZomeHash)
 
   /** -- UID List -- **/
   let uidList = []
@@ -91,24 +91,20 @@ export function initApp() {
 }
 
 
-/**
- *
- */
-function setupSessionStorage(sessionPath, dnaHash) {
-
+/** */
+function setupSessionStorage(sessionPath: string, modelZomeHash: string) {
   const dna_version_txt = path.join(sessionPath, DNA_VERSION_FILENAME);
-
-  // Create storage and setup if none found
+  /** Create storage and setup if none found */
   if (!fs.existsSync(sessionPath)) {
     log('info', "Creating missing dir: " + sessionPath);
     try {
       fs.mkdirSync(sessionPath)
-      fs.writeFileSync(dna_version_txt, dnaHash, 'utf-8');
+      fs.writeFileSync(dna_version_txt, modelZomeHash, 'utf-8');
     } catch(e) {
       fatalError("Failed to setup storage folder on disk", e)
     }
   } else {
-    /** Make sure its a compatible version */
+    /** Make sure it's a compatible version */
     let storedDnaHash = '<not found>';
     try {
       log('debug', 'Reading: ' + dna_version_txt);
@@ -117,17 +113,17 @@ function setupSessionStorage(sessionPath, dnaHash) {
       log('error', 'Failed to read the dna_version_txt file !');
       log('error', e);
     }
-    if (storedDnaHash !== dnaHash) {
+    if (storedDnaHash !== modelZomeHash) {
       const msg = "The data found on disk is for a different version of Place's core:\n" +
-        '  Stored data version: ' + storedDnaHash + '\n' +
-        'This running version: ' + dnaHash;
+        '  Stored version: ' + storedDnaHash + '\n' +
+        'This app\'s version: ' + modelZomeHash;
       log('error', msg);
       const canErase = promptVersionMismatch(msg);
       if (canErase) {
         try {
           fs.rmdirSync(sessionPath, {recursive: true});
           /* Start over */
-          setupSessionStorage(sessionPath, dnaHash);
+          setupSessionStorage(sessionPath, modelZomeHash);
         } catch (e) {
           fatalError('Failed erasing current stored data', e);
         }
@@ -157,15 +153,15 @@ export function addUidToDisk(newUid: string, sessionDataPath: string): boolean {
 /**
  * @returns dnaHash
  */
-function loadRunningZomeHash() {
-  if(fs.existsSync(RUNNING_ZOME_HASH_FILEPATH)) {
-    return fs.readFileSync(RUNNING_ZOME_HASH_FILEPATH, 'utf-8');
+function loadModelZomeHash() {
+  if(fs.existsSync(MODEL_ZOME_HASH_FILEPATH)) {
+    return fs.readFileSync(MODEL_ZOME_HASH_FILEPATH, 'utf-8');
   }
-  if(fs.existsSync('resources/app/' + RUNNING_ZOME_HASH_FILEPATH)) {
-    return fs.readFileSync('resources/app/' + RUNNING_ZOME_HASH_FILEPATH, 'utf-8');
+  if(fs.existsSync('resources/app/' + MODEL_ZOME_HASH_FILEPATH)) {
+    return fs.readFileSync('resources/app/' + MODEL_ZOME_HASH_FILEPATH, 'utf-8');
   }
-  if(fs.existsSync(app.getAppPath() + '/' + RUNNING_ZOME_HASH_FILEPATH)) {
-    return fs.readFileSync(app.getAppPath() + '/' + RUNNING_ZOME_HASH_FILEPATH, 'utf-8');
+  if(fs.existsSync(app.getAppPath() + '/' + MODEL_ZOME_HASH_FILEPATH)) {
+    return fs.readFileSync(app.getAppPath() + '/' + MODEL_ZOME_HASH_FILEPATH, 'utf-8');
   }
   fatalError("Corrupt installation. Missing zome hash file.");
 }

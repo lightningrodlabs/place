@@ -88,4 +88,4 @@ typings/
 .webpack/
 
 # Electron-Forge
-out/
+out-builder/

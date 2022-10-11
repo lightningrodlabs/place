@@ -1,15 +1,20 @@
 #!/bin/bash
 
-echo $OSTYPE
+echo "copy-binaries.sh" os-type: $OSTYPE
+
+binFolder="electron/bin"
+moduleFolder="node_modules/@lightningrodlabs/electron-holochain/binaries"
 
 if [[ $OSTYPE == 'darwin'* ]]; then
-  cp node_modules/electron-holochain/binaries/holochain-runner electron/bin/holochain-runner
+  cp $moduleFolder/holochain-runner $binFolder/holochain-runner
 elif [[ $OSTYPE == 'linux-gnu'* ]]; then
-  cp node_modules/electron-holochain/binaries/holochain-runner electron/bin/holochain-runner
+  cp $moduleFolder/holochain-runner $binFolder/holochain-runner
 elif [[ $OSTYPE == "cygwin" ]]; then
   # POSIX compatibility layer and Linux environment emulation for Windows
-  cp node_modules/electron-holochain/binaries/holochain-runner.exe electron/bin/holochain-runner.exe
+  cp $moduleFolder/holochain-runner.exe $binFolder/holochain-runner.exe
 elif [[ $OSTYPE == "msys" ]]; then
   # Lightweight shell and GNU utilities compiled for Windows (part of MinGW)
-  cp node_modules/electron-holochain/binaries/holochain-runner.exe electron/bin/holochain-runner.exe
+  cp $moduleFolder/holochain-runner.exe $binFolder/holochain-runner.exe
 fi
+
+echo "copy-binaries.sh" DONE

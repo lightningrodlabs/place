@@ -10,10 +10,11 @@
   "scripts": {
     "version"                : "hc --version && holochain --version && lair-keystore --version",
     "ci:tsc"                 : "tsc --version",
+    "postinstall"            : "npm run install:hash-zome && bash scripts/copy-binaries.sh",
     "ci:hc-install"          : "bash scripts/install-hc-tools.sh",
-    "hash-zome-install"      : "bash scripts/download-hash-zome.sh",
-    "hash-zome"              : "bash scripts/write-zome-hash.sh",
-    "setup"                  : "bash scripts/copy-binaries.sh",
+    "install:hash-zome"      : "bash scripts/download-hash-zome.sh",
+    "hash-zome"              : "bash scripts/hash_zome.sh",
+
     "build:zome"             : "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
     "build:dna"              : "npm run build:zome && bash scripts/pack-dna.sh",
     "build:happ"             : "npm run build:dna && hc app pack dna/workdir",
@@ -21,11 +22,14 @@
     "build:webapp"           : "npm run build -w place",
     "build:webapp-chaperone" : "npm run build -w place-chaperone",
     "build:chaperone-mainnet": "npm run build:webcomponents && npm run build:webapp-chaperone && PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run package -w place-chaperone",
+    "build:we"               : "npm run build -w we-applet",
+
     "test"                   : "npm run build:happ && npm run build:webcomponents && npm t -w tests",
 
     "prepare-test"           : "npm run clean:hc & npm run build:webcomponents && npm run build:webapp",
     "devtest"                : "npm run prepare-test && npm run start:agent",
     "devtest:we"             : "npm run prepare-test && npm run devtest -w we-applet",
+    "devtest:electron"       : "npm run dist:webapp && npm run start -w place-app",
 
     "dev:libs"               : "npm run build:watch -w webcomponents",
     "start:happ"             : "RUST_LOG=warn echo \"pass\" | hc s --piped -f=$ADMIN_PORT generate dna/workdir/place.happ --run=$HC_PORT -a place network mdns",
@@ -41,27 +45,22 @@
     "network-proxied"        : "npm run build:happ && concurrently-repeat \"npm run start:agent-proxied\"",
     "network-playground"     : "npm run build:happ && concurrently-repeat \"npm run start:agent:playground\"",
 
+    "playground"             : "run-singleton \"holochain-playground\"",
 
-    "package": "npm run build:happ && npm run build:webcomponents && npm run build:webapp && npm run package -w place",
+    "dist:webapp"            : "npm run build:happ && npm run build:webcomponents && npm run build:webapp && npm run package -w webapp",
+    "dist:webhapp"           : "npm run package -w webapp && npm run dist:webhapp -w webapp",
+    "dist:we"                : "npm run package -w webapp && npm run package -w we-applet",
+    "dist:electron"          : "npm run dist -w electron",
 
-    "playground": "run-singleton \"holochain-playground\"",
+    "hc-host:gen-agent"      : "sh ./scripts/gen-host-agent.sh",
+    "hc-host:run"            : "hc sandbox r 0 -p=8888",
+    "serve:self-hosted"      : "PLACE_APP_CONTEXT='self-hosted' vue-cli-service serve",
+    "serve:holo"             : "PLACE_APP_CONTEXT='holo-host' PLACE_CHAPERONE_SERVER_URL='http://localhost:24274/' vue-cli-service serve",
+    "self-hosted"            : "nix-shell --command 'holo-dev-server -p 24274 workdir/place.happ'",
 
-
-    "dist:webhapp" : "npm run package -w webapp && npm run dist:webhapp -w webapp",
-    "dist:we"      : "npm run package -w webapp && npm run package -w we-applet",
-
-    "dist": "cd electron && npm run tsc && npm run dist",
-    "dist-linux": "cd electron && npm run tsc && npm run dist-linux",
-    "electron": "npm run package && npm run start -w place-app",
-
-    "hc-host:gen-agent": "sh ./scripts/gen-host-agent.sh",
-    "hc-host:run": "hc sandbox r 0 -p=8888",
-    "serve:self-hosted": "PLACE_APP_CONTEXT='self-hosted' vue-cli-service serve",
-    "serve:holo": "PLACE_APP_CONTEXT='holo-host' PLACE_CHAPERONE_SERVER_URL='http://localhost:24274/' vue-cli-service serve",
-    "self-hosted": "nix-shell --command 'holo-dev-server -p 24274 workdir/place.happ'",
-    "clean": "npm run clean:npm && bash scripts/clean.sh",
-    "clean:npm": "bash scripts/clean-npm.sh",
-    "clean:hc": "rm -rf .hc*"
+    "clean"                  : "bash scripts/clean.sh && npm run clean:npm",
+    "clean:npm"              : "bash scripts/clean-npm.sh",
+    "clean:hc"               : "rm -rf .hc*"
   },
   "devDependencies": {
     "@holochain-playground/cli": "^0.0.8",
@@ -77,5 +76,8 @@
     "lit-flatpickr": "^0.4.0",
     "@types/ws": "^8.5.3",
     "place": "file:electron"
+  },
+  "engines": {
+    "npm": ">=7.0.0"
   }
 }

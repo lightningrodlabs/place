@@ -33,12 +33,12 @@ jobs:
       # Download previously uploaded artifacts
       - uses: actions/download-artifact@master
         with:
-          name: place-happ-artifact
-          path: workdir
+          name: happ-artifact
+          path: dna/workdir
       - uses: actions/download-artifact@master
         with:
-          name: place-webapp-artifact
-          path: workdir
+          name: webhapp-artifact
+          path: dna/workdir
       - uses: actions/download-artifact@master
         with:
           name: place-hash-artifact
@@ -47,17 +47,23 @@ jobs:
       - name: Install nodejs dependencies
         run: |
           npm install
-      # Build happ
-      - name: Build happ
+      # build webcomponents
+      - name: build webcomponents
+        shell: bash
         run: |
-          npm run build
-      # Build installers and binaries
-      - name: Build binaries
+          npm run build:webcomponents
+      # build webapp
+      - name: build webapp
+        shell: bash
+        run: |
+          npm run build:webapp
+      # build electron
+      - name: build electron
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run dist
+          npm run build -w electron
 #      # Build tar.gz
 #      - name: Build tar.gz
 #        if: ${{ runner.os == 'Linux' }}
@@ -72,7 +78,7 @@ jobs:
       - name: Check electron output folder
         continue-on-error: true
         run: ls -R
-        working-directory: electron/out
+        working-directory: electron/out-builder
       # Build chaperone app
       - name: Build chaperone app (ubuntu only)
         continue-on-error: true
@@ -83,7 +89,7 @@ jobs:
       - name: Check workdir folder
         continue-on-error: true
         run: ls -R
-        working-directory: workdir
+        working-directory: dna/workdir
 #      #
 #      - name: list releases
 #        continue-on-error: true
@@ -97,19 +103,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "manual-release" "electron/out/Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "manual-release" "workdir/place.happ" --clobber
-          gh release upload "manual-release" "workdir/place.webhapp" --clobber
-          gh release upload "manual-release" "workdir/ui-chaperone.zip" --clobber
+          gh release upload "manual-release" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
+          gh release upload "manual-release" "dna/workdir/place.webhapp" --clobber
+          gh release upload "manual-release" "dna/workdir/ui-chaperone.zip" --clobber
       - name: upload binary (macos only)
         if: ${{ runner.os == 'macOs' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "manual-release" "electron/out/Place-$PLACE_VERSION.dmg" --clobber
+          gh release upload "manual-release" "electron/out-builder/Place-$PLACE_VERSION.dmg" --clobber
       - name: upload binary (Windows only)
         if: ${{ runner.os == 'Windows' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "manual-release" "electron/out/Place Setup $env:PLACE_VERSION.exe" --clobber
+          gh release delete-asset "manual-release" "Place.Setup.$env:PLACE_VERSION.exe" -y          
+          gh release upload "manual-release" "electron/out-builder/Place Setup $env:PLACE_VERSION.exe" --clobber

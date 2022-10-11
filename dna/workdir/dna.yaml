@@ -5,7 +5,7 @@ uid: ~
 integrity:
   origin_time: 2022-09-25T13:55:49.200Z
   properties:
-    startTime: 1665500946
+    startTime: 1665505854
     canvasSize: 200
     bucketSizeSec: 120
     pixelsPerBucket: 20

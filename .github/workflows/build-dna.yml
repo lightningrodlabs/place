@@ -16,7 +16,7 @@ jobs:
       # Hash Zome
       - name: Hash Zome Install
         run: |
-          npm run hash-zome-install
+          npm run install:hash-zome
       # build dna
       - name: Build DNA
         run: |
@@ -28,25 +28,35 @@ jobs:
       - uses: actions/upload-artifact@master
         with:
           name: place-happ-artifact
-          path: workdir/place.happ
+          path: dna/workdir/place.happ
       - uses: actions/upload-artifact@master
         with:
           name: place-hash-artifact
-          path: workdir/place_zome_hash.txt
+          path: dna/workdir/place_zome_hash.txt
       # Setup npm
       - name: Install nodejs dependencies
         run: |
           npm install place --ignore-scripts
-      # Build happ
-      - name: Build happ
+      # Build webapp
+      - name: Build webapp
         run: |
-          npm run build:ui
-      # Build web-happ
-      - name: Build web-happ
+          npm run prepare-test
+      # Package web-happ
+      - name: Package web-happ
         run: |
-          npm run build:webapp
+          npm run dist:webhapp
+      # "upload" happ as build artifact
+      - uses: actions/upload-artifact@master
+        with:
+          name: happ-artifact
+          path: dna/workdir/place.happ
       # "upload" web-happ as build artifact
       - uses: actions/upload-artifact@master
         with:
-          name: place-webapp-artifact
-          path: workdir/place.webhapp
+          name: webhapp-artifact
+          path: webapp/webhapp.workdir/place.webhapp
+      # "upload" zome_hash as build artifact
+      - uses: actions/upload-artifact@master
+        with:
+          name: model-hash-artifact
+          path: electron/bin/model_zome_hash.txt
