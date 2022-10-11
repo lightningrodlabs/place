@@ -45,7 +45,7 @@ jobs:
           path: dna/workdir
       - uses: actions/download-artifact@master
         with:
-          name: place-hash-artifact
+          name: model-hash-artifact
           path: electron/bin
       # Setup npm
       - name: Install nodejs dependencies
