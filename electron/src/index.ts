@@ -25,7 +25,7 @@ import initAgent, {
 import {
   createHolochainOptions,
   stateSignalToText,
-  BINARY_PATHS,
+  BINARY_PATHS, loadDnaVersion,
 } from './holochain'
 
 import { electronLogger, log } from './logger'
@@ -73,7 +73,7 @@ let g_mainWindow: BrowserWindow | null = null;
 let g_runner_version = 'holochain runner version (unknown)'
 //let g_lair_version = 'lair version (unknown)'
 let g_dnaHash = '(unknown)'
-
+let g_modelZomeHash: string | undefined;
 
 //--------------------------------------------------------------------------------------------------
 // -- Functions
@@ -254,6 +254,7 @@ app.on('ready', async () => {
     const {sessionDataPath, uidList} = initApp();
     g_sessionDataPath = sessionDataPath
     g_uidList = uidList
+    g_modelZomeHash = loadDnaVersion(sessionDataPath);
   }
   /** Determine starting UID */
   const maybeUid = g_userSettings.get("lastUid")
@@ -449,21 +450,22 @@ ipc.on('dnaHash', (event, dnaHash) => {
  */
 async function promptUid(canExitOnCancel: boolean, parentBrowserWindow: BrowserWindow) {
   let r = await prompt({
-    title: 'Place: Join new Network',
-    height: 180,
-    width: 500,
-    alwaysOnTop: true,
-    label: 'Network Access Key:',
-    value: g_uid,
-    parentBrowserWindow,
-    inputAttrs: {
-      minlength: "2",
-      required: true,
-      pattern: "[a-zA-Z0-9\-_.]+",
-      type: 'string'
+      title: 'Place: Join new Network',
+      height: 180,
+      width: 500,
+      alwaysOnTop: true,
+      label: 'Network Access Key:',
+      value: g_uid,
+      inputAttrs: {
+        minlength: "2",
+        required: "true",
+        pattern: "[a-zA-Z0-9\-_.]+",
+        type: 'string'
+      },
+      type: 'input'
     },
-    type: 'input'
-  });
+    //parentBrowserWindow
+  );
   if(r === null) {
     log('debug','user cancelled. Can exit: ' + canExitOnCancel);
     if (canExitOnCancel) {
@@ -528,7 +530,7 @@ async function showAbout() {
     title: `About ${app.getName()}`,
     message: `${app.getName()} - v${app.getVersion()}`,
     detail: `Social experiment on holochain from Lightning Rod Labs\n\n`
-      // + `Zome hash:\n${DNA_HASH}\n\n`
+      + `Data model version:\n${g_modelZomeHash}\n`
       + `DNA hash of "${g_uid}":\n${g_dnaHash}\n\n`
       + '' + g_runner_version + ''
       //+ '' + g_lair_version

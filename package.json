@@ -64,18 +64,13 @@
   },
   "devDependencies": {
     "@holochain-playground/cli": "^0.0.8",
+    "bestzip": "^2.2.0",
     "concurrently": "^6.2.1",
     "concurrently-repeat": "^0.0.1",
     "cross-env": "^7.0.3",
-    "json-parse-better-errors": "^1.0.2",
     "new-port-cli": "^1.0.0",
-    "run-singleton-cli": "^0.0.5"
-  },
-  "dependencies": {
-    "@holochain-open-dev/cell-client": "^0.7.3",
-    "lit-flatpickr": "^0.4.0",
-    "@types/ws": "^8.5.3",
-    "place": "file:electron"
+    "run-singleton-cli": "^0.0.5",
+    "json-parse-better-errors": "^1.0.2"
   },
   "engines": {
     "npm": ">=7.0.0"

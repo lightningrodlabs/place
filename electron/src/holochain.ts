@@ -1,7 +1,9 @@
 import * as path from 'path'
 import { app } from 'electron'
 import { ElectronHolochainOptions, StateSignal, PathOptions } from '@lightningrodlabs/electron-holochain'
-import {MAIN_APP_ID, COMMUNITY_PROXY_URL} from './constants'
+import {MAIN_APP_ID, COMMUNITY_PROXY_URL, DNA_VERSION_FILENAME} from './constants'
+import * as fs from "fs";
+import {log} from "./logger";
 
 // these messages get seen on the splash page
 export enum StateSignalText {
@@ -44,7 +46,7 @@ const whereDnaPath = app.isPackaged
 // in development
 // fall back on defaults in the electron-holochain package
 const fileExt = process.platform === 'win32' ? '.exe' : '';
-const BINARY_PATHS: PathOptions | undefined = app.isPackaged
+export const BINARY_PATHS: PathOptions | undefined = app.isPackaged
   ? {
       holochainRunnerBinaryPath: path.join(
         __dirname,
@@ -62,7 +64,7 @@ const BINARY_PATHS: PathOptions | undefined = app.isPackaged
 /**
  *
  */
-function createHolochainOptions(uid: string, storagePath: string): ElectronHolochainOptions {
+export function createHolochainOptions(uid: string, storagePath: string): ElectronHolochainOptions {
   const options: ElectronHolochainOptions = {
     happPath: whereDnaPath,
     datastorePath: path.join(storagePath, 'databases-' + app.getVersion()),
@@ -79,4 +81,18 @@ function createHolochainOptions(uid: string, storagePath: string): ElectronHoloc
   return options;
 }
 
-export { whereDnaPath, BINARY_PATHS, createHolochainOptions }
+
+/** */
+export function loadDnaVersion(sessionDataPath: string): string | undefined  {
+  let dnaVersion = undefined;
+  //const configFilePath = path.join(sessionDataPath, '../');
+  const configFilePath = path.join(sessionDataPath, DNA_VERSION_FILENAME);
+  //log('debug', "loadDnaVersion() configFilePath = " + configFilePath);
+  try {
+    dnaVersion = fs.readFileSync(configFilePath).toString();
+  } catch(error) {
+    log("warn", "File not found ; " + configFilePath)
+    return undefined;
+  }
+  return dnaVersion;
+}
