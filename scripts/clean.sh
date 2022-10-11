@@ -10,17 +10,21 @@ rm webcomponents/tsconfig.tsbuildinfo
 rm -rf webapp/dist
 rm -rf webapp/out-tsc
 rm webapp/tsconfig.tsbuildinfo
-rm webapp/*.zip
+rm webapp/ui.zip
 # WEB-APP CHAPERONE
 rm -rf webapp-chaperone/dist
 rm -rf webapp-chaperone/out-tsc
 rm webapp-chaperone/tsconfig.tsbuildinfo
-rm webapp-chaperone/*.zip
+rm webapp-chaperone/ui.zip
 # ELECTRON
+rm -rf electron/out-builder
 rm -rf electron/out-tsc
 rm electron/bin/*
-rm electron/web/*.js
+#ls -d electron/web/* | grep -P ".*\.js" | xargs -d"\n" rm
+#ls -d electron/web/* | grep -P ".*map" | xargs -d"\n" rm
+rm electron/web/index.html
 rm electron/tsconfig.tsbuildinfo
 # WE APPLET
 rm -rf we-applet/out-tsc
 rm we-applet/.hc_live*
+rm we-applet/ui-applet.zip

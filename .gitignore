@@ -5,17 +5,28 @@
 ## system files
 .DS_Store
 
+## Build files
 target/
 node_modules/
 dist/
 .cargo/
-.hc*
-dna/workdir/dna*/*.dna
-dna/workdir/happ*/*.happ
-workdir/*.webhapp
-workdir/*.dna
-workdir/*.happ
-workdir/*.zip
-*.tsbuildinfo
-.running
+*/*.tsbuildinfo
+
+## DNA files
+dna/workdir/*.dna
+dna/workdir/*.happ
+dna/workdir/*.txt
 hash_zome*
+*.zip
+*.webhapp
+*.happ
+*.map
+
+## Testing files
+.hc*
+.running
+
+
+## Specific files
+electron/web/index.html
+Cargo.lock
