@@ -37,6 +37,10 @@ jobs:
           path: dna/workdir
       - uses: actions/download-artifact@master
         with:
+          name: happ-artifact
+          path: electron/bin
+      - uses: actions/download-artifact@master
+        with:
           name: webhapp-artifact
           path: dna/workdir
       - uses: actions/download-artifact@master
@@ -60,10 +64,15 @@ jobs:
       # build electron
       - name: build electron
         shell: bash
+        run: |
+          npm run build -w electron
+      # Package electron
+      - name: Package electron
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run build -w electron
+          npm run dist:build -w electron
 #      # Build tar.gz
 #      - name: Build tar.gz
 #        if: ${{ runner.os == 'Linux' }}

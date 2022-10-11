@@ -2,6 +2,8 @@
   "name": "place-app",
   "version": "0.1.0-hc.165",
   "description": "A playground for pixels",
+  "author": "Harris-Braun Enterprises, LLC and contributors",
+  "license": "CAL-1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/lightningrodlabs/place.git"
@@ -11,16 +13,14 @@
     "lint": "eslint --ext .ts .",
     "build": "tsc",
     "start": "tsc && electron .",
-    "dist": "cp ../dna/workdir/place.happ ./bin && electron-builder build",
-    "dist-tar": "cp ../dna/workdir/place.happ ./bin && electron-builder --linux tar.gz",
-    "dist-linux": "cp ../dna/workdir/place.happ ./bin && electron-builder --linux AppImage"
+    "dist:build": "electron-builder build",
+    "dist-tar": "electron-builder --linux tar.gz",
+    "dist-linux": "electron-builder --linux AppImage"
   },
   "keywords": [
     "Electron",
     "Holochain"
   ],
-  "author": "Harris-Braun Enterprises, LLC and contributors",
-  "license": "CAL-1.0",
   "build": {
     "productName": "Place",
     "afterSign": "./afterSignHook.js",
@@ -38,8 +38,19 @@
       "buildResources": "web/logo",
       "output": "out-builder"
     },
+    "linux": {
+      "target": "AppImage"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
     "publish": {
-      "provider": "github"
+      "provider": "github",
+      "releaseType": "prerelease",
+      "publishAutoUpdate": true
     }
   },
   "devDependencies": {

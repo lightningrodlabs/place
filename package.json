@@ -50,7 +50,7 @@
     "dist:webapp"            : "npm run build:happ && npm run build:webcomponents && npm run build:webapp && npm run package -w webapp",
     "dist:webhapp"           : "npm run package -w webapp && npm run dist:webhapp -w webapp",
     "dist:we"                : "npm run package -w webapp && npm run package -w we-applet",
-    "dist:electron"          : "npm run dist -w electron",
+    "dist:electron"          : "npm run dist:build -w electron",
 
     "hc-host:gen-agent"      : "sh ./scripts/gen-host-agent.sh",
     "hc-host:run"            : "hc sandbox r 0 -p=8888",
