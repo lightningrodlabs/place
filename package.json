@@ -46,6 +46,10 @@
 
     "playground": "run-singleton \"holochain-playground\"",
 
+
+    "dist:webhapp" : "npm run package -w webapp && npm run dist:webhapp -w webapp",
+    "dist:we"      : "npm run package -w webapp && npm run package -w we-applet",
+
     "dist": "cd electron && npm run tsc && npm run dist",
     "dist-linux": "cd electron && npm run tsc && npm run dist-linux",
     "electron": "npm run package && npm run start -w place-app",
