@@ -38,42 +38,40 @@ jobs:
     steps:
       # Checkout repo
       - uses: actions/checkout@v2
-      # rm the dna files from repository
-      - name: clearing precompiled dna files
-        continue-on-error: true
-        run: |
-          rm workdir/place.happ
       # Download previously uploaded artifacts
       - uses: actions/download-artifact@master
         with:
-          name: place-happ-artifact
-          path: workdir
-      - uses: actions/download-artifact@master
-        with:
-          name: place-webapp-artifact
-          path: workdir
-      - uses: actions/download-artifact@master
-        with:
-          name: place-hash-artifact
-          path: electron/bin
+          name: all-happ-artifact
+      # Display structure of downloaded files
+      - name: Display structure of downloaded files
+        run: ls
+        working-directory: ./
+      # Dispatch artifacts
+      - name: Dispatch artifacts
+        run: |
+          cp ./place.happ ./electron/bin
+          cp ./model_zome_hash.txt ./electron/bin
       # Setup npm
       - name: Install nodejs dependencies
         run: |
           npm install
-      # Build happ
-      - name: Build happ
+      # build webcomponents
+      - name: build webcomponents
+        shell: bash
         run: |
-          npm run build
-      # Setup sign & notarize
-      #- name: Setup sign and notarize (macos only)
-      #  continue-on-error: true
-      #  if: ${{ runner.os == 'macOs' }}
-      #  uses:  figleafteam/import-codesign-certs@v2
-      #  with:
-      #    p12-file-base64: ${{ secrets.HBE_APPLE_CERTIFICATE_BASE64 }}
-      #    p12-password: ${{ secrets.HBE_APPLE_CERTIFICATE_PASS }}
-      # Build installers and binaries
-      - name: Build binaries
+          npm run build:webcomponents
+      # build webapp
+      - name: build webapp
+        shell: bash
+        run: |
+          npm run build:webapp
+      # build electron
+      - name: build electron
+        shell: bash
+        run: |
+          npm run build -w electron
+      # Package electron
+      - name: Package electron
         shell: bash
         env:
           #WIN_CSC_LINK: ${{ steps.write_file.outputs.filePath }}
@@ -84,42 +82,46 @@ jobs:
           DEBUG: electron-osx-sign*,electron-notarize*
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run dist
-      # Check electron output folder
-      - name: Check electron output folder
+          npm run dist:build -w electron
+      # List electron output folder
+      - name: List electron output folder
         continue-on-error: true
         run: ls
         working-directory: electron/out-builder
+      # list bin folder
+      - name: list bin folder
+        continue-on-error: true
+        run: ls
+        working-directory: electron/bin
       # Build chaperone app
       - name: Build chaperone app (ubuntu only)
         continue-on-error: true
         if: ${{ runner.os == 'Linux' }}
         run: |
-          npm run build:chaperone
-      # Check workdir folder
-      - name: Check workdir folder
-        continue-on-error: true
-        run: ls -R
-        working-directory: workdir
+          npm run build:chaperone-mainnet
       # upload binary for each platform
       - name: upload binary (ubuntu only)
         if: ${{ runner.os == 'Linux' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${GITHUB_REF#refs/tags/}" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "dna/workdir/place.happ" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "dna/workdir/place.webhapp" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "dna/workdir/ui-chaperone.zip" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "webapp-chaperone/ui-chaperone.zip" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place_we-applet.webhapp" --clobber          
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place.webhapp" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place.happ" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place.dna" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place.wasm" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place_model.wasm" --clobber
       - name: upload binary (macos only)
         if: ${{ runner.os == 'macOs' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${GITHUB_REF#refs/tags/}" "electron/out-builder/Place-$PLACE_VERSION.dmg" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "electron/out-builder/Place-$PLACE_VERSION.dmg" --clobber
       - name: upload binary (Windows only)
         if: ${{ runner.os == 'Windows' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
+        run: |       
           gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "electron/out-builder/Place Setup $env:PLACE_VERSION.exe" --clobber
