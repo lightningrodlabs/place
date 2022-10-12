@@ -18,7 +18,7 @@ rm webapp/ui.zip
 rm -rf webapp-chaperone/dist
 rm -rf webapp-chaperone/out-tsc
 rm webapp-chaperone/tsconfig.tsbuildinfo
-rm webapp-chaperone/ui.zip
+rm webapp-chaperone/ui-chaperone.zip
 # ELECTRON
 rm -rf electron/out-builder
 rm -rf electron/out-tsc

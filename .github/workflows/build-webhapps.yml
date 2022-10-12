@@ -1,10 +1,10 @@
-name: build-dna
+name: build-webhapps
 
 on:
   workflow_call:
 
 jobs:
-  build-dna:
+  build-webhapps:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -25,19 +25,10 @@ jobs:
       - name: Hash Zome
         run: |
           npm run hash-zome
-      # "upload" dna build artifacts
-      - uses: actions/upload-artifact@master
-        with:
-          name: place-happ-artifact
-          path: dna/workdir/place.happ
-      - uses: actions/upload-artifact@master
-        with:
-          name: place-hash-artifact
-          path: dna/workdir/place_zome_hash.txt
       # Setup npm
       - name: Install nodejs dependencies
         run: |
-          npm install place --ignore-scripts
+          npm install
       # Build webapp
       - name: Build webapp
         run: |
@@ -46,16 +37,27 @@ jobs:
       - name: Package web-happ
         run: |
           npm run dist:webhapp
+      # build we-applet
+      - name: build we-applet
+        shell: bash
+        run: |
+          npm run build:we
+      # Package we-applet
+      - name: Package we-applet
+        shell: bash
+        run: |
+          npm run dist:we
       # Regroup artifacts
       - name: Regroup artifacts
         run: |
           mkdir artifacts
+          cp electron/bin/model_zome_hash.txt ./artifacts          
           cp target/wasm32-unknown-unknown/release/place_model.wasm ./artifacts
           cp target/wasm32-unknown-unknown/release/place.wasm ./artifacts
           cp dna/workdir/place.dna ./artifacts
           cp dna/workdir/place.happ ./artifacts                   
           cp webapp/webhapp.workdir/place.webhapp ./artifacts
-          cp electron/bin/model_zome_hash.txt ./artifacts
+          cp we-applet/webhapp.workdir/place_we-applet.webhapp ./artifacts
       # Display structure of uploaded files
       - name: Display structure of uploaded files
         run: ls -R
