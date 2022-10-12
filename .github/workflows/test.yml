@@ -57,6 +57,16 @@ jobs:
         shell: bash
         run: |
           npm run build:webapp
+      # build we-applet
+      - name: build we-applet
+        shell: bash
+        run: |
+          npm run build:we
+      # Package we-applet
+      - name: Package we-applet
+        shell: bash
+        run: |
+          npm run dist:we
       # build electron
       - name: build electron
         shell: bash
