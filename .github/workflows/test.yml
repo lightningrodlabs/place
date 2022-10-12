@@ -34,9 +34,10 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: all-happ-artifact
+      # Display structure of downloaded files
       - name: Display structure of downloaded files
         run: ls -R
-        path: ./artifacts
+        working-directory: ./artifacts
       # Dispatch artifacts
       - name: Dispatch artifacts
         run: |

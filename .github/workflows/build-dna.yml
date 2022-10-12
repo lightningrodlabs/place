@@ -56,7 +56,7 @@ jobs:
           cp dna/workdir/place.happ ./artifacts                   
           cp webapp/webhapp.workdir/place.webhapp ./artifacts
           cp electron/bin/model_zome_hash.txt ./artifacts
-      # Display structure of downloaded files
+      # Display structure of uploaded files
       - name: Display structure of uploaded files
         run: ls -R
         working-directory: ./artifacts
