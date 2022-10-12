@@ -36,13 +36,13 @@ jobs:
           name: all-happ-artifact
       # Display structure of downloaded files
       - name: Display structure of downloaded files
-        run: ls -R
-        working-directory: ./artifacts
+        run: ls
+        working-directory: ./
       # Dispatch artifacts
       - name: Dispatch artifacts
         run: |
-          cp ./artifacts/place.happ ./electron/bin
-          cp ./artifacts/model_zome_hash.txt ./electron/bin
+          cp ./place.happ ./electron/bin
+          cp ./model_zome_hash.txt ./electron/bin
       # Setup npm
       - name: Install nodejs dependencies
         run: |
@@ -109,12 +109,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "manual-release" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "manual-release" "webapp-chaperone/ui-chaperone.zip" --clobber          
-          gh release upload "manual-release" "artifacts/place.webhapp" --clobber
-          gh release upload "manual-release" "artifacts/place.happ" --clobber
-          gh release upload "manual-release" "artifacts/place.dna" --clobber
-          gh release upload "manual-release" "artifacts/place.wasm" --clobber
-          gh release upload "manual-release" "artifacts/place_model.wasm" --clobber
+          gh release upload "manual-release" "webapp-chaperone/ui-chaperone.zip" --clobber
+          gh release upload "manual-release" "we-applet/webhapp.workdir/place_we-applet.webhapp" --clobber          
+          gh release upload "manual-release" "./place.webhapp" --clobber
+          gh release upload "manual-release" "./place.happ" --clobber
+          gh release upload "manual-release" "./place.dna" --clobber
+          gh release upload "manual-release" "./place.wasm" --clobber
+          gh release upload "manual-release" "./place_model.wasm" --clobber
       - name: upload binary (macos only)
         if: ${{ runner.os == 'macOs' }}
         env:

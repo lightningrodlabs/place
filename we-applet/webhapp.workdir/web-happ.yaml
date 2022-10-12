@@ -1,6 +1,6 @@
 ---
 manifest_version: "1"
-name: place_applet
+name: place_we-applet
 ui:
   bundled: "../ui-applet.zip"
 happ_manifest:
