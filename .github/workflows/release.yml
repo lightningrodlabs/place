@@ -51,7 +51,7 @@ jobs:
         run: |
           cp ./place.happ ./electron/bin
           cp ./model_zome_hash.txt ./electron/bin
-      # Setup npm
+      # Install nodejs dependencies
       - name: Install nodejs dependencies
         run: |
           npm install
@@ -105,20 +105,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "webapp-chaperone/ui-chaperone.zip" --clobber
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place_we-applet.webhapp" --clobber          
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place.webhapp" --clobber
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place.happ" --clobber
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place.dna" --clobber
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place.wasm" --clobber
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "./place_model.wasm" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "webapp-chaperone/ui-chaperone.zip" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "./place_we-applet.webhapp" --clobber          
+          gh release upload "${GITHUB_REF#refs/tags/}" "./place.webhapp" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "./place.happ" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "./place.dna" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "./place.wasm" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "./place_model.wasm" --clobber
       - name: upload binary (macos only)
         if: ${{ runner.os == 'macOs' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "electron/out-builder/Place-$PLACE_VERSION.dmg" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "electron/out-builder/Place-$PLACE_VERSION.dmg" --clobber
       - name: upload binary (Windows only)
         if: ${{ runner.os == 'Windows' }}
         env:
