@@ -4,6 +4,7 @@
   "workspaces": [
     "webcomponents",
     "webapp",
+    "webapp-chaperone",
     "we-applet",
     "electron"
   ],

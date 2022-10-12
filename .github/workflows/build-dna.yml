@@ -16,7 +16,7 @@ jobs:
       # Install Hash Zome
       - name: Install Hash Zome
         run: |
-          npm run install:hash-zome          
+          npm run install:hash-zome
       # build dna
       - name: Build DNA
         run: |
@@ -46,18 +46,22 @@ jobs:
       - name: Package web-happ
         run: |
           npm run dist:webhapp
-      # "upload" happ as build artifact
+      # Regroup artifacts
+      - name: Regroup artifacts
+        run: |
+          mkdir artifacts
+          cp target/wasm32-unknown-unknown/release/place_model.wasm ./artifacts
+          cp target/wasm32-unknown-unknown/release/place.wasm ./artifacts
+          cp dna/workdir/place.dna ./artifacts
+          cp dna/workdir/place.happ ./artifacts                   
+          cp webapp/webhapp.workdir/place.webhapp ./artifacts
+          cp electron/bin/model_zome_hash.txt ./artifacts
+      # Display structure of downloaded files
+      - name: Display structure of uploaded files
+        run: ls -R
+        working-directory: ./artifacts
+      # "upload" artifacts
       - uses: actions/upload-artifact@master
         with:
-          name: happ-artifact
-          path: dna/workdir/place.happ
-      # "upload" web-happ as build artifact
-      - uses: actions/upload-artifact@master
-        with:
-          name: webhapp-artifact
-          path: webapp/webhapp.workdir/place.webhapp
-      # "upload" zome_hash as build artifact
-      - uses: actions/upload-artifact@master
-        with:
-          name: model-hash-artifact
-          path: electron/bin/model_zome_hash.txt
+          name: all-happ-artifact
+          path: artifacts/

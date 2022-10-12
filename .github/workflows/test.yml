@@ -33,20 +33,15 @@ jobs:
       # Download previously uploaded artifacts
       - uses: actions/download-artifact@master
         with:
-          name: happ-artifact
-          path: dna/workdir
-      - uses: actions/download-artifact@master
-        with:
-          name: happ-artifact
-          path: electron/bin
-      - uses: actions/download-artifact@master
-        with:
-          name: webhapp-artifact
-          path: dna/workdir
-      - uses: actions/download-artifact@master
-        with:
-          name: model-hash-artifact
-          path: electron/bin
+          name: all-happ-artifact
+      - name: Display structure of downloaded files
+        run: ls -R
+        path: ./artifacts
+      # Dispatch artifacts
+      - name: Dispatch artifacts
+        run: |
+          cp ./artifacts/place.happ ./electron/bin
+          cp ./artifacts/model_zome_hash.txt ./electron/bin
       # Setup npm
       - name: Install nodejs dependencies
         run: |
@@ -93,7 +88,7 @@ jobs:
         continue-on-error: true
         if: ${{ runner.os == 'Linux' }}
         run: |
-          npm run build:chaperone
+          npm run build:chaperone-mainnet
       # Check workdir folder
       - name: Check workdir folder
         continue-on-error: true
@@ -113,8 +108,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "manual-release" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "manual-release" "dna/workdir/place.webhapp" --clobber
-          gh release upload "manual-release" "dna/workdir/ui-chaperone.zip" --clobber
+          gh release upload "manual-release" "webapp-chaperone/ui-chaperone.zip" --clobber          
+          gh release upload "manual-release" "artifacts/place.webhapp" --clobber
+          gh release upload "manual-release" "artifacts/place.happ" --clobber
+          gh release upload "manual-release" "artifacts/place.dna" --clobber
+          gh release upload "manual-release" "artifacts/place.wasm" --clobber
+          gh release upload "manual-release" "artifacts/place_model.wasm" --clobber
       - name: upload binary (macos only)
         if: ${{ runner.os == 'macOs' }}
         env:

@@ -5,7 +5,7 @@
     "build": "tsc",
     "build:watch": "run-singleton \"tsc -w --incremental --preserveWatchOutput\"",
     "start": "concurrently --names tsc,dev-server \"npm run build:watch\" \"web-dev-server --config ./web-dev-server.config.mjs\"",
-    "package": "rm -rf ui.zip && rm -rf dist && tsc && rollup --config rollup.config.js && cd dist && cp * ../../../../electron/web && bestzip ../ui.zip * && cp ../ui.zip ../../../../workdir/ui-chaperone.zip"
+    "package": "rm -rf ui.zip && rm -rf dist && npm run build && rollup --config rollup.config.js && cd dist && cp * ../../electron/web && bestzip ../ui.zip * && cp ../ui.zip ../ui-chaperone.zip"
 
   },
   "devDependencies": {
