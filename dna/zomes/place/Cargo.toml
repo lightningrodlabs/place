@@ -1,10 +1,10 @@
 [package]
-name = "zome_place"
-version = "0.0.1"
+name = "place"
+version = "0.1.0-hdk.154"
 edition = "2021"
 
 [lib]
-name = "zome_place"
+name = "place"
 crate-type = [ "cdylib", "rlib" ]
 
 [dependencies]

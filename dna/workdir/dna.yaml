@@ -16,6 +16,6 @@ integrity:
 coordinator:
   zomes:
     - name: place
-      bundled: '../../target/wasm32-unknown-unknown/release/zome_place.wasm'
+      bundled: '../../target/wasm32-unknown-unknown/release/place.wasm'
       dependencies:
         - name: place_model

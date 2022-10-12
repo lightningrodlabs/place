@@ -1,6 +1,6 @@
 [package]
 name = "place_model"
-version = "0.0.1"
+version = "0.1.0-hdk.154"
 edition = "2021"
 
 [lib]
