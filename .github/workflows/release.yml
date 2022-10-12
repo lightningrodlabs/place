@@ -107,12 +107,13 @@ jobs:
         run: |
           gh release upload "${GITHUB_REF#refs/tags/}" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
           gh release upload "${GITHUB_REF#refs/tags/}" "webapp-chaperone/ui-chaperone.zip" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "./place_we-applet.webhapp" --clobber          
-          gh release upload "${GITHUB_REF#refs/tags/}" "./place.webhapp" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "./place.happ" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "./place.dna" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "./place.wasm" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "./place_model.wasm" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "webapp/ui.zip" --clobber             
+          gh release upload "${GITHUB_REF#refs/tags/}" "place_we-applet.webhapp" --clobber          
+          gh release upload "${GITHUB_REF#refs/tags/}" "place.webhapp" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "place.happ" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "place.dna" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "place.wasm" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "place_model.wasm" --clobber
       - name: upload binary (macos only)
         if: ${{ runner.os == 'macOs' }}
         env:

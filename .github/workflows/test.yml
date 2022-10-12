@@ -110,12 +110,13 @@ jobs:
         run: |
           gh release upload "manual-release" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
           gh release upload "manual-release" "webapp-chaperone/ui-chaperone.zip" --clobber
-          gh release upload "manual-release" "./place_we-applet.webhapp" --clobber          
-          gh release upload "manual-release" "./place.webhapp" --clobber
-          gh release upload "manual-release" "./place.happ" --clobber
-          gh release upload "manual-release" "./place.dna" --clobber
-          gh release upload "manual-release" "./place.wasm" --clobber
-          gh release upload "manual-release" "./place_model.wasm" --clobber
+          gh release upload "manual-release" "webapp/ui.zip" --clobber           
+          gh release upload "manual-release" "place_we-applet.webhapp" --clobber          
+          gh release upload "manual-release" "place.webhapp" --clobber
+          gh release upload "manual-release" "place.happ" --clobber
+          gh release upload "manual-release" "place.dna" --clobber
+          gh release upload "manual-release" "place.wasm" --clobber
+          gh release upload "manual-release" "place_model.wasm" --clobber
       - name: upload binary (macos only)
         if: ${{ runner.os == 'macOs' }}
         env:
