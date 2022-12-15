@@ -2,6 +2,9 @@
 
 rustc --version
 
+# For ts-bindings
+cargo install zits
+
 # temp fix for broken holochain deps
 cargo update -p hdi --precise 0.1.3
 

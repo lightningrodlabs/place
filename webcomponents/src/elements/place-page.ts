@@ -12,12 +12,15 @@ import 'lit-flatpickr';
 import { contextProvided } from '@lit-labs/context';
 
 import {sharedStyles} from "../sharedStyles";
-import {destructurePlacement, placeContext, PlacementEntry, PlaceState, snapshot_to_str, SnapshotEntry} from "../types";
-import {PlaceStore} from "../place.store";
+
 import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {ScopedElementsMixin} from "@open-wc/scoped-elements";
 import {color2index, COLOR_PALETTE, IMAGE_SCALE} from "../constants";
 import {buffer2Texture, randomSnapshotData, setPixel, snapshotIntoFrame} from "../imageBuffer";
+import {ZomeElement} from "@ddd-qc/lit-happ";
+import {destructurePlacement, PlacePerspective, PlaceState, snapshot_to_str} from "../viewModel/place.perspective";
+import {PlaceZvm} from "../viewModel/place.zvm";
+import {Placement, Snapshot} from "../bindings/place";
 
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
@@ -38,20 +41,17 @@ const toHHMMSS = function (str: string) {
 
 
 /**
- * @element place-controller
+ * @element place-page
  */
-export class PlaceController extends ScopedElementsMixin(LitElement) {
+export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   constructor() {
-    super();
+    super(PlaceZvm.DEFAULT_ZOME_NAME)
   }
 
   /** Public attributes */
   @property({ type: Boolean, attribute: 'debug' })
   debugMode: boolean = false;
 
-  /** Dependencies */
-  @contextProvided({ context: placeContext })
-  _store!: PlaceStore;
 
   /** PIXI Elements */
   _pixiApp: any = undefined;
@@ -99,7 +99,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** After first render only */
   async firstUpdated() {
-    console.log("place-controller first update done!")
+    console.log("place-page first update done!")
     await this.init();
   }
 
@@ -109,7 +109,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     console.log("*** updated() called !")
 
     if (this._mustInitPixi) {
-      const properties = await this._store.getProperties()
+      const properties = await this._zvm.getProperties()
       console.log({properties})
       this.initPixiApp(this.playfieldElem, properties.canvasSize)
       this._mustInitPixi = false;
@@ -134,13 +134,13 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
         }
 
         /** Publishing if latest snapshot is older than now */
-        let maybeLatestStored = this._store.getLatestStoredSnapshot()
+        let maybeLatestStored = this._zvm.getLatestStoredSnapshot()
         //console.log({maybeLatestStored})
         if (!maybeLatestStored) {
           break;
         }
-        let nowIndex = this._store.epochToBucketIndex(Date.now() / 1000);
-        nowIndex -=  nowIndex % this._store.getMaybeProperties()!.snapshotIntervalInBuckets;
+        let nowIndex = this._zvm.epochToBucketIndex(Date.now() / 1000);
+        nowIndex -=  nowIndex % this._zvm.getMaybeProperties()!.snapshotIntervalInBuckets;
         if (maybeLatestStored!.timeBucketIndex < nowIndex) {
           await this.changeState(PlaceState.Publishing);
           break;
@@ -163,20 +163,20 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
    * Get local snapshots and latest from DHT
    */
   private async init() {
-    console.log("place-controller.init() - START!");
+    console.log("<place-page>.init() - START!");
     await this.changeState(PlaceState.Initializing)
 
     /** Wait a second for pixi to startup? */
     await delay(1 * 1000);
 
     /** Get latest snapshot from DHT and store it */
-    await this._store.pullLatestSnapshotFromDht();
-    console.log("Latest in store: " + snapshot_to_str(this._store.getLatestStoredSnapshot()!))
+    await this._zvm.pullLatestSnapshotFromDht();
+    console.log("Latest in store: " + snapshot_to_str(this._zvm.getLatestStoredSnapshot()!))
 
     /** Store all local snapshots */
     console.log("Calling getLocalSnapshots()...")
     try {
-      const localSnapshots = await this._store.getLocalSnapshots();
+      const localSnapshots = await this._zvm.getLocalSnapshots();
       console.log("localSnapshots.length = ", localSnapshots.length)
     } catch (e) {
       console.log("Calling getLocalSnapshots() failed")
@@ -184,7 +184,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
     /** Done */
     await this.changeState(PlaceState.Initialized);
-    console.log("place-controller.init() - DONE");
+    console.log("<place-page>.init() - DONE");
   }
 
 
@@ -248,9 +248,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     //   .drawRect(0, 0, WORLD_SIZE, WORLD_SIZE)
 
     //let buffer: Uint8Array;
-    if (this._store.latestStoredBucketIndex != 0) {
+    if (this._zvm.latestStoredBucketIndex != 0) {
       //const snapshots = this._snapshots.value;
-      const snapshot = this._store.snapshotStore[this._store.latestStoredBucketIndex];
+      const snapshot = this._zvm.perspective.snapshots[this._zvm.latestStoredBucketIndex];
       console.log("Starting latest: " + snapshot_to_str(snapshot));
       this._frameBuffer = snapshotIntoFrame(snapshot.imageData, worldSize);
     } else {
@@ -299,7 +299,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
         try {
           this._pixelsPlaced += 1
-          await this._store.placePixel(placement)
+          await this._zvm.placePixel(placement)
           const tiny = new tinycolor(this._selectedColor)
           const colorNum = parseInt(tiny.toHex(), 16);
           setPixel(this._frameBuffer, colorNum, customPos, worldSize);
@@ -373,14 +373,14 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Called once after init is done and canvas has been rendered */
   private async postInit() {
-    console.log("place-controller.postInit() - START!");
-    const properties = await this._store.getProperties()
+    console.log("<place-page>.postInit() - START!");
+    const properties = await this._zvm.getProperties()
     console.log({properties})
 
     this.initPixiApp(this.playfieldElem, properties.canvasSize)
 
     /** Display latest stored snapshot */
-    let maybeLatestStored = this._store.getLatestStoredSnapshot()
+    let maybeLatestStored = this._zvm.getLatestStoredSnapshot()
     //console.log({maybeLatestStored})
     if (maybeLatestStored) {
       this.viewSnapshot(maybeLatestStored, properties.canvasSize);
@@ -408,26 +408,26 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     /** Transition to Live */
     this._requestingSnapshotIndex = 0
     const succeeded = await this.changeState(PlaceState.Loading);
-    console.log("place-controller.postInit() - DONE");
+    console.log("<place-page>.postInit() - DONE");
   }
 
 
   /** Get now snapshot from DHT or publish it yourself */
   private async publishToNow(nowIndex?: number) {
-    const nowIndex2 = nowIndex? nowIndex: this._store.epochToBucketIndex(Date.now() / 1000)
-    let nowSnapshot = await this._store.getSnapshotAt(nowIndex2);
+    const nowIndex2 = nowIndex? nowIndex: this._zvm.epochToBucketIndex(Date.now() / 1000)
+    let nowSnapshot = await this._zvm.getSnapshotAt(nowIndex2);
     if (!nowSnapshot) {
       //await this._store.publishUpTo(nowIndex2, this.onPublish, this);
-      await this._store.publishSameUpTo(nowIndex2, this.onPublish, this);
+      await this._zvm.publishSameUpTo(nowIndex2, this.onPublish, this);
     }
   }
 
 
   /** Callback for this.publishToNow() */
-  private onPublish(snapshot: SnapshotEntry, cbData?: PlaceController): void {
+  private onPublish(snapshot: Snapshot, cbData?: PlacePage): void {
     console.log("onPublish() called: " + snapshot.timeBucketIndex)
     if (cbData) {
-      cbData.viewSnapshot(snapshot, cbData._store.getMaybeProperties()!.canvasSize)
+      cbData.viewSnapshot(snapshot, cbData._zvm.getMaybeProperties()!.canvasSize)
       cbData.requestUpdate();
     }
   }
@@ -435,15 +435,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** */
   private async publishNowSnapshot(nowSec: number) {
-    const nowIndex = this._store.epochToBucketIndex(nowSec)
-    const nowSnapshot = await this._store.getSnapshotAt(nowIndex);
+    const nowIndex = this._zvm.epochToBucketIndex(nowSec)
+    const nowSnapshot = await this._zvm.getSnapshotAt(nowIndex);
     //console.log(`publishNowSnapshot() now = ${nowIndex} ; exists = ` + (nowSnapshot != null));
     /** Now snapshot found ; just get my rank */
     if (nowSnapshot) {
-      let myRank = this._store.myRankStore[nowIndex]
+      let myRank = this._zvm.perspective.myRanks[nowIndex]
       if (!myRank) {
-        await this._store.getMyRenderTime(nowIndex)
-        myRank = this._store.getMyRankAt(nowIndex)
+        await this._zvm.getMyRenderTime(nowIndex)
+        myRank = this._zvm.getMyRankAt(nowIndex)
       }
       /** When in Live make sure we are displaying latest */
       //console.log("publishNowSnapshot() aborted. Already exists | " + this._store.getRelativeBucketIndex(nowIndex) + " | my rank : " + myRank)
@@ -455,7 +455,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
     /** Not found: try to publish */
     //const res = await this._store.publishNextSnapshotAt(nowIndex - 1)
-    const res = await this._store.publishNextSnapshot(nowSec)
+    const res = await this._zvm.publishNextSnapshot(nowSec)
     console.log("publishNowSnapshot() " + nowIndex + ": " + (res? "SUCCEEDED" : "FAILED"));
     /** When in Live make sure we are displaying latest */
     if (res && this._state == PlaceState.Live) {
@@ -479,10 +479,10 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
 
   /** */
-  async viewFutureSnapshot(snapshot: SnapshotEntry, placements: PlacementEntry[]) {
+  async viewFutureSnapshot(snapshot: Snapshot, placements: Placement[]) {
     //console.log(`viewFutureSnapshot() adding ${placements.length} placements to index ` + this._store.getRelativeBucketIndex(snapshot.timeBucketIndex))
     /* Update frame with current bucket placements */
-    const properties = await this._store.getProperties()
+    const properties = await this._zvm.getProperties()
     console.log({properties})
     this._frameBuffer = snapshotIntoFrame(snapshot.imageData, properties.canvasSize);
     for (const placement of placements) {
@@ -500,9 +500,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
 
   /** */
-  viewSnapshot(snapshot: SnapshotEntry, worldSize: number) {
+  viewSnapshot(snapshot: Snapshot, worldSize: number) {
     this._displayedIndex = snapshot.timeBucketIndex
-    console.log("frame set to: " + this._store.getRelativeBucketIndex(snapshot.timeBucketIndex));
+    console.log("frame set to: " + this._zvm.getRelativeBucketIndex(snapshot.timeBucketIndex));
     this._frameBuffer = snapshotIntoFrame(snapshot.imageData, worldSize);
     if (this._frameSprite) {
       this._frameSprite.texture = buffer2Texture(this._frameBuffer, worldSize);
@@ -516,9 +516,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     this._hideOverlay = false;
     this._cursor.visible = false;
     //const placements = await this._store.getPlacementsAt(iBucketIndex)
-    const maybeSnapshot = await this._store.getSnapshotAt(iBucketIndex)
+    const maybeSnapshot = await this._zvm.getSnapshotAt(iBucketIndex)
     if (maybeSnapshot) {
-      this.viewSnapshot(maybeSnapshot, this._store.getMaybeProperties()!.canvasSize);
+      this.viewSnapshot(maybeSnapshot, this._zvm.getMaybeProperties()!.canvasSize);
       this.requestUpdate();
     }
     this._hideOverlay = true;
@@ -536,7 +536,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** */
   async refresh() {
     //console.log("refresh(): Pulling data from DHT")
-    await this._store.pullLatestSnapshotFromDht()
+    await this._zvm.pullLatestSnapshotFromDht()
     if(this._state == PlaceState.Live) {
        await this.transitionToLive()
      }
@@ -558,15 +558,15 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
   /** */
   async onDatePicked(date:Date) {
     //console.log("onDatePicked called: ", date)
-    const bucketIndex = this._store.epochToBucketIndex(date.getTime() / 1000)
-    console.log("onDatePicked bucketIndex: ", this._store.getRelativeBucketIndex(bucketIndex), bucketIndex)
+    const bucketIndex = this._zvm.epochToBucketIndex(date.getTime() / 1000)
+    console.log("onDatePicked bucketIndex: ", this._zvm.getRelativeBucketIndex(bucketIndex), bucketIndex)
     this._requestingSnapshotIndex = bucketIndex
   }
 
 
   /** */
   buildSnapshotButtons(nowIndex: number): any[] {
-    const startIndex = this._store.getStartIndex()
+    const startIndex = this._zvm.getStartIndex()
     const bucketCount = nowIndex - startIndex + 1
     console.log(`Buttons: timeframeCount: ${bucketCount} = ${nowIndex} - ${startIndex} + 1`)
     let snapshotButtons: any[] = []
@@ -679,21 +679,21 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
 
   /** Set frame to now snapshot + placements in future bucket */
-  async transitionToLive(currentPlacement?: PlacementEntry): Promise<boolean> {
+  async transitionToLive(currentPlacement?: Placement): Promise<boolean> {
     //console.log("transitionToLive()...")
 
     this._cursor.visible = false;
 
-    await this._store.pullLatestSnapshotFromDht()
+    await this._zvm.pullLatestSnapshotFromDht()
 
     /* Latest must correspond to 'now' */
-    let latest = this._store.getLatestStoredSnapshot();
+    let latest = this._zvm.getLatestStoredSnapshot();
     if (!latest) {
       console.warn("transitionToLive() aborting: no latest snapshot stored")
       return false;
     }
-    const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
-    const nowSnapshotIndex = nowIndex - (nowIndex % this._store.getMaybeProperties()!.snapshotIntervalInBuckets);
+    const nowIndex = this._zvm.epochToBucketIndex(Date.now() / 1000)
+    const nowSnapshotIndex = nowIndex - (nowIndex % this._zvm.getMaybeProperties()!.snapshotIntervalInBuckets);
     console.log("transitionToLive()", nowIndex, nowSnapshotIndex)
     if (latest.timeBucketIndex != nowSnapshotIndex) {
       console.warn("transitionToLive() latest.timeBucketIndex != nowSnapshotIndex", latest.timeBucketIndex, nowSnapshotIndex)
@@ -701,9 +701,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     }
 
     /* Create future frame */
-    let placements: PlacementEntry[] = [];
+    let placements: Placement[] = [];
     for(let i = nowSnapshotIndex; i <= nowIndex; i++) {
-      const current: PlacementEntry[] = await this._store.getPlacementsAt(i);
+      const current: Placement[] = await this._zvm.getPlacementsAt(i);
       placements = placements.concat(current)
     }
     if (currentPlacement) {
@@ -745,7 +745,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Render the current state */
   render() {
-    //console.log("place-controller render() - " + this._state);
+    //console.log("<place-page> render() - " + this._state);
     switch(this._state) {
       case PlaceState.Uninitialized:
       case PlaceState.Initializing: return this.renderStartup(); break;
@@ -772,11 +772,11 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Render to do when syncing to latest frame */
   renderPublishToNow() {
-    let localBirthDate = new Date(this._store.getMaybeProperties()!.startTime * 1000).toLocaleString()
-    const nowIndex = this._store.epochToBucketIndex(Date.now() / 1000)
+    let localBirthDate = new Date(this._zvm.getMaybeProperties()!.startTime * 1000).toLocaleString()
+    const nowIndex = this._zvm.epochToBucketIndex(Date.now() / 1000)
     /** */
     return html`
-      <h2>Publishing snapshots up to current time... ${Math.max(0, this._store.getRelativeBucketIndex(this._displayedIndex))} / ${this._store.getRelativeBucketIndex(nowIndex)}</h2>
+      <h2>Publishing snapshots up to current time... ${Math.max(0, this._zvm.getRelativeBucketIndex(this._displayedIndex))} / ${this._zvm.getRelativeBucketIndex(nowIndex)}</h2>
       <div>Birthdate: ${localBirthDate}</div>
       <!--<span>${this._state}</span>-->
       <!--<div>${Date.now()}</div>-->
@@ -787,12 +787,12 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
 
   /** Render for real-time editing of frame */
   renderNormal() {
-    //console.log("place-controller renderNormal()");
+    //console.log("<place-page> renderNormal()");
     /** Frame consts */
-    const maybeProperties = this._store.getMaybeProperties()
+    const maybeProperties = this._zvm.getMaybeProperties()
     const nowMs: number = Date.now()
     const nowSec = Math.floor(nowMs / 1000)
-    const nowIndex = this._store.epochToBucketIndex(nowSec)
+    const nowIndex = this._zvm.epochToBucketIndex(nowSec)
     const nowDate = new Date(nowIndex * maybeProperties!.bucketSizeSec * 1000)
     const startDate = new Date(maybeProperties!.startTime * 1000)
     const localBirthDate = startDate.toLocaleString()
@@ -845,9 +845,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
     // .onChange=${(dates:any) => {this.onDatePicked(dates[0])}}
 
     /** Build placement logs */
-    let displayedDetails = this._store.placementStore[this._displayedIndex]
+    let displayedDetails = this._zvm.perspective.placements[this._displayedIndex];
     if (!displayedDetails) {
-      this._store.getPlacementsAt(this._displayedIndex).then(() => this.requestUpdate())
+      this._zvm.getPlacementsAt(this._displayedIndex).then(() => this.requestUpdate())
       displayedDetails = [];
     }
     let placementDetails = displayedDetails.map((detail) => {
@@ -867,8 +867,8 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
                           }}></button>`
     })
 
-    const myRank = this._store.getMyRankAt(this._displayedIndex);
-    const publishers = this._store.getPublishersAt(this._displayedIndex);
+    const myRank = this._zvm.getMyRankAt(this._displayedIndex);
+    const publishers = this._zvm.getPublishersAt(this._displayedIndex);
 
     let footer = html`<div style="min-height:10px;"></div>`;
     if (!this._canFullscreen) {
@@ -877,9 +877,9 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
           <div>Birthdate: ${localBirthDate}</div>
           <!--<div>Age: ${toHHMMSS(timeDiff.toString())}</div>-->
           <span>State: ${this._state}</span>
-          <div>Displaying bucket: ${this._store.getRelativeBucketIndex(this._displayedIndex)} ${this._state == PlaceState.Live? " (live)" :""}</div>
+          <div>Displaying bucket: ${this._zvm.getRelativeBucketIndex(this._displayedIndex)} ${this._state == PlaceState.Live? " (live)" :""}</div>
           <div id="displayedIndexInfoDiv" style="min-height: 200px; margin-left: 20px;">
-            <!--<div>Now: ${this._store.getRelativeBucketIndex(nowIndex)}</div>-->
+            <!--<div>Now: ${this._zvm.getRelativeBucketIndex(nowIndex)}</div>-->
             <div> - My render rank: ${myRank}</div>
             <div> - Publishers: ${publishers}</div>
             <span> - Placements:</span>
@@ -920,7 +920,7 @@ export class PlaceController extends ScopedElementsMixin(LitElement) {
             <div class="center">${maybeProperties!.pixelsPerBucket - this._pixelsPlaced}</div>
             <hr>
             <div class="center">View</div>
-              <!--<div>Latest stored: ${this._store.getRelativeBucketIndex(this._store.latestStoredBucketIndex)}</div>-->
+              <!--<div>Latest stored: ${this._zvm.getRelativeBucketIndex(this._zvm.latestStoredBucketIndex)}</div>-->
             ${timeTravelUi}
             <button style="margin:5px;"
                     .disabled=${this._state == PlaceState.Live}

@@ -8,7 +8,7 @@ import builtins from "rollup-plugin-node-builtins";
 import babel from "@rollup/plugin-babel";
 import html from "@web/rollup-plugin-html";
 import { importMetaAssets } from "@web/rollup-plugin-import-meta-assets";
-import { terser } from "rollup-plugin-terser";
+//import { terser } from "rollup-plugin-terser";
 import { generateSW } from "rollup-plugin-workbox";
 import path from "path";
 
@@ -44,14 +44,14 @@ export default {
       "process.env.NODE_ENV": '"production"',
       "process.env.ENV": `"${process.env.ENV}"`,
       "process.env.HC_PORT": `"${HC_PORT}"`,
-      preventAssignment: true
+      "process.env.APP_DEV": `"${process.env.APP_DEV}"`,
+      "preventAssignment": true,
     }),
-    builtins(),
     typescript({ experimentalDecorators: true, outDir: DIST_FOLDER }),
-    commonjs({}),
+    builtins(),
     //globals(), // removed because it cause build error
     /** Minify JS */
-    terser(),
+    //terser(),
     /** Bundle assets references via import.meta.url */
     importMetaAssets(),
     /** Compile JS to a lower language target */
@@ -108,5 +108,6 @@ export default {
       clientsClaim: true,
       runtimeCaching: [{ urlPattern: "polyfills/*.js", handler: "CacheFirst" }],
     }),
+    commonjs({}),
   ],
 };

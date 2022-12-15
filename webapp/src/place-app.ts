@@ -1,92 +1,89 @@
-import { LitElement, html } from "lit";
+import { html } from "lit";
 import { state } from "lit/decorators.js";
-import { ScopedElementsMixin } from "@open-wc/scoped-elements";
 import {CellId} from "@holochain/client";
-import {HolochainClient} from "@holochain-open-dev/cell-client";
-import {ContextProvider} from "@lit-labs/context";
 import {serializeHash} from '@holochain-open-dev/utils';
 
 import {
-  PlaceController,
-  PlaceStore,
-  placeContext,
+  PlacePage,
+  DEFAULT_PLACE_DEF, PlaceDvm,
 } from "@place/elements";
-import {AppWebsocket} from "@holochain/client";
+import {CellContext, HappElement, HvmDef} from "@ddd-qc/lit-happ";
 
+//const APP_DEV = process.env.APP_DEV? process.env.APP_DEV : false;
+let HC_APP_PORT: number = Number(process.env.HC_PORT);
 
-let APP_ID = 'place'
-let HC_PORT:any = process.env.HC_PORT;
-let NETWORK_ID: any = null
 export const IS_ELECTRON = (window.location.port === ""); // No HREF PORT when run by Electron
 if (IS_ELECTRON) {
-  APP_ID = 'main-app'
-  let searchParams = new URLSearchParams(window.location.search);
-  HC_PORT = searchParams.get("PORT");
-  NETWORK_ID = searchParams.get("UID");
-  console.log(NETWORK_ID)
+  const APP_ID = 'main-app'
+  const searchParams = new URLSearchParams(window.location.search);
+  const urlPort = searchParams.get("PORT");
+  if(!urlPort) {
+    console.error("Missing PORT value in URL", window.location.search)
+  }
+  HC_APP_PORT = Number(urlPort);
+  const NETWORK_ID = searchParams.get("UID");
+  console.log(NETWORK_ID);
+  DEFAULT_PLACE_DEF.id = APP_ID + '-' + NETWORK_ID;  // override installed_app_id
 }
 
-// FIXME
-//const HC_PORT = process.env.HC_PORT
-//const HC_PORT = 8889
-console.log("HC_PORT = " + HC_PORT + " || " + process.env.HC_PORT);
+console.log({APP_ID: DEFAULT_PLACE_DEF.id})
+console.log({HC_APP_PORT})
 
 
 /** */
-export class PlaceApp extends ScopedElementsMixin(LitElement) {
+export class PlaceApp extends HappElement {
 
-  @state() loaded = false;
-
-  _placeStore: PlaceStore | null = null;
+  @state() private _loaded = false;
 
   _placeCellId: CellId | null = null;
 
+  static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
+
+  constructor() {
+    super(HC_APP_PORT);
+  }
+
+
+  get placeDvm(): PlaceDvm { return this.hvm.getDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDvm }
+
 
   /** */
-  async firstUpdated() {
-    const wsUrl = `ws://localhost:${HC_PORT}`
-    const installed_app_id = NETWORK_ID == null || NETWORK_ID == ''
-      ? APP_ID
-      : APP_ID + '-' + NETWORK_ID;
-    console.log({installed_app_id})
-
-    const appWebsocket = await AppWebsocket.connect(wsUrl);
-    console.log({appWebsocket})
-    const hcClient = new HolochainClient(appWebsocket)
-    /** Place */
-    const appInfo = await hcClient.appWebsocket.appInfo({installed_app_id});
-    this._placeCellId  = appInfo.cell_data[0].cell_id;
-
+  async happInitialized() {
+    console.log("happInitialized()")
+    //new ContextProvider(this, cellContext, this.taskerDvm.installedCell);
+    this._placeCellId = this.placeDvm.installedCell.cell_id;
+    await this.hvm.probeAll();
 
     /** Send dnaHash to electron */
     if (IS_ELECTRON) {
       const ipc = window.require('electron').ipcRenderer;
-      const dnaHashB64 = serializeHash(this._placeCellId[0])
+      const dnaHashB64 = serializeHash(this._placeCellId![0])
       let _reply = ipc.sendSync('dnaHash', dnaHashB64);
     }
 
-
-    this._placeStore = new PlaceStore(hcClient, this._placeCellId);
-    new ContextProvider(this, placeContext, this._placeStore);
-
-    this.loaded = true;
+    /** Done */
+    this._loaded = true;
   }
 
 
+  /** */
   render() {
-    console.log("place-app render() called!")
-    if (!this.loaded) {
+    console.log("<place-app>.render()")
+    if (!this._loaded) {
       return html`<span>Loading...</span>`;
     }
     return html`
-       <place-controller style="height:100vh"></place-controller>
+       <cell-context .installedCell="${this.placeDvm.installedCell}">
+         <place-page style="height:100vh"></place-page>
+       </cell-context>
     `;
   }
 
 
   static get scopedElements() {
     return {
-      "place-controller": PlaceController,
+      "place-page": PlacePage,
+      "cell-context": CellContext,
     };
   }
 }

@@ -1,7 +1,6 @@
 ---
 manifest_version: "1"
-name: place
-uid: ~
+name: dPlace
 integrity:
   origin_time: 2022-09-25T13:55:49.200Z
   properties:
@@ -15,7 +14,7 @@ integrity:
       bundled: '../../target/wasm32-unknown-unknown/release/place_model.wasm'
 coordinator:
   zomes:
-    - name: place
+    - name: zPlace
       bundled: '../../target/wasm32-unknown-unknown/release/place.wasm'
       dependencies:
         - name: place_model

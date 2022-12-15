@@ -4,12 +4,15 @@ use crate::Placement;
 use crate::double_pixel::DoublePixel;
 use crate::get_properties::get_dna_properties;
 
+/// For typescript bindings compatability
+type Uint8Array = Vec<DoublePixel>;
+
 /// A Public Entry representing the whole canvas for a specific time bucket
 #[hdk_entry_helper]
 #[derive(Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Snapshot {
-   pub image_data: Vec<DoublePixel>, // 2 x 4-bit pixels per u8
+   pub image_data: Uint8Array, // 2 x 4-bit pixels per u8
    pub time_bucket_index: u32, // Number of 'bucket_size_sec' since EPOCH.
 }
 

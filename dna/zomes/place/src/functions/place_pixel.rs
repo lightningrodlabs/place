@@ -51,6 +51,7 @@ pub fn place_pixel(input: DestructuredPlacement) -> ExternResult<ActionHash> {
 /** DEBUGGING API */
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PlaceAtInput {
    placement: DestructuredPlacement,
    bucket_index: u32,

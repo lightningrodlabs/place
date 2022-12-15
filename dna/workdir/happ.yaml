@@ -1,14 +1,12 @@
 ---
 manifest_version: "1"
-name: place
-description: ""
+name: hPlace
+description: "Pixel placing canvas"
 roles:
-  - id: place
+  - id: rPlace
     provisioning:
       strategy: create
       deferred: false
     dna:
       bundled: "place.dna"
-      uid: ~
-      properties: ~
       clone_limit: 0
