@@ -3,7 +3,7 @@ manifest_version: "1"
 name: hPlace
 description: "Pixel placing canvas"
 roles:
-  - id: rPlace
+  - name: rPlace
     provisioning:
       strategy: create
       deferred: false

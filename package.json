@@ -18,7 +18,7 @@
 
     "build:zome"             : "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
     "build:dna"              : "npm run build:zome && bash scripts/pack-dna.sh",
-    "build:happ"             : "npm run build:dna && hc app pack dna/workdir && cp dna/workdir/place.happ electron/bin/place.happ && npm run hash-zome && bash scripts/ts-bindings.sh",
+    "build:happ"             : "npm run build:dna && hc app pack dna/workdir -o dna/workdir/place.happ && cp dna/workdir/place.happ electron/bin/place.happ && npm run hash-zome && bash scripts/ts-bindings.sh",
     "build:webcomponents"    : "npm run build -w @place/elements",
     "build:webapp"           : "npm run build -w place",
     "build:webapp-chaperone" : "npm run build -w place-chaperone",
@@ -27,14 +27,14 @@
 
     "test"                   : "npm run build:happ && npm run build:webcomponents && npm t -w tests",
 
-    "prepare-test"           : "npm run clean:hc & npm run build:webcomponents && npm run build:webapp",
-    "devtest"                : "npm run prepare-test && npm run start",
-    "devtest:we"             : "npm run prepare-test && npm run devtest -w we-applet",
+    "prepare-devtest"        : "npm run clean:hc & npm run build:happ && npm run build:webcomponents",
+    "devtest"                : "npm run prepare-devtest && npm run build:webapp && npm run start",
+    "devtest:we"             : "npm run prepare-devtest && npm run devtest -w we-applet",
     "devtest:electron"       : "npm run dist:webapp && npm run start -w place-app",
 
     "dev:libs"               : "npm run build:watch -w webcomponents",
-    "start:happ"             : "RUST_LOG=warn echo \"pass\" | hc s --piped -f=$ADMIN_PORT generate dna/workdir/hPlace.happ --run=$HC_PORT -a place network mdns",
-    "start:happ-proxied"     : "RUST_LOG=warn echo \"pass\" | hc s --piped -f=$ADMIN_PORT generate dna/workdir/hPlace.happ --run=$HC_PORT -a place network --bootstrap https://bootstrap-staging.holo.host/ quic -p=kitsune-proxy://SYVd4CF3BdJ4DS7KwLLgeU3_DbHoZ34Y-qroZ79DOs8/kitsune-quic/h/165.22.32.11/p/5779/--",
+    "start:happ"             : "RUST_LOG=warn echo \"pass\" | hc s --piped -f=$ADMIN_PORT generate dna/workdir/place.happ --run=$HC_PORT -a place network mdns",
+    "start:happ-proxied"     : "RUST_LOG=warn echo \"pass\" | hc s --piped -f=$ADMIN_PORT generate dna/workdir/place.happ --run=$HC_PORT -a place network --bootstrap https://bootstrap-staging.holo.host/ quic -p=kitsune-proxy://SYVd4CF3BdJ4DS7KwLLgeU3_DbHoZ34Y-qroZ79DOs8/kitsune-quic/h/165.22.32.11/p/5779/--",
     "start:chaperone"        : "cross-env HC_PORT=33735 ADMIN_PORT=$(port) concurrently \"npm run dev:libs\" \"npm run start:happ\" \"sleep 5 && npm run start -w place-chaperone\"",
     "start"                  : "cross-env HC_PORT=33735 ADMIN_PORT=$(port) concurrently \"npm run dev:libs\" \"npm run start:happ\" \"sleep 5 && npm run start -w place\"",
     "start:agent-proxied"    : "cross-env HC_PORT=$(port) ADMIN_PORT=$(port) concurrently \"npm run dev:libs\" \"npm run start:happ-proxied\" \"sleep 5 && npm run start -w place\"",
