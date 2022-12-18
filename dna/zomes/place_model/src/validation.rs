@@ -1,7 +1,7 @@
 use super::*;
 
 
-///
+/// TODO
 #[hdk_extern]
 fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
   match op {
@@ -11,7 +11,7 @@ fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
 }
 
 
-///
+/// TODO
 pub fn __validate_create_entry(entry: Entry) -> ExternResult<ValidateCallbackResult> {
   match entry {
     _ => Ok(ValidateCallbackResult::Valid),
