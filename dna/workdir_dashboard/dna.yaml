@@ -1,0 +1,14 @@
+---
+manifest_version: "1"
+name: dPlaceDashboard
+integrity:
+  origin_time: 2022-09-25T13:55:49.200Z
+  zomes:
+    - name: place_dashboard_integrity
+      bundled: '../../target/wasm32-unknown-unknown/release/place_dashboard_integrity.wasm'
+coordinator:
+  zomes:
+    - name: zPlaceDashboard
+      bundled: '../../target/wasm32-unknown-unknown/release/place_dashboard.wasm'
+      dependencies:
+        - name: place_dashboard_integrity

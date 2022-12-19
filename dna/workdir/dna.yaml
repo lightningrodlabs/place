@@ -4,17 +4,18 @@ name: dPlace
 integrity:
   origin_time: 2022-09-25T13:55:49.200Z
   properties:
-    startTime: 1671157059
+    startTime: 1671485674
     canvasSize: 200
     bucketSizeSec: 120
     pixelsPerBucket: 20
     snapshotIntervalInBuckets: 5
   zomes:
-    - name: place_model
-      bundled: '../../target/wasm32-unknown-unknown/release/place_model.wasm'
+    - name: place_integrity
+      bundled: '../../target/wasm32-unknown-unknown/release/place_integrity.wasm'
 coordinator:
   zomes:
     - name: zPlace
       bundled: '../../target/wasm32-unknown-unknown/release/place.wasm'
       dependencies:
-        - name: place_model
+        - name: place_integrity
+

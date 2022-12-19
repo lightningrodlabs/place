@@ -8,6 +8,7 @@ import {
   DEFAULT_PLACE_DEF, PlaceDvm,
 } from "@place/elements";
 import {CellContext, HappElement, HvmDef} from "@ddd-qc/lit-happ";
+import {PlaceDashboard} from "@place/elements/dist/elements/place-dashboard";
 
 //const APP_DEV = process.env.APP_DEV? process.env.APP_DEV : false;
 let HC_APP_PORT: number = Number(process.env.HC_PORT);
@@ -74,7 +75,7 @@ export class PlaceApp extends HappElement {
     }
     return html`
        <cell-context .installedCell="${this.placeDvm.installedCell}">
-         <place-page style="height:100vh"></place-page>
+         <place-dashboard style="height:100vh"></place-dashboard>
        </cell-context>
     `;
   }
@@ -83,6 +84,7 @@ export class PlaceApp extends HappElement {
   static get scopedElements() {
     return {
       "place-page": PlacePage,
+      "place-dashboard": PlaceDashboard,
       "cell-context": CellContext,
     };
   }

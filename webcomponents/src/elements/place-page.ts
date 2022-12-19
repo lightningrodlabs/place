@@ -1,4 +1,4 @@
-import {css, html, LitElement} from "lit";
+import {css, html} from "lit";
 import {property} from "lit/decorators.js";
 
 import * as PIXI from 'pixi.js'
@@ -8,13 +8,9 @@ import {Viewport} from 'pixi-viewport'
 import tinycolor from "tinycolor2";
 import 'lit-flatpickr';
 
-//import {contextProvided} from "@holochain-open-dev/context";
-import { contextProvided } from '@lit-labs/context';
-
 import {sharedStyles} from "../sharedStyles";
 
 import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
-import {ScopedElementsMixin} from "@open-wc/scoped-elements";
 import {color2index, COLOR_PALETTE, IMAGE_SCALE} from "../constants";
 import {buffer2Texture, randomSnapshotData, setPixel, snapshotIntoFrame} from "../imageBuffer";
 import {ZomeElement} from "@ddd-qc/lit-happ";

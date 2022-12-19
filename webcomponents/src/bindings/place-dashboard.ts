@@ -137,32 +137,20 @@ export interface Snapshot {
   timeBucketIndex: number
 }
 
-export enum PlaceEntryType {
-	Placement = 'Placement',
-	Snapshot = 'Snapshot',
-}
-export type PlaceEntryVariantPlacement = {placement: Placement}
-export type PlaceEntryVariantSnapshot = {snapshot: Snapshot}
-export type PlaceEntry = 
- | PlaceEntryVariantPlacement | PlaceEntryVariantSnapshot;
-
-export interface GetAuthorRankInput {
-  author: AgentPubKeyB64
-  bucketIndex: number
+export interface Game {
+  name: string
+  dna_hash: DnaHash
+  settings: PlaceProperties
 }
 
-export interface GetPlacementAuthorInput {
-  placement: number
-  bucketIndex: number
+export enum PlaceDashboardEntryType {
+	Game = 'Game',
 }
+export type PlaceDashboardEntryVariantGame = {game: Game}
+export type PlaceDashboardEntry = 
+ | PlaceDashboardEntryVariantGame;
 
-/** DEBUGGING API */
-export interface PlaceAtInput {
-  placement: DestructuredPlacement
-  bucketIndex: number
-}
-
-export interface BucketRangeInput {
-  latestKnownBucket: number
+export interface CreateGameInput {
+  name: number
   nowBucket: number
 }
