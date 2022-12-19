@@ -1,6 +1,7 @@
 use hdk::prelude::*;
 #[allow(unused_imports)]
 use place_model::*;
+use place_integrity::*;
 
 use crate::{
    functions::*,

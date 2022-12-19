@@ -2,6 +2,7 @@ use hdk::prelude::*;
 use zome_utils::*;
 #[allow(unused_imports)]
 use place_model::*;
+use place_integrity::*;
 
 use crate::{
    utils::*,

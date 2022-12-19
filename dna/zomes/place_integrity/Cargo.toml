@@ -1,5 +1,5 @@
 [package]
-name = "place"
+name = "place_integrity"
 version.workspace = true
 edition.workspace = true
 
@@ -8,8 +8,5 @@ crate-type = [ "cdylib", "rlib" ]
 
 [dependencies]
 serde.workspace = true
-hdk.workspace = true
-zome_utils.workspace = true
-
+hdi.workspace = true
 place_model.workspace = true
-place_integrity = {path="../place_integrity"}

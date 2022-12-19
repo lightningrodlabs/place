@@ -3,7 +3,7 @@ use hdk::prelude::*;
 use zome_utils::*;
 #[allow(unused_imports)]
 use place_model::*;
-
+use place_integrity::*;
 
 /// Zome Function
 /// Return bucket index of all snapshots stored locally
@@ -36,7 +36,7 @@ pub fn get_local_snapshots(_: ()) -> ExternResult<Vec<u32>> {
   let query_args = ChainQueryFilter::default()
     .include_entries(false)
     .action_type(ActionType::Create)
-    .entry_type(UnitEntryTypes::Snapshot.try_into().unwrap());
+    .entry_type(PlaceEntryTypes::Snapshot.try_into().unwrap());
   let els = query(query_args)?;
   //debug!("*** get_local_snapshots() els: {}", els.len());
   let mut creates: Vec<Create> = els.iter()

@@ -1,5 +1,5 @@
 [package]
-name = "place"
+name = "place_dashboard"
 version.workspace = true
 edition.workspace = true
 
@@ -12,4 +12,4 @@ hdk.workspace = true
 zome_utils.workspace = true
 
 place_model.workspace = true
-place_integrity = {path="../place_integrity"}
+place_dashboard_integrity = {path="../place_dashboard_integrity"}
