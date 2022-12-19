@@ -5,7 +5,7 @@ members = [
   "dna/zomes/place_integrity",  
   "dna/zomes/place",
   "dna/zomes/place_dashboard_integrity",
-  #"dna/zomes/place_dashboard",  
+  "dna/zomes/place_dashboard",  
 ]
 
 [workspace.package]

@@ -10,9 +10,9 @@ use place_model::*;
 #[hdk_entry_helper]
 #[derive(Clone, PartialEq)]
 pub struct Game {
-   name: String,
-   dna_hash: DnaHash,
-   settings: PlaceProperties,
+   pub name: String,
+   pub dna_hash: DnaHash,
+   pub settings: PlaceProperties,
 }
 
 #[hdk_entry_defs]
