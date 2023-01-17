@@ -1,12 +1,14 @@
 import { html } from "lit";
-import { state } from "lit/decorators.js";
-import {AdminWebsocket, CellId, encodeHashToBase64} from "@holochain/client";
+import { state, property } from "lit/decorators.js";
+import {AdminWebsocket, Cell, CellId, DnaHash, encodeHashToBase64} from "@holochain/client";
 
 import {
   PlacePage,
-  DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm,
+  DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm, PlaceDashboardPerspective,
 } from "@place/elements";
-import {CellContext, HappElement, HvmDef} from "@ddd-qc/lit-happ";
+import {CellContext, CellsForRole, CloneId, HappElement, HCL, HvmDef} from "@ddd-qc/lit-happ";
+import {PlaceProperties} from "@place/elements/dist/bindings/place.types";
+import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 
 
 let HC_APP_PORT: number;
@@ -40,24 +42,40 @@ export class PlaceApp extends HappElement {
 
   @state() private _loaded = false;
 
-  _placeCellId: CellId | null = null;
+  @state() private _curPlaceId: CloneId | null = null;
+
+  @state() private _placeCells!: CellsForRole;
 
   static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
+
+  // @property({type: Object, attribute: false, hasChanged: (_v, _old) => true})
+  // dashboardPerspective!: PlaceDashboardPerspective;
 
   constructor() {
     super(HC_APP_PORT);
   }
 
 
-  get placeDashboardDvm(): PlaceDashboardDvm { return this.hvm.getDvm(PlaceDashboardDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDashboardDvm }
-  get placeDvm(): PlaceDvm { return this.hvm.getDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDvm }
+  /** -- Getters -- */
 
+  get placeDashboardDvm(): PlaceDashboardDvm { return this.hvm.getDvm(PlaceDashboardDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDashboardDvm }
+  //get placeDvm(): PlaceDvm { return this.hvm.getDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDvm }
+
+
+  get curPlaceDvm(): PlaceDvm {
+    const hcl = new HCL(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME, this._curPlaceId);
+    const maybeDvm = this.hvm.getDvm(hcl);
+    if (!maybeDvm) console.error("DVM not found for Place " + hcl.toString(), this.hvm);
+    return maybeDvm! as PlaceDvm;
+  }
+
+  /** -- Methods -- */
 
   /** */
   async happInitialized() {
     console.log("happInitialized()")
     //new ContextProvider(this, cellContext, this.taskerDvm.installedCell);
-    this._placeCellId = this.placeDvm.cell.cell_id;
+    //this._curPlaceCellId = this.placeDvm.cell.cell_id;
     /** Authorize all zome calls */
     const adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
     //console.log({ adminWs });
@@ -68,12 +86,41 @@ export class PlaceApp extends HappElement {
     /** Send dnaHash to electron */
     if (IS_ELECTRON) {
       const ipc = window.require('electron').ipcRenderer;
-      const dnaHashB64 = encodeHashToBase64(this._placeCellId![0])
+      const dnaHashB64 = encodeHashToBase64(this.curPlaceDvm.cell.cell_id[0])
       let _reply = ipc.sendSync('dnaHash', dnaHashB64);
     }
 
+    /** Grab place cells */
+    this._placeCells = await this.conductorAppProxy.fetchCells(DEFAULT_PLACE_DEF.id, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
+
     /** Done */
     this._loaded = true;
+  }
+
+
+  /** */
+  async onAddClone(cloneName: string, settings: PlaceProperties) {
+    console.log("onAddClone()", cloneName);
+    const cellDef = { modifiers: {properties: settings, origin_time: settings.startTime}, cloneName}
+    const [_cloneIndex, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
+    this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
+    //this._curPlaceId = dvm.cell.clone_id;
+    console.log("Place clone created:", dvm.hcl.toString(), dvm.cell.name, dvm.cell.clone_id);
+    /** Create Game Entry */
+    const game: Game = {name: cloneName, dna_hash: dvm.cell.cell_id[0], settings}
+    await this.placeDashboardDvm.zvm.createGame(game);
+  }
+
+  async onSelectClone(dnaHash: DnaHash) {
+    const cloneB64 = encodeHashToBase64(dnaHash);
+    console.log("onSelectClone()", cloneB64);
+    /** Look for clone with this dnaHash */
+    for (const clone of Object.values(this._placeCells.clones)) {
+      if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
+        this._curPlaceId = clone.clone_id;
+        break;
+      }
+    }
   }
 
 
@@ -83,9 +130,25 @@ export class PlaceApp extends HappElement {
     if (!this._loaded) {
       return html`<span>Loading...</span>`;
     }
+
+    /** Render Current Place */
+    if (this._curPlaceId) {
+      return html`
+       <cell-context .cell="${this.curPlaceDvm.cell}">
+         <place-page style="height:100vh"
+                     @exit="${(e:any) => {e.stopPropagation(); this._curPlaceId = null}}"
+         ></place-page>
+       </cell-context>
+    `;
+    }
+
+    /** Render Dashboard */
     return html`
        <cell-context .cell="${this.placeDashboardDvm.cell}">
-         <place-dashboard style="height:100vh"></place-dashboard>
+         <place-dashboard style="height:100vh"
+                          @create-new-game="${(e:any) => {e.stopPropagation(); this.onAddClone(e.detail.name, e.detail.settings)}}"
+                          @clone-selected="${(e:any) => {e.stopPropagation(); this.onSelectClone(e.detail)}}"
+         ></place-dashboard>
        </cell-context>
     `;
   }

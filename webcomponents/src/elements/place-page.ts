@@ -896,6 +896,9 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     return html`
         <div id="horizontal-div" style="display:flex; flex-direction:row;; height: 100%;">
           <div style="width:84px; display:flex; flex-direction:column">
+            <button style="margin:0px 5px 5px 5px;" @click=${() => {
+              this.dispatchEvent(new CustomEvent('exit', {detail: null, bubbles: true, composed: true}));
+            }}>Exit</button>
             <button class=" ${this._selectedColor? "colorButton" : "selected"} " style=""
                     @click=${() => {
                       this.disableCursor()

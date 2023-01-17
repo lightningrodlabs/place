@@ -32,6 +32,7 @@ export class PlaceDashboardZvm extends ZomeViewModel {
 
   /** */
   async probeAll() {
+    console.log("PlaceDashboardZvm.probeAll()")
     const allGames = await this.zomeProxy.listAllGames();
     const myGames = await this.zomeProxy.listMyGames();
 
@@ -61,12 +62,14 @@ export class PlaceDashboardZvm extends ZomeViewModel {
   }
 
   async createGame(game: Game): Promise<EntryHash> {
+    console.log({game})
     if (this._perspective.allGames[game.name]) {
       Promise.reject("Game with same name already exists: " + game.name);
     }
-    return this.zomeProxy.createGame(game);
+    const eh = await this.zomeProxy.createGame(game);
     this._perspective.allGames[game.name] = [this.agentPubKey, true, game];
     this.notifySubscribers();
+    return eh
   }
 
   async listAllGames(): Promise<[AgentPubKey, Game, ][]> {
