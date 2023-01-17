@@ -1,8 +1,8 @@
 // TODO: add globally available interfaces for your elements
 
-import {AgentPubKeyB64, EntryHashB64, HoloHashB64, Dictionary} from "@holochain-open-dev/core-types";
-import {DestructuredPlacement, Placement} from "../bindings/place";
-import {Snapshot} from "../bindings/place";
+import {Snapshot, Placement, DestructuredPlacement} from "../bindings/place.types";
+import {Dictionary} from "@ddd-qc/cell-proxy";
+import {AgentPubKeyB64, EntryHashB64} from "@holochain/client";
 
 
 

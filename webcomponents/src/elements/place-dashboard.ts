@@ -4,7 +4,7 @@ import {ZomeElement} from "@ddd-qc/lit-happ";
 import {PlaceDashboardPerspective} from "../viewModel/place-dashboard.perspective";
 import {PlaceDashboardZvm} from "../viewModel/place-dashboard.zvm";
 import {SlBadge, SlTooltip} from "@scoped-elements/shoelace";
-import {Game} from "../bindings/place-dashboard";
+import {Game} from "../bindings/place-dashboard.types";
 
 
 /**

@@ -1,7 +1,6 @@
 import { html } from "lit";
 import { state } from "lit/decorators.js";
-import {CellId} from "@holochain/client";
-import {serializeHash} from '@holochain-open-dev/utils';
+import {AdminWebsocket, CellId, encodeHashToBase64} from "@holochain/client";
 
 import {
   PlacePage,
@@ -10,25 +9,31 @@ import {
 import {CellContext, HappElement, HvmDef} from "@ddd-qc/lit-happ";
 import {PlaceDashboard} from "@place/elements/dist/elements/place-dashboard";
 
-//const APP_DEV = process.env.APP_DEV? process.env.APP_DEV : false;
-let HC_APP_PORT: number = Number(process.env.HC_PORT);
 
+let HC_APP_PORT: number;
+let HC_ADMIN_PORT: number;
 export const IS_ELECTRON = (window.location.port === ""); // No HREF PORT when run by Electron
 if (IS_ELECTRON) {
   const APP_ID = 'main-app'
   const searchParams = new URLSearchParams(window.location.search);
-  const urlPort = searchParams.get("PORT");
+  const urlPort = searchParams.get("APP");
   if(!urlPort) {
-    console.error("Missing PORT value in URL", window.location.search)
+    console.error("Missing APP value in URL", window.location.search)
   }
   HC_APP_PORT = Number(urlPort);
+  const urlAdminPort = searchParams.get("ADMIN");
+  HC_ADMIN_PORT = Number(urlAdminPort);
   const NETWORK_ID = searchParams.get("UID");
   console.log(NETWORK_ID);
   DEFAULT_PLACE_DEF.id = APP_ID + '-' + NETWORK_ID;  // override installed_app_id
+} else {
+  HC_APP_PORT = Number(process.env.HC_APP_PORT);
+  HC_ADMIN_PORT = Number(process.env.HC_ADMIN_PORT);
 }
 
-console.log({APP_ID: DEFAULT_PLACE_DEF.id})
-console.log({HC_APP_PORT})
+console.log("APP_ID =", DEFAULT_PLACE_DEF.id)
+console.log("HC_APP_PORT", HC_APP_PORT);
+console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
 
 
 /** */
@@ -52,13 +57,18 @@ export class PlaceApp extends HappElement {
   async happInitialized() {
     console.log("happInitialized()")
     //new ContextProvider(this, cellContext, this.taskerDvm.installedCell);
-    this._placeCellId = this.placeDvm.installedCell.cell_id;
+    this._placeCellId = this.placeDvm.cell.cell_id;
+    /** Authorize all zome calls */
+    const adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
+    //console.log({ adminWs });
+    await this.hvm.authorizeAllZomeCalls(adminWs);
+    console.log("*** Zome call authorization complete");
+    /** Probe */
     await this.hvm.probeAll();
-
     /** Send dnaHash to electron */
     if (IS_ELECTRON) {
       const ipc = window.require('electron').ipcRenderer;
-      const dnaHashB64 = serializeHash(this._placeCellId![0])
+      const dnaHashB64 = encodeHashToBase64(this._placeCellId![0])
       let _reply = ipc.sendSync('dnaHash', dnaHashB64);
     }
 
@@ -74,7 +84,7 @@ export class PlaceApp extends HappElement {
       return html`<span>Loading...</span>`;
     }
     return html`
-       <cell-context .installedCell="${this.placeDvm.installedCell}">
+       <cell-context .cell="${this.placeDvm.cell}">
          <place-dashboard style="height:100vh"></place-dashboard>
        </cell-context>
     `;

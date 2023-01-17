@@ -1,8 +1,8 @@
 // TODO: add globally available interfaces for your elements
 
-import {Game} from "../bindings/place-dashboard";
-import {AgentPubKeyB64, Dictionary} from "@holochain-open-dev/core-types";
-
+import {Game} from "../bindings/place-dashboard.types";
+import {AgentPubKeyB64} from "@holochain/client";
+import {Dictionary} from "@ddd-qc/cell-proxy";
 
 
 export interface PlaceDashboardPerspective {

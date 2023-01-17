@@ -1,10 +1,10 @@
 import {ZomeViewModel} from "@ddd-qc/lit-happ";
 import {PlaceDashboardProxy} from "../bindings/place-dashboard.proxy";
 import {defaultDashboardPerspective, PlaceDashboardPerspective} from "./place-dashboard.perspective";
-import {serializeHash} from "@holochain-open-dev/utils";
-import {AgentPubKeyB64, Dictionary, DnaHashB64} from "@holochain-open-dev/core-types";
-import {Game, PlaceProperties} from "../bindings/place-dashboard";
-import {AgentPubKey, EntryHash} from "@holochain/client";
+import {Game, PlaceProperties} from "../bindings/place-dashboard.types";
+import {AgentPubKey, EntryHash, AgentPubKeyB64, DnaHashB64, encodeHashToBase64} from "@holochain/client";
+import {Dictionary} from "@ddd-qc/cell-proxy";
+
 
 /**
  *
@@ -35,13 +35,13 @@ export class PlaceDashboardZvm extends ZomeViewModel {
     const allGames = await this.zomeProxy.listAllGames();
     const myGames = await this.zomeProxy.listMyGames();
 
-    const joinedGameHashs: DnaHashB64[] = myGames.map(([_author, game]) => {return serializeHash(game.dna_hash)});
+    const joinedGameHashs: DnaHashB64[] = myGames.map(([_author, game]) => {return encodeHashToBase64(game.dna_hash)});
 
 
     const tuples: Dictionary<[AgentPubKeyB64, boolean, Game]> = {};
     for (const [author, game] of allGames) {
-      const joined = joinedGameHashs.includes(serializeHash(game.dna_hash));
-      tuples[game.name] = [serializeHash(author), joined, game];
+      const joined = joinedGameHashs.includes(encodeHashToBase64(game.dna_hash));
+      tuples[game.name] = [encodeHashToBase64(author), joined, game];
     }
     /** Done */
     this._perspective = {allGames: tuples};

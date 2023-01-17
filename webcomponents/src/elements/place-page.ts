@@ -16,7 +16,7 @@ import {buffer2Texture, randomSnapshotData, setPixel, snapshotIntoFrame} from ".
 import {ZomeElement} from "@ddd-qc/lit-happ";
 import {destructurePlacement, PlacePerspective, PlaceState, snapshot_to_str} from "../viewModel/place.perspective";
 import {PlaceZvm} from "../viewModel/place.zvm";
-import {Placement, Snapshot} from "../bindings/place";
+import {Placement, Snapshot} from "../bindings/place.types";
 
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))

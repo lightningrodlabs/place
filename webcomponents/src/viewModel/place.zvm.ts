@@ -1,12 +1,10 @@
-import {EntryHashB64, ActionHashB64, AgentPubKeyB64, Dictionary} from '@holochain-open-dev/core-types';
-import {DestructuredPlacement, PlaceAtInput, Placement, PlaceProperties} from "../bindings/place";
-import {Snapshot} from "../bindings/place";
+import {EntryHashB64, ActionHashB64, AgentPubKeyB64, encodeHashToBase64} from '@holochain/client';
+import {DestructuredPlacement, PlaceAtInput, Placement, PlaceProperties} from "../bindings/place.types";
+import {Snapshot} from "../bindings/place.types";
 import {destructurePlacement, PlacementDetails, PublishCallback, snapshot_to_str} from "./place.perspective";
 import {CellProxy, ZomeViewModel} from "@ddd-qc/lit-happ";
 import {defaultPerspective, PlacePerspective} from "./place.perspective";
 import {PlaceProxy} from "../bindings/place.proxy";
-import {serializeHash} from "@holochain-open-dev/utils";
-
 
 
 /**
@@ -289,7 +287,7 @@ export class PlaceZvm extends ZomeViewModel {
   async placePixel(destructured: DestructuredPlacement): Promise<ActionHashB64> {
     const res = await this.zomeProxy.placePixel(destructured);
     //this.notifySubscribers();
-    return serializeHash(res);
+    return encodeHashToBase64(res);
   }
 
 
@@ -308,7 +306,7 @@ export class PlaceZvm extends ZomeViewModel {
     console.log("publishNextSnapshotAt() succeeded = " + res != null)
     await this.pullLatestSnapshotFromDht();
     if (res === null) return null;
-    return serializeHash(res);
+    return encodeHashToBase64(res);
   }
 
 
@@ -354,7 +352,7 @@ export class PlaceZvm extends ZomeViewModel {
       console.log("publishNextSnapshot() succeeded = " + (res != null))
       await this.pullLatestSnapshotFromDht();
       if (res === null) return null;
-      return serializeHash(res);
+      return encodeHashToBase64(res);
     } else {
       console.warn(`publishNextSnapshot() Aborted: too soon. Index: ${this.getRelativeBucketIndex(nowIndex)}
        -          now: ${nowSec}
@@ -393,7 +391,7 @@ export class PlaceZvm extends ZomeViewModel {
   /** DEBUGGING */
 
   async placePixelAt(input: PlaceAtInput): Promise<ActionHashB64> {
-    return serializeHash(await this.zomeProxy.placePixelAt(input));
+    return encodeHashToBase64(await this.zomeProxy.placePixelAt(input));
   }
 
 

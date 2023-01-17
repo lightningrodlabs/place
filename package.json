@@ -4,8 +4,6 @@
   "workspaces": [
     "webcomponents",
     "webapp",
-    "webapp-chaperone",
-    "we-applet",
     "electron"
   ],
   "scripts": {
@@ -64,6 +62,7 @@
     "clean:hc"               : "rm -rf .hc*"
   },
   "devDependencies": {
+    "@types/ws": "^8.5.3",
     "@holochain-playground/cli": "^0.0.8",
     "bestzip": "^2.2.0",
     "concurrently": "^6.2.1",

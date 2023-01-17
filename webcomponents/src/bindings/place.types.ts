@@ -11,14 +11,23 @@ ActionHash,
 AnyDhtHash,
 KitsuneAgent,
 KitsuneSpace,
+HoloHashB64,
+AgentPubKeyB64,
+DnaHashB64,
+WasmHashB64,
+EntryHashB64,
+ActionHashB64,
+AnyDhtHashB64,
 InstalledAppId,
 Signature,
 CellId,
 DnaProperties,
-RoleId,
+RoleName,
 InstalledCell,
 Timestamp,
 HoloHashed,
+NetworkInfo,
+FetchQueueInfo,
 /** Action */
 SignedActionHashed,
 ActionHashed,
@@ -41,6 +50,7 @@ CapClaim,
 ZomeCallCapGrant,
 CapAccess,
 CapGrant,
+GrantedFunctionsType,
 /** CounterSigning */
 //CounterSigningSessionData,
 //PreflightRequest,
@@ -59,16 +69,23 @@ getDhtOpEntry,
 getDhtOpSignature,
 /** Entry */
 EntryVisibility,
-AppEntryType,
+AppEntryDef,
 EntryType,
 EntryContent,
 Entry,
 /** Record */
-Record,
-RecordEntry,
+Record as HcRecord,
+RecordEntry as HcRecordEntry,
 /** admin types */
-ZomeName,
+InstalledAppInfoStatus,
+StemCell,
+Cell,
+CellType,
+CellInfo,
+AppInfo,
 MembraneProof,
+FunctionName,
+ZomeName,
 ZomeDefinition,
 IntegrityZome,
 CoordinatorZome,
@@ -76,7 +93,6 @@ DnaDefinition,
 ResourceBytes,
 ResourceMap,
 CellProvisioning,
-HoloHashB64,
 DnaVersionSpec,
 DnaVersionFlexible,
 NetworkSeed,
@@ -84,27 +100,21 @@ ZomeLocation,
    } from '@holochain/client';
 
 import {
-// Common
-Dictionary,
-EntryHashB64,
-ActionHashB64,
+/** Common */
 DhtOpHashB64,
-DnaHashB64,
-AgentPubKeyB64,
-AnyDhtHashB64,
 DhtOpHash,
-// DnaFile
+/** DnaFile */
 DnaFile,
 DnaDef,
 Zomes,
 WasmCode,
-// entry-details
+/** entry-details */
 EntryDetails,
 RecordDetails,
 Details,
 DetailsType,
 EntryDhtStatus,
-// Validation
+/** Validation */
 ValidationStatus,
 ValidationReceipt,
    } from '@holochain-open-dev/core-types';
@@ -137,20 +147,40 @@ export interface Snapshot {
   timeBucketIndex: number
 }
 
-export interface Game {
-  name: string
-  dna_hash: DnaHash
-  settings: PlaceProperties
+export enum PlaceEntryType {
+	Placement = 'Placement',
+	Snapshot = 'Snapshot',
+}
+export type PlaceEntryVariantPlacement = {Placement: Placement}
+export type PlaceEntryVariantSnapshot = {Snapshot: Snapshot}
+export type PlaceEntry = 
+ | PlaceEntryVariantPlacement | PlaceEntryVariantSnapshot;
+
+/**  */
+export const MAX_BUCKET_SIZE_SEC = 24 * 60 * 60;
+
+export const MIN_BUCKET_SIZE_SEC = 60;
+
+export interface GetAuthorRankInput {
+  author: AgentPubKeyB64
+  bucketIndex: number
 }
 
-export enum PlaceDashboardEntryType {
-	Game = 'Game',
+export interface GetPlacementAuthorInput {
+  placement: number
+  bucketIndex: number
 }
-export type PlaceDashboardEntryVariantGame = {game: Game}
-export type PlaceDashboardEntry = 
- | PlaceDashboardEntryVariantGame;
 
-export interface CreateGameInput {
-  name: number
+/** DEBUGGING API */
+export interface PlaceAtInput {
+  placement: DestructuredPlacement
+  bucketIndex: number
+}
+
+export interface BucketRangeInput {
+  latestKnownBucket: number
   nowBucket: number
 }
+
+/** Listing all Holochain Path used in this DNA */
+export const Days = "days";
