@@ -4,10 +4,9 @@ import {AdminWebsocket, CellId, encodeHashToBase64} from "@holochain/client";
 
 import {
   PlacePage,
-  DEFAULT_PLACE_DEF, PlaceDvm,
+  DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm,
 } from "@place/elements";
 import {CellContext, HappElement, HvmDef} from "@ddd-qc/lit-happ";
-import {PlaceDashboard} from "@place/elements/dist/elements/place-dashboard";
 
 
 let HC_APP_PORT: number;
@@ -50,6 +49,7 @@ export class PlaceApp extends HappElement {
   }
 
 
+  get placeDashboardDvm(): PlaceDashboardDvm { return this.hvm.getDvm(PlaceDashboardDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDashboardDvm }
   get placeDvm(): PlaceDvm { return this.hvm.getDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDvm }
 
 
@@ -84,7 +84,7 @@ export class PlaceApp extends HappElement {
       return html`<span>Loading...</span>`;
     }
     return html`
-       <cell-context .cell="${this.placeDvm.cell}">
+       <cell-context .cell="${this.placeDashboardDvm.cell}">
          <place-dashboard style="height:100vh"></place-dashboard>
        </cell-context>
     `;
