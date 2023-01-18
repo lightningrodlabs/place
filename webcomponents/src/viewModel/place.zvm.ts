@@ -87,6 +87,7 @@ export class PlaceZvm extends ZomeViewModel {
     let nowIndex = this.epochToBucketIndex(Date.now() / 1000);
     let maybeNow = await this.getSnapshotAt(nowIndex);
     if (maybeNow) {
+      console.log("getLatestSnapshot(): now");
       return maybeNow;
     }
     let maybeSnapshot = await this.searchLatestSnapshot(startIndex, nowIndex, this.latestStoredBucketIndex);

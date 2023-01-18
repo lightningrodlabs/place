@@ -6,8 +6,8 @@ import {
   PlacePage,
   DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm, PlaceDashboardPerspective,
 } from "@place/elements";
-import {CellContext, CellsForRole, CloneId, HappElement, HCL, HvmDef} from "@ddd-qc/lit-happ";
-import {PlaceProperties} from "@place/elements/dist/bindings/place.types";
+import {CellContext, CellsForRole, CloneId, Dictionary, HappElement, HCL, HvmDef} from "@ddd-qc/lit-happ";
+import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.types";
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 
 
@@ -42,14 +42,19 @@ export class PlaceApp extends HappElement {
 
   @state() private _loaded = false;
 
-  @state() private _curPlaceId: CloneId | null = null;
+  @state() private _curPlaceCloneId: CloneId | null = null;
 
   @state() private _placeCells!: CellsForRole;
 
   static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
 
+
+  @state() private _latestSnapshots: Dictionary<Snapshot> = {};
+
   // @property({type: Object, attribute: false, hasChanged: (_v, _old) => true})
   // dashboardPerspective!: PlaceDashboardPerspective;
+
+  private _adminWs: AdminWebsocket;
 
   constructor() {
     super(HC_APP_PORT);
@@ -63,12 +68,18 @@ export class PlaceApp extends HappElement {
 
 
   get curPlaceDvm(): PlaceDvm {
-    const hcl = new HCL(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME, this._curPlaceId == null? undefined: this._curPlaceId);
-    const maybeDvm = this.hvm.getDvm(hcl);
-    if (!maybeDvm) console.error("DVM not found for Place " + hcl.toString(), this.hvm);
-    return maybeDvm! as PlaceDvm;
+    return this.getPlaceDvm(this._curPlaceCloneId == null? undefined: this._curPlaceCloneId);
   }
 
+  getPlaceDvm(cloneId?: CloneId): PlaceDvm | null {
+    const hcl = new HCL(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME, cloneId);
+    const maybeDvm = this.hvm.getDvm(hcl);
+    if (!maybeDvm) {
+      console.error("DVM not found for Place " + hcl.toString(), this.hvm);
+      return null;
+    }
+    return maybeDvm as PlaceDvm;
+  }
   /** -- Methods -- */
 
   /** */
@@ -77,9 +88,9 @@ export class PlaceApp extends HappElement {
     //new ContextProvider(this, cellContext, this.taskerDvm.installedCell);
     //this._curPlaceCellId = this.placeDvm.cell.cell_id;
     /** Authorize all zome calls */
-    const adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
+    this._adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
     //console.log({ adminWs });
-    await this.hvm.authorizeAllZomeCalls(adminWs);
+    await this.hvm.authorizeAllZomeCalls(this._adminWs);
     console.log("*** Zome call authorization complete");
     /** Probe */
     await this.hvm.probeAll();
@@ -99,7 +110,7 @@ export class PlaceApp extends HappElement {
 
 
   /** */
-  async onAddClone(cloneName: string, settings: PlaceProperties) {
+  async onAddClone(cloneName: string, settings: PlaceProperties): Promise<PlaceDvm> {
     console.log("onAddClone()", cloneName);
     const cellDef = { modifiers: {properties: settings, origin_time: settings.startTime}, cloneName}
     const [_cloneIndex, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
@@ -109,23 +120,55 @@ export class PlaceApp extends HappElement {
     /** Create Game Entry */
     const game: Game = {name: cloneName, dna_hash: dvm.cell.cell_id[0], settings}
     await this.placeDashboardDvm.zvm.createGame(game);
+    return dvm as PlaceDvm;
+  }
+
+
+  /** */
+  async onRefreshClone(game: Game) {
+    console.log("onRefreshClone()", game.name);
+    const cloneB64 = encodeHashToBase64(game.dna_hash);
+    let cloneId = null;
+    /** Look for clone with this dnaHash */
+    for (const clone of Object.values(this._placeCells.clones)) {
+      if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
+        cloneId = clone.clone_id;
+        break;
+      }
+    }
+    let dvm: PlaceDvm;
+    if (cloneId == null) {
+      dvm = await this.onAddClone(game.name, game.settings);
+    } else {
+      dvm = this.getPlaceDvm(cloneId);
+    }
+    console.log("onRefreshClone()", dvm);
+    const snapshot = await dvm.placeZvm.getLatestSnapshot();
+    this._latestSnapshots[cloneB64] = snapshot;
   }
 
 
   /** */
   async onSelectClone(game: Game) {
+    console.log("onSelectClone()", game.name);
     const cloneB64 = encodeHashToBase64(game.dna_hash);
-    console.log("onSelectClone()", cloneB64);
     /** Look for clone with this dnaHash */
     for (const clone of Object.values(this._placeCells.clones)) {
       if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
-        this._curPlaceId = clone.clone_id;
+        this._curPlaceCloneId = clone.clone_id;
         return;
       }
     }
     /** Cell not found, means cell is not installed or running */
     console.log("onSelectClone() Clone not found, adding it:", game.name);
     await this.onAddClone(game.name, game.settings);
+  }
+
+
+  onExitGame(cloneId: CloneId) {
+    // FIXME
+    //this._adminWs.disableCell()
+    this._curPlaceCloneId = null;
   }
 
 
@@ -137,11 +180,11 @@ export class PlaceApp extends HappElement {
     }
 
     /** Render Current Place */
-    if (this._curPlaceId) {
+    if (this._curPlaceCloneId) {
       return html`
        <cell-context .cell="${this.curPlaceDvm.cell}">
          <place-page style="height:100vh"
-                     @exit="${(e:any) => {e.stopPropagation(); this._curPlaceId = null}}"
+                     @exit="${(e:any) => {e.stopPropagation(); this.onExitGame(e.detail)}}"
          ></place-page>
        </cell-context>
     `;
@@ -151,8 +194,10 @@ export class PlaceApp extends HappElement {
     return html`
        <cell-context .cell="${this.placeDashboardDvm.cell}">
          <place-dashboard style="height:100vh"
+                          .latestSnapshots="${this._latestSnapshots}"
                           @create-new-game="${(e:any) => {e.stopPropagation(); this.onAddClone(e.detail.name, e.detail.settings)}}"
                           @clone-selected="${(e:any) => {e.stopPropagation(); this.onSelectClone(e.detail)}}"
+                          @refresh-requested="${(e:any) => {e.stopPropagation(); this.onRefreshClone(e.detail)}}"
          ></place-dashboard>
        </cell-context>
     `;

@@ -1,10 +1,10 @@
 import {css, html} from "lit";
 import {property, state} from "lit/decorators.js";
-import {ZomeElement} from "@ddd-qc/lit-happ";
+import {Dictionary, ZomeElement} from "@ddd-qc/lit-happ";
 import {PlaceDashboardPerspective} from "../viewModel/place-dashboard.perspective";
 import {PlaceDashboardZvm} from "../viewModel/place-dashboard.zvm";
 import {SlBadge, SlButton, SlCard, SlDetails, SlInput, SlSkeleton, SlTooltip} from "@scoped-elements/shoelace";
-import {Game, PlaceProperties} from "../bindings/place-dashboard.types";
+import {Game, PlaceProperties, Snapshot} from "../bindings/place-dashboard.types";
 import {DnaHash, encodeHashToBase64} from "@holochain/client";
 
 
@@ -20,12 +20,22 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
   @state() private _initialized = false;
 
 
+  @property({type: Object})
+  latestSnapshots: Dictionary<Snapshot> = {};
+
   /** -- Methods -- */
 
   /** */
   openGame(game: Game) {
-    console.log("openGame()", encodeHashToBase64(game.dna_hash))
+    console.log("openGame()", game.name)
     this.dispatchEvent(new CustomEvent('clone-selected', {detail: game, bubbles: true, composed: true}));
+  }
+
+
+  /** */
+  refreshGame(game: Game) {
+    console.log("refreshGame()", game.name)
+    this.dispatchEvent(new CustomEvent('refresh-requested', {detail: game, bubbles: true, composed: true}));
   }
 
 
@@ -54,9 +64,16 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
     /* Elements */
     const allGamesLi = Object.values(this.perspective.allGames).map(
       ([author, joined, game]) => {
+        const maybeSnapshot = this.latestSnapshots[encodeHashToBase64(game.dna_hash)];
+        if (!maybeSnapshot) {
+          this.refreshGame(game);
+        }
         return html `
           <sl-card class="card-game">
-            <sl-skeleton class="square" slot="image"></sl-skeleton>
+            ${maybeSnapshot
+              ? html`<div>${maybeSnapshot.timeBucketIndex}</div>`
+              : html`<sl-skeleton class="square" slot="image"></sl-skeleton>`
+            }
             <strong><abbr title="by ${author}">${game.name}</abbr></strong>
             ${joined
               ? html`<sl-badge variant="primary" pill>joined</sl-badge>`
@@ -72,6 +89,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
               </sl-details>
             <div slot="footer">
               <sl-button variant="primary" @click=${() => {this.openGame(game)}}>open</sl-button>
+              <sl-button @click=${() => {this.refreshGame(game)}}>refresh</sl-button>
             </div>
           </sl-card>`;
       }
