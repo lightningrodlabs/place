@@ -3,7 +3,7 @@ name: test-workflow x64
 on: workflow_dispatch
 
 env:
-  PLACE_VERSION: 0.1.0-hc.165
+  PLACE_VERSION: 0.2.0-hc-brc.2
   USE_HARD_LINKS: false
 
 jobs:
