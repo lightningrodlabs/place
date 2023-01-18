@@ -23,9 +23,9 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
   /** -- Methods -- */
 
   /** */
-  openGame(dnaHash: DnaHash) {
-    console.log("openGame()", encodeHashToBase64(dnaHash))
-    this.dispatchEvent(new CustomEvent('clone-selected', {detail: dnaHash, bubbles: true, composed: true}));
+  openGame(game: Game) {
+    console.log("openGame()", encodeHashToBase64(game.dna_hash))
+    this.dispatchEvent(new CustomEvent('clone-selected', {detail: game, bubbles: true, composed: true}));
   }
 
 
@@ -71,7 +71,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
                 <div>snapshotInterval: ${game.settings.snapshotIntervalInBuckets}</div>
               </sl-details>
             <div slot="footer">
-              <sl-button variant="primary" @click=${() => {this.openGame(game.dna_hash)}}>open</sl-button>
+              <sl-button variant="primary" @click=${() => {this.openGame(game)}}>open</sl-button>
             </div>
           </sl-card>`;
       }
@@ -140,7 +140,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: green;
+        /*background: green;*/
       }
 
       .square::part(indicator) {

@@ -113,16 +113,19 @@ export class PlaceApp extends HappElement {
 
 
   /** */
-  async onSelectClone(dnaHash: DnaHash) {
-    const cloneB64 = encodeHashToBase64(dnaHash);
+  async onSelectClone(game: Game) {
+    const cloneB64 = encodeHashToBase64(game.dna_hash);
     console.log("onSelectClone()", cloneB64);
     /** Look for clone with this dnaHash */
     for (const clone of Object.values(this._placeCells.clones)) {
       if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
         this._curPlaceId = clone.clone_id;
-        break;
+        return;
       }
     }
+    /** Cell not found, means cell is not installed or running */
+    console.log("onSelectClone() Clone not found, adding it:", game.name);
+    await this.onAddClone(game.name, game.settings);
   }
 
 
