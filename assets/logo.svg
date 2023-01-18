@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+    <defs>
+        <style>.a{fill:#fff;}.q{fill:#15e113;}.b{fill:#92e233;}.c{fill:#e79700;}.d{fill:#a16a3f;}.e{fill:#e6db00;}.f{fill:#888789;}.g{fill:#00c000;}.h{fill:#e4e4e4;}.i{fill:#222;}.j{fill:#01e5f2;}.k{fill:#ffa6d1;}.l{fill:#0082ca;}.m{fill:#e80000;}.n{fill:#820281;}.o{fill:#e23eff;}.p{fill:#0600ee;}</style>
+    </defs>
+    <title>Asset 2</title>
+    <rect class="a" width="10" height="10" />
+    <rect class="b" width="2" height="2" />
+    <rect class="c" x="2" y="8" width="2" height="2" />
+    <rect class="d" x="4" width="2" height="2" />
+    <rect class="e" x="6" width="2" height="2" />
+    <rect class="f" y="2" width="2" height="2" />
+    <rect class="g" x="8" y="2" width="2" height="2" />
+    <rect class="h" y="4" width="2" height="2" />
+    <rect class="i" x="4" y="4" width="2" height="2" />
+    <rect class="j" x="8" y="4" width="2" height="2" />
+    <rect class="k" y="6" width="2" height="2" />
+    <rect class="l" x="8" y="6" width="2" height="2" />
+    <rect class="m" y="8" width="2" height="2" />
+    <rect class="n" x="4" y="8" width="2" height="2" />
+    <rect class="o" x="6" y="8" width="2" height="2" />
+    <rect class="p" x="8" y="8" width="2" height="2" />
+    <rect class="q" x="4" y="6" width="2" height="2" />
+</svg>

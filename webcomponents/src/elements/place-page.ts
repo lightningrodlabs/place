@@ -16,7 +16,7 @@ import {buffer2Texture, randomSnapshotData, setPixel, snapshotIntoFrame} from ".
 import {ZomeElement} from "@ddd-qc/lit-happ";
 import {destructurePlacement, PlacePerspective, PlaceState, snapshot_to_str} from "../viewModel/place.perspective";
 import {PlaceZvm} from "../viewModel/place.zvm";
-import {Placement, Snapshot} from "../bindings/place.types";
+import {Placement, PlaceProperties, Snapshot} from "../bindings/place.types";
 
 
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
@@ -52,7 +52,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   /** PIXI Elements */
   _pixiApp: any = undefined;
   _grid: any = undefined;
-  _viewport: any = undefined;
+  _viewport?: Viewport;
   _frameSprite: any = undefined;
   _cursor: any = undefined;
   _frameBuffer: Uint8Array = new Uint8Array();
@@ -357,7 +357,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
       this._grid.visible = this._viewport.scale.x > 2;
       this.requestUpdate()
     })
-    this._viewport.fitWorld(true)
+    this.fitCanvas(this._zvm.getMaybeProperties()!)
 
     /** DEBUG ; without viewport **/
     //this._pixiApp.stage.addChild(this._frameSprite)
@@ -781,6 +781,13 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   }
 
 
+  /** */
+  fitCanvas(properties:PlaceProperties) {
+      this._viewport?.fitWorld(false);
+      this._viewport?.moveCenter(properties.canvasSize * IMAGE_SCALE / 2, properties.canvasSize * IMAGE_SCALE / 2);
+      this.requestUpdate();
+  }
+
   /** Render for real-time editing of frame */
   renderNormal() {
     //console.log("<place-page> renderNormal()");
@@ -907,15 +914,11 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
             ${palette}
             <hr>
             <div class="center" style="margin-bottom: 4px;">Zoom<div>${Math.round(this._viewport?.scale.x * 100)}%</div></div>
-            <button style="margin:5px;" @click=${() => {
-              this._viewport?.fitWorld(false);
-              this._viewport?.moveCenter(maybeProperties!.canvasSize * IMAGE_SCALE / 2, maybeProperties!.canvasSize * IMAGE_SCALE / 2);
-              this.requestUpdate();
-            }}>Fit</button>
+            <button style="margin:5px;" @click=${() => this.fitCanvas(maybeProperties!)}>Fit</button>
             <hr>
             ${timeUi}
             <hr>
-            <div class="center">Pixels:</div>
+            <div class="center">Pixels left:</div>
             <div class="center">${maybeProperties!.pixelsPerBucket - this._pixelsPlaced}</div>
             <hr>
             <div class="center">View</div>

@@ -3,7 +3,7 @@ import {property, state} from "lit/decorators.js";
 import {ZomeElement} from "@ddd-qc/lit-happ";
 import {PlaceDashboardPerspective} from "../viewModel/place-dashboard.perspective";
 import {PlaceDashboardZvm} from "../viewModel/place-dashboard.zvm";
-import {SlBadge, SlTooltip} from "@scoped-elements/shoelace";
+import {SlBadge, SlButton, SlCard, SlDetails, SlInput, SlSkeleton, SlTooltip} from "@scoped-elements/shoelace";
 import {Game, PlaceProperties} from "../bindings/place-dashboard.types";
 import {DnaHash, encodeHashToBase64} from "@holochain/client";
 
@@ -54,50 +54,98 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
     /* Elements */
     const allGamesLi = Object.values(this.perspective.allGames).map(
       ([author, joined, game]) => {
-        return html `<li>
-          <h3><abbr title="${encodeHashToBase64(game.dna_hash)}">${game.name}</abbr></h3>
-          <button @click=${() => {this.openGame(game.dna_hash)}}>open</button>
-          <div>joined: ${joined}</div>
-          <details>
-            <summary>Settings</summary>
-            <div>Created by: ${author}</div>
-            ${JSON.stringify(game.settings)}
-          </details>
-        </li>`;
+        return html `
+          <sl-card class="card-game">
+            <sl-skeleton class="square" slot="image"></sl-skeleton>
+            <strong><abbr title="by ${author}">${game.name}</abbr></strong>
+            ${joined
+              ? html`<sl-badge variant="primary" pill>joined</sl-badge>`
+              : html`<sl-badge variant="neutral" pill>unjoined</sl-badge>`
+            }
+            <small>${encodeHashToBase64(game.dna_hash)}</small>
+              <sl-details summary="Parameters">
+                <div>startTime: ${game.settings.startTime}</div>
+                <div>canvasSize: ${game.settings.canvasSize}</div>
+                <div>bucketSizeSec: ${game.settings.bucketSizeSec}</div>
+                <div>pixelsPerBucket: ${game.settings.pixelsPerBucket}</div>
+                <div>snapshotInterval: ${game.settings.snapshotIntervalInBuckets}</div>
+              </sl-details>
+            <div slot="footer">
+              <sl-button variant="primary" @click=${() => {this.openGame(game.dna_hash)}}>open</sl-button>
+            </div>
+          </sl-card>`;
       }
     )
+
     /** render all */
     return html`
+      <h1>
+        <img src="logo.svg" width="32" height="32" style="padding-left: 5px;padding-top: 5px;"/>
+        Place
+      </h1>
       <div>
-        <h1>Dashboard</h1>
         <h2>Available games (${gamesCount})</h2>
-        <ul id="gamesList">${allGamesLi}</ul>
+        <div>
+            ${allGamesLi}
+        </div>
       </div>
       <!-- Create new Place Game -->
-      <h2>Create New Game</h2>
-      <form>
-        <label for="createNameInput">Name:</label><input id="createNameInput" type="text" name="name">
-        <label for="createcanvasSizeInput">canvasSize:</label><input id="createcanvasSizeInput" type="number" value="10" name="canvasSize">
-        <label for="createbucketSizeInput">bucketSizeSec:</label><input id="createbucketSizeInput" type="number" value="60" name="bucketSizeSec">
-        <label for="createPpbInput">pixelsPerBucket:</label><input id="createPpbInput" type="number" value="10" name="pixelsPerBucket">
-        <label for="createIntervalInput">snapshotIntervalInBuckets:</label><input id="createIntervalInput" value="2" type="number" name="snapshotIntervalInBuckets">
+      <sl-card>
+        <h3 style="margin-top:0px;" slot="header">Create New Game</h3>
+        <sl-input label="Name:" id="createNameInput" clearable type="text"></sl-input>
+        <sl-input label="Canvas size:" id="createcanvasSizeInput" type="number" value="10"></sl-input>
+        <sl-input label="Timeframe duration:" id="createbucketSizeInput" type="number" value="60"></sl-input>
+        <sl-input label="Pixels per timeframe:" id="createPpbInput" type="number" value="10"></sl-input>
+        <sl-input label="Snapshot interval (in timeframes):" id="createIntervalInput" value="2" type="number"></sl-input>
 
-        <div>
-          <input type="button" value="create" @click=${this.onCreateGame}>
-        </div>
-      </form>
+          <sl-button variant="primary" @click=${this.onCreateGame}>
+            create
+          </sl-button>
+
+      </sl-card>
     `;
   }
 
   /** */
   static get scopedElements() {
     return {
+      'sl-card': SlCard,
       'sl-tooltip': SlTooltip,
       'sl-badge': SlBadge,
+      'sl-button': SlButton,
+      'sl-input': SlInput,
+      'sl-details': SlDetails,
+      'sl-skeleton': SlSkeleton,
     };
   }
 
   static get styles() {
-    return []
+    return [css`
+      .card-game {
+        max-width: 300px;
+        min-width: 300px;
+        overflow: clip;
+        background: red;
+      }
+
+      .card-game small {
+        color: var(--sl-color-neutral-500);
+      }
+
+      .card-game [slot='image'] {
+        height: 170px;
+      }
+
+      .card-game [slot='footer'] {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: green;
+      }
+
+      .square::part(indicator) {
+        --border-radius: var(--sl-border-radius-medium);
+      }
+    `]
   }
 }

@@ -111,6 +111,8 @@ export class PlaceApp extends HappElement {
     await this.placeDashboardDvm.zvm.createGame(game);
   }
 
+
+  /** */
   async onSelectClone(dnaHash: DnaHash) {
     const cloneB64 = encodeHashToBase64(dnaHash);
     console.log("onSelectClone()", cloneB64);

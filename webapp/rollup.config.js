@@ -4,7 +4,7 @@ import commonjs from "@rollup/plugin-commonjs";
 //import replace from "@rollup/plugin-replace";
 //import builtins from "rollup-plugin-node-builtins";
 //import globals from "rollup-plugin-node-globals";
-
+import copy from "rollup-plugin-copy";
 import babel from "@rollup/plugin-babel";
 import html from "@web/rollup-plugin-html";
 //import { importMetaAssets } from "@web/rollup-plugin-import-meta-assets";
@@ -38,6 +38,9 @@ export default {
     nodeResolve({
       browser: true,
       preferBuiltins: false,
+    }),
+    copy({
+      targets: [{ src: "../assets/logo.svg", dest: "dist" }],
     }),
     typescript({ experimentalDecorators: true, outDir: DIST_FOLDER }),
     //builtins(),
