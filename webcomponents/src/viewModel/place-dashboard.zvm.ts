@@ -35,6 +35,7 @@ export class PlaceDashboardZvm extends ZomeViewModel {
     console.log("PlaceDashboardZvm.probeAll()")
     const allGames = await this.zomeProxy.listAllGames();
     const myGames = await this.zomeProxy.listMyGames();
+    //console.log("PlaceDashboardZvm.probeAll()", Object.values(allGames).length, Object.values(myGames).length)
 
     const joinedGameHashs: DnaHashB64[] = myGames.map(([_author, game]) => {return encodeHashToBase64(game.dna_hash)});
 
