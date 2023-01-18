@@ -63,7 +63,7 @@ export class PlaceApp extends HappElement {
 
 
   get curPlaceDvm(): PlaceDvm {
-    const hcl = new HCL(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME, this._curPlaceId);
+    const hcl = new HCL(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME, this._curPlaceId == null? undefined: this._curPlaceId);
     const maybeDvm = this.hvm.getDvm(hcl);
     if (!maybeDvm) console.error("DVM not found for Place " + hcl.toString(), this.hvm);
     return maybeDvm! as PlaceDvm;

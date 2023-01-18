@@ -4,4 +4,4 @@ name: place
 ui:
   bundled: "../ui.zip"
 happ_manifest:
-  bundled: "../../dna/workdir/place.happ"
+  bundled: "../../artifacts/place.happ"

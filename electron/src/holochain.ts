@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { app } from 'electron'
 import { ElectronHolochainOptions, StateSignal, PathOptions } from '@lightningrodlabs/electron-holochain'
-import {MAIN_APP_ID, COMMUNITY_PROXY_URL, DNA_VERSION_FILENAME} from './constants'
+import {MAIN_APP_ID, COMMUNITY_PROXY_URL, DNA_VERSION_FILENAME, ADMIN_WS} from './constants'
 import * as fs from "fs";
 import {log} from "./logger";
 
@@ -37,7 +37,7 @@ export function stateSignalToText(state: StateSignal): StateSignalText {
 
 const whereDnaPath = app.isPackaged
   ? path.join(app.getAppPath(), '../app/bin/place.happ')
-  : path.join(app.getAppPath(), '../dna/workdir/place.happ')
+  : path.join(app.getAppPath(), '../artifacts/place.happ')
 
 //console.log({whereDnaPath})
 
@@ -72,7 +72,7 @@ export function createHolochainOptions(uid: string, storagePath: string): Electr
     appId: MAIN_APP_ID + '-' + uid,
     //appId: MAIN_APP_ID,
     appWsPort: 0,
-    adminWsPort: 1235,
+    adminWsPort: ADMIN_WS,
     //proxyUrl: COMMUNITY_PROXY_URL,
     //bootstrapUrl: "",
     //uid,

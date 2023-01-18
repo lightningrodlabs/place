@@ -1,19 +1,12 @@
 ---
 manifest_version: "1"
-name: hPlace
+name: hPlaceStandalone
 description: "Pixel placing canvas"
 roles:
-  - name: rPlaceDashboard
-    provisioning:
-      strategy: create
-      deferred: false
-    dna:
-      bundled: "place-dashboard.dna"
-      clone_limit: 0
   - name: rPlace
     provisioning:
       strategy: create
       deferred: false
     dna:
-      bundled: "place.dna"
-      clone_limit: 10
+      bundled: "../../artifacts/place.dna"
+      clone_limit: 0

@@ -34,3 +34,5 @@ hash_zome*
 electron/web/index.html
 Cargo.lock
 package-lock.json
+
+artifacts/

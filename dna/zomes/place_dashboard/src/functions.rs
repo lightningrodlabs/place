@@ -1,5 +1,4 @@
 use hdk::prelude::*;
-use hdk::prelude::holo_hash::hash_type::AnyLinkable;
 #[allow(unused_imports)]
 use place_model::*;
 use place_dashboard_integrity::*;

@@ -8,7 +8,7 @@
     "build:watch": "run-singleton \"tsc -w --incremental --preserveWatchOutput\"",
     "start": "concurrently --names tsc,dev-server \"npm run build:watch\" \"web-dev-server --config ./web-dev-server.config.mjs\"",
     "package": "rm -rf ui.zip && cd dist && bestzip ../ui.zip *",
-    "dist:webhapp": " hc web-app pack ./webhapp.workdir"
+    "dist:webhapp": " hc web-app pack ./webhapp.workdir -o ../artifacts/place.happ"
 
   },
   "devDependencies": {

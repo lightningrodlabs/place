@@ -1,0 +1,19 @@
+---
+manifest_version: "1"
+name: hPlace
+description: "Pixel placing game"
+roles:
+  - name: rPlaceDashboard
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "../../artifacts/place-dashboard.dna"
+      clone_limit: 0
+  - name: rPlace
+    provisioning:
+      strategy: create
+      deferred: false
+    dna:
+      bundled: "../../artifacts/place.dna"
+      clone_limit: 10

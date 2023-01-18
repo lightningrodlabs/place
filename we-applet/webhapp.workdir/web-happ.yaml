@@ -4,4 +4,4 @@ name: place_we-applet
 ui:
   bundled: "../ui-applet.zip"
 happ_manifest:
-  bundled: "../../dna/workdir/place.happ"
+  bundled: "../../artifacts/place.happ"

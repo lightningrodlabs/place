@@ -37,7 +37,7 @@ import {
   LINUX_ICON_FILE,
   SPLASH_FILE,
   MAIN_FILE,
-  IS_DEBUG, APP_DATA_PATH, ICON_FILEPATH
+  IS_DEBUG, APP_DATA_PATH, ICON_FILEPATH, ADMIN_WS
 } from './constants'
 
 import {initApp, addUidToDisk} from "./init";
@@ -119,7 +119,7 @@ const createMainWindow = async (appPort: string): Promise<BrowserWindow> => {
 
   /** load the index.html of the app */
   let mainUrl = app.isPackaged? MAIN_FILE : path.join(DEVELOPMENT_UI_URL, "index.html")
-  mainUrl += "?PORT=" + appPort + "&UID=" + g_uid
+  mainUrl += "?ADMIN="+ ADMIN_WS + "&APP=" + appPort + "&UID=" + g_uid
   log('info', "createMainWindow ; mainUrl = " + mainUrl)
   try {
     await mainWindow.loadURL("file://" + mainUrl)
@@ -134,7 +134,7 @@ const createMainWindow = async (appPort: string): Promise<BrowserWindow> => {
     log('info', "new-window ; open: " + url)
     shell.openExternal(url).then(_r => {});
   })
-  /** once its ready to show, show */
+  /** once it's ready to show, show */
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
   })
