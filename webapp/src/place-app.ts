@@ -142,9 +142,12 @@ export class PlaceApp extends HappElement {
     } else {
       dvm = this.getPlaceDvm(cloneId);
     }
-    console.log("onRefreshClone()", dvm);
+    //console.log("onRefreshClone()", dvm);
     const snapshot = await dvm.placeZvm.getLatestSnapshot();
+    console.log("onRefreshClone()", snapshot);
     this._latestSnapshots[cloneB64] = snapshot;
+    //this.requestUpdate();
+    this._latestSnapshots = this._latestSnapshots;
   }
 
 

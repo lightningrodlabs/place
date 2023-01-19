@@ -6,6 +6,7 @@ import {PlaceDashboardZvm} from "../viewModel/place-dashboard.zvm";
 import {SlBadge, SlButton, SlCard, SlDetails, SlInput, SlSkeleton, SlTooltip} from "@scoped-elements/shoelace";
 import {Game, PlaceProperties, Snapshot} from "../bindings/place-dashboard.types";
 import {DnaHash, encodeHashToBase64} from "@holochain/client";
+import {snapshotIntoFrame} from "../imageBuffer";
 
 
 /**
@@ -56,6 +57,47 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
   }
 
 
+  async updated() {
+    /** Fill in canvases */
+    for (const [author, joined, game] of Object.values(this.perspective.allGames)) {
+      const maybeSnapshot = this.latestSnapshots[encodeHashToBase64(game.dna_hash)];
+      if (!maybeSnapshot || !joined) {
+        continue;
+      }
+      const canvasId = "canvas-" + encodeHashToBase64(game.dna_hash);
+      const canvas = this.shadowRoot!.getElementById(canvasId) as HTMLCanvasElement;
+      if (!canvas) {
+        console.warn("canvasId not found", canvasId)
+        continue;
+      }
+      const snapshotFrame = snapshotIntoFrame(maybeSnapshot.imageData, game.settings.canvasSize)
+      console.log("" + maybeSnapshot.timeBucketIndex + ".snapshotFrame", snapshotFrame)
+
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+      const imgData = ctx.createImageData(game.settings.canvasSize, game.settings.canvasSize);
+
+      for (let i = 0; i < snapshotFrame.length; i += 1) {
+        imgData.data[i] = snapshotFrame[i];
+      }
+
+      // for (let i = 0; i < imgData.data.length; i += 4) {
+      //   imgData.data[i+0] = 255;
+      //   imgData.data[i+1] = 0;
+      //   imgData.data[i+2] = 0;
+      //   imgData.data[i+3] = 255;
+      // }
+
+      const bmp = await createImageBitmap(imgData);
+
+      const scale = 150 / game.settings.canvasSize;
+      ctx.scale(scale, scale);
+      ctx.drawImage(bmp, 0, 0);
+
+      console.log("" + scale + " | ImageData of " + game.name, imgData)
+    }
+  }
+
   /** */
   render() {
     const gamesCount = Object.values(this._zvm.perspective.allGames).length;
@@ -70,10 +112,13 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
         }
         return html `
           <sl-card class="card-game">
-            ${maybeSnapshot
-              ? html`<div>${maybeSnapshot.timeBucketIndex}</div>`
-              : html`<sl-skeleton class="square" slot="image"></sl-skeleton>`
+            <div slot="image" style="background: #0d0c0c;">
+            ${maybeSnapshot && joined
+              //? html`<div>${maybeSnapshot.timeBucketIndex}</div>`
+              ? html`<canvas  id="canvas-${encodeHashToBase64(game.dna_hash)}" width="150" height="150" class="place-preview">`
+              : html`<sl-skeleton class="square"></sl-skeleton>`
             }
+            </div>
             <strong><abbr title="by ${author}">${game.name}</abbr></strong>
             ${joined
               ? html`<sl-badge variant="primary" pill>joined</sl-badge>`
@@ -143,15 +188,24 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
         max-width: 300px;
         min-width: 300px;
         overflow: clip;
-        background: red;
+        background: greenyellow;
       }
 
+      .place-preview {
+        padding-left: 75px;
+        image-rendering: optimizeSpeed;
+        image-rendering: -moz-crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: optimize-contrast;
+        image-rendering: pixelated;
+        -ms-interpolation-mode: nearest-neighbor;
+      }
       .card-game small {
         color: var(--sl-color-neutral-500);
       }
 
       .card-game [slot='image'] {
-        height: 170px;
+        height: 150px;
       }
 
       .card-game [slot='footer'] {
@@ -162,7 +216,8 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
       }
 
       .square::part(indicator) {
-        --border-radius: var(--sl-border-radius-medium);
+        /*--border-radius: var(--sl-border-radius-medium);*/
+        height: 100%;
       }
     `]
   }
