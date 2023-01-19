@@ -7,6 +7,7 @@ import {SlBadge, SlButton, SlCard, SlDetails, SlInput, SlSkeleton, SlTooltip} fr
 import {Game, PlaceProperties, Snapshot} from "../bindings/place-dashboard.types";
 import {DnaHash, encodeHashToBase64} from "@holochain/client";
 import {snapshotIntoFrame} from "../imageBuffer";
+import {determineBucketTime} from "../time";
 
 
 /**
@@ -75,6 +76,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
 
       const ctx = canvas.getContext("2d");
       ctx.imageSmoothingEnabled = false;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       const imgData = ctx.createImageData(game.settings.canvasSize, game.settings.canvasSize);
 
       for (let i = 0; i < snapshotFrame.length; i += 1) {
@@ -125,6 +127,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
               : html`<sl-badge type="neutral" pill>unjoined</sl-badge>`
             }
             <!-- <small>${encodeHashToBase64(game.dna_hash)}</small> -->
+              <small>${determineBucketTime(maybeSnapshot.timeBucketIndex, game.settings)}</small>
               <sl-details summary="Parameters">
                 <div>startTime: ${game.settings.startTime}</div>
                 <div>canvasSize: ${game.settings.canvasSize}</div>
