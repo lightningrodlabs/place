@@ -10,7 +10,6 @@ import 'lit-flatpickr';
 
 import {sharedStyles} from "../sharedStyles";
 
-import {SlBadge, SlTooltip} from '@scoped-elements/shoelace';
 import {color2index, COLOR_PALETTE, IMAGE_SCALE} from "../constants";
 import {buffer2Texture, randomSnapshotData, setPixel, snapshotIntoFrame} from "../imageBuffer";
 import {ZomeElement} from "@ddd-qc/lit-happ";
@@ -954,8 +953,6 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   static get scopedElements() {
     return {
       //"place-snapshot": PlaceSnapshot,
-      'sl-tooltip': SlTooltip,
-      'sl-badge': SlBadge,
     };
   }
 

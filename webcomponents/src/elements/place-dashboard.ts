@@ -111,8 +111,8 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
           this.refreshGame(game);
         }
         return html `
-          <sl-card class="card-game">
-            <div slot="image" style="background: #0d0c0c;">
+          <sl-card class="card-game --sl-shadow-large">
+            <div slot="image" style="background: #0d0c0c;" @click=${() => {this.refreshGame(game)}}>
             ${maybeSnapshot && joined
               //? html`<div>${maybeSnapshot.timeBucketIndex}</div>`
               ? html`<canvas  id="canvas-${encodeHashToBase64(game.dna_hash)}" width="150" height="150" class="place-preview">`
@@ -121,10 +121,10 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
             </div>
             <strong><abbr title="by ${author}">${game.name}</abbr></strong>
             ${joined
-              ? html`<sl-badge variant="primary" pill>joined</sl-badge>`
-              : html`<sl-badge variant="neutral" pill>unjoined</sl-badge>`
+              ? html`<sl-badge type="primary" pill>joined</sl-badge>`
+              : html`<sl-badge type="neutral" pill>unjoined</sl-badge>`
             }
-            <small>${encodeHashToBase64(game.dna_hash)}</small>
+            <!-- <small>${encodeHashToBase64(game.dna_hash)}</small> -->
               <sl-details summary="Parameters">
                 <div>startTime: ${game.settings.startTime}</div>
                 <div>canvasSize: ${game.settings.canvasSize}</div>
@@ -133,8 +133,8 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
                 <div>snapshotInterval: ${game.settings.snapshotIntervalInBuckets}</div>
               </sl-details>
             <div slot="footer">
-              <sl-button variant="primary" @click=${() => {this.openGame(game)}}>open</sl-button>
-              <sl-button @click=${() => {this.refreshGame(game)}}>refresh</sl-button>
+              <sl-button type="primary" @click=${() => {this.openGame(game)}}>open</sl-button>
+              <!-- <sl-button @click=${() => {this.refreshGame(game)}}>refresh</sl-button> -->
             </div>
           </sl-card>`;
       }
@@ -147,21 +147,22 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
         Place
       </h1>
       <div>
-        <h2>Available games (${gamesCount})</h2>
+        <!-- <h2>Available games (${gamesCount})</h2> -->
+        <h2>Games</h2>
         <div>
             ${allGamesLi}
         </div>
       </div>
       <!-- Create new Place Game -->
-      <sl-card>
-        <h3 style="margin-top:0px;" slot="header">Create New Game</h3>
+      <sl-card id="card-create-new" style="margin:10px;">
+        <strong slot="header">Create New Game</strong>
         <sl-input label="Name:" id="createNameInput" clearable type="text"></sl-input>
         <sl-input label="Canvas size:" id="createcanvasSizeInput" type="number" value="10"></sl-input>
         <sl-input label="Timeframe duration:" id="createbucketSizeInput" type="number" value="60"></sl-input>
         <sl-input label="Pixels per timeframe:" id="createPpbInput" type="number" value="10"></sl-input>
         <sl-input label="Snapshot interval (in timeframes):" id="createIntervalInput" value="2" type="number"></sl-input>
 
-          <sl-button variant="primary" @click=${this.onCreateGame}>
+          <sl-button type="primary" @click=${this.onCreateGame} style="padding-top:10px;">
             create
           </sl-button>
 
@@ -184,11 +185,22 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
 
   static get styles() {
     return [css`
+
+      #card-create-new {
+        box-shadow: var(--sl-shadow-x-large)
+      }
+
+
+      #card-create-new [slot='header'] {
+        font-size: larger;
+      }
+
       .card-game {
         max-width: 300px;
         min-width: 300px;
         overflow: clip;
         background: greenyellow;
+        box-shadow: var(--sl-shadow-x-large)
       }
 
       .place-preview {

@@ -147,7 +147,8 @@ export class PlaceApp extends HappElement {
     console.log("onRefreshClone()", snapshot);
     this._latestSnapshots[cloneB64] = snapshot;
     //this.requestUpdate();
-    this._latestSnapshots = this._latestSnapshots;
+    const dashboard = this.shadowRoot!.querySelectorAll('place-dashboard')[0] as PlaceDashboard;
+    dashboard.requestUpdate();
   }
 
 
