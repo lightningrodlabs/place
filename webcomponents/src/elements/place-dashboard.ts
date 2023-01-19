@@ -7,7 +7,8 @@ import {SlBadge, SlButton, SlCard, SlDetails, SlInput, SlSkeleton, SlTooltip} fr
 import {Game, PlaceProperties, Snapshot} from "../bindings/place-dashboard.types";
 import {DnaHash, encodeHashToBase64} from "@holochain/client";
 import {snapshotIntoFrame} from "../imageBuffer";
-import {determineBucketTime} from "../time";
+import {determineBucketTime, validateSettings} from "../time";
+import {MAX_BUCKET_SIZE_SEC, MIN_BUCKET_SIZE_SEC} from "../bindings/place.types";
 
 
 /**
@@ -54,6 +55,19 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
       pixelsPerBucket: Number((this.shadowRoot!.getElementById("createPpbInput") as HTMLInputElement).value),
       snapshotIntervalInBuckets: Number((this.shadowRoot!.getElementById("createIntervalInput") as HTMLInputElement).value),
     };
+    /** Validate settings */
+    const helper = this.shadowRoot!.getElementById("createHelper") as HTMLSpanElement;
+    try {
+      if (name.length < 2) throw Error("Name too short");
+      validateSettings(settings);
+    } catch (e:any) {
+      console.log({e})
+      helper.style.display = "block";
+      helper.innerHTML = e.message;
+      return;
+    }
+    /** All good */
+    helper.style.display = "none";
     this.dispatchEvent(new CustomEvent('create-new-game', {detail: {name, settings}, bubbles: true, composed: true}));
   }
 
@@ -78,20 +92,17 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
       ctx.imageSmoothingEnabled = false;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       const imgData = ctx.createImageData(game.settings.canvasSize, game.settings.canvasSize);
-
       for (let i = 0; i < snapshotFrame.length; i += 1) {
         imgData.data[i] = snapshotFrame[i];
       }
-
+      // Test - red square
       // for (let i = 0; i < imgData.data.length; i += 4) {
       //   imgData.data[i+0] = 255;
       //   imgData.data[i+1] = 0;
       //   imgData.data[i+2] = 0;
       //   imgData.data[i+3] = 255;
       // }
-
       const bmp = await createImageBitmap(imgData);
-
       const scale = 150 / game.settings.canvasSize;
       ctx.scale(scale, scale);
       ctx.drawImage(bmp, 0, 0);
@@ -160,11 +171,11 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
       <sl-card id="card-create-new" style="margin:10px;">
         <strong slot="header">Create New Game</strong>
         <sl-input label="Name:" id="createNameInput" clearable type="text"></sl-input>
-        <sl-input label="Canvas size:" id="createcanvasSizeInput" type="number" value="10"></sl-input>
-        <sl-input label="Timeframe duration:" id="createbucketSizeInput" type="number" value="60"></sl-input>
+        <sl-input label="Canvas size (pixels):" id="createcanvasSizeInput" type="number" value="10" help-text="Must be even"></sl-input>
+        <sl-input label="Timeframe duration (sec):" id="createbucketSizeInput" type="number" value="60" help-text="${MIN_BUCKET_SIZE_SEC} - ${MAX_BUCKET_SIZE_SEC}"></sl-input>
         <sl-input label="Pixels per timeframe:" id="createPpbInput" type="number" value="10"></sl-input>
         <sl-input label="Snapshot interval (in timeframes):" id="createIntervalInput" value="2" type="number"></sl-input>
-
+        <span id="createHelper" style="display: none;margi-top:10px;color:red;"></span>
           <sl-button type="primary" @click=${this.onCreateGame} style="padding-top:10px;">
             create
           </sl-button>
@@ -196,6 +207,10 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
 
       #card-create-new [slot='header'] {
         font-size: larger;
+      }
+
+      #card-create-new sl-input {
+        margin-bottom:15px;
       }
 
       .card-game {

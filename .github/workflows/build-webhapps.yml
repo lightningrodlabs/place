@@ -54,10 +54,6 @@ jobs:
           cp electron/bin/model_zome_hash.txt ./artifacts          
           cp target/wasm32-unknown-unknown/release/place_model.wasm ./artifacts
           cp target/wasm32-unknown-unknown/release/place.wasm ./artifacts
-          cp dna/workdir/place.dna ./artifacts
-          cp dna/workdir/place.happ ./artifacts                   
-          cp webapp/webhapp.workdir/place.webhapp ./artifacts
-          cp we-applet/webhapp.workdir/place_we-applet.webhapp ./artifacts
       # Display structure of uploaded files
       - name: Display structure of uploaded files
         run: ls -R

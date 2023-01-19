@@ -78,8 +78,8 @@ pub fn apply_pixels_to_canvas(image_data: &mut Vec<DoublePixel>, placements: Vec
    debug!("apply_pixels_to_canvas(): {} placements", placements.len());
    let canvas_size = get_dna_properties().canvas_size;
    for placement in placements {
-      //debug!("placing: {:?} | {}", placement, placement.index());
       let index: usize = (placement.index(canvas_size) / 2) as usize;
+      debug!("placement.index = {} | image_data.len = {}", index, image_data.len());
       image_data[index].set_half(
          placement.colorIndex(),
          placement.index(canvas_size) % 2 == 1,

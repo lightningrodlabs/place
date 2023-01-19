@@ -5,7 +5,7 @@
     "build": "rm -rf dist && tsc && rollup --config rollup.config.js",
     "build:watch": "tsc -w --preserveWatchOutput",
     "package:ui": "rm -rf ui-applet.zip && npm run build && cd ./dist && bestzip ../ui-applet.zip * ",
-    "package": "npm run package:ui && hc web-app pack ./webhapp.workdir",
+    "package": "npm run package:ui && hc web-app pack ./webhapp.workdir -o ../artifacts/place_we-applet.webhapp",
     "start:happ": "RUST_LOG=warn WASM_LOG=debug  echo \"pass\" | hc s --piped -f=$ADMIN_PORT generate ../dna/workdir/place.happ --run=$HC_PORT -a place-applet network mdns",
     "start:ui": "concurrently -k --names tsc,dev-server \"npm run build:watch\" \"wds --config ./web-dev-server.config.mjs\"",
     "devtest": "npm run package && cross-env HC_PORT=$(port) ADMIN_PORT=$(port) APP_DEV=true concurrently \"npm run start:happ\" \"npm run start:ui\"",

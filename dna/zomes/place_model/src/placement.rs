@@ -47,7 +47,7 @@ impl Placement {
 
    /// Pixel index in canvas
    pub fn index(&self, canvas_size: u16) -> u32 {
-      //debug!("Index of {:?} | {} x {}", self, self.x(), self.y());
+      //debug!("Index of: {} x {} | {}", self.x(), self.y(), canvas_size);
       return self.x() as u32 + self.y() as u32 * canvas_size as u32;
    }
 

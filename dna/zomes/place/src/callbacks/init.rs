@@ -23,7 +23,11 @@ fn init(_: ()) -> ExternResult<InitCallbackResult> {
    debug!("*** init() place_properties: {:?}", place_properties);
    if place_properties.bucket_size_sec >= MAX_BUCKET_SIZE_SEC
    || place_properties.bucket_size_sec < MIN_BUCKET_SIZE_SEC {
-      let err_msg = format!("Invalid DNA property \"bucket_size_sec\": {:?}", place_properties.bucket_size_sec);
+      let err_msg = format!("Invalid DNA property \"bucket_size_sec\" too small or too big. value = {}", place_properties.bucket_size_sec);
+      return Ok(InitCallbackResult::Fail(err_msg));
+   }
+   if place_properties.canvas_size  % 2 > 0 {
+      let err_msg = format!("Invalid DNA property \"canvas_size\" must be even. value = {}", place_properties.bucket_size_sec);
       return Ok(InitCallbackResult::Fail(err_msg));
    }
    /// First day only setup
