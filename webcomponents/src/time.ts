@@ -1,7 +1,6 @@
-/** */
 import {MAX_BUCKET_SIZE_SEC, MIN_BUCKET_SIZE_SEC, PlaceProperties} from "./bindings/place.types";
-import {set} from "lodash-es";
 
+/** */
 export const toHHMMSS = function (str: string) {
   var sec_num = parseInt(str, 10); // don't forget the second param
   var hours:any   = Math.floor(sec_num / 3600);
@@ -15,13 +14,14 @@ export const toHHMMSS = function (str: string) {
 }
 
 
-
+/** */
 export function determineBucketTime(bucketIndex: number, settings: PlaceProperties): string {
   const bucketTime = bucketIndex * settings.bucketSizeSec - settings.startTime;
   return toHHMMSS(bucketTime.toString());
 }
 
 
+/** */
 export  function validateSettings(settings: PlaceProperties) {
   if (settings.canvasSize < 2) throw Error("Canvas size too small");
   if (settings.canvasSize > 100) throw Error("Canvas size too big");

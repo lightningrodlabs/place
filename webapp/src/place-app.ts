@@ -1,6 +1,6 @@
 import { html } from "lit";
 import { state, property } from "lit/decorators.js";
-import {AdminWebsocket, Cell, CellId, DnaHash, encodeHashToBase64} from "@holochain/client";
+import {AdminWebsocket, ClonedCell, DnaHashB64, encodeHashToBase64} from "@holochain/client";
 
 import {
   PlacePage,
@@ -39,26 +39,22 @@ console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
 
 /** */
 export class PlaceApp extends HappElement {
-
-  @state() private _loaded = false;
-
-  @state() private _curPlaceCloneId: CloneId | null = null;
-
-  @state() private _placeCells!: CellsForRole;
-
-  static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
-
-
-  @state() private _latestSnapshots: Dictionary<Snapshot> = {};
-
-  // @property({type: Object, attribute: false, hasChanged: (_v, _old) => true})
-  // dashboardPerspective!: PlaceDashboardPerspective;
-
-  private _adminWs: AdminWebsocket;
-
   constructor() {
     super(HC_APP_PORT);
   }
+
+  static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
+
+  @state() private _loaded = false;
+  @state() private _curPlaceCloneId: CloneId | null = null;
+  @state() private _placeCells!: CellsForRole;
+  /** DnaHashB64 -> Snapshot */
+  @state() private _latestSnapshots: Dictionary<Snapshot> = {};
+
+  /** DnaHashB64 -> CloneId */
+  private _clones: Dictionary<CloneId> = {}
+
+  private _adminWs: AdminWebsocket;
 
 
   /** -- Getters -- */
@@ -97,8 +93,7 @@ export class PlaceApp extends HappElement {
     /** Send dnaHash to electron */
     if (IS_ELECTRON) {
       const ipc = window.require('electron').ipcRenderer;
-      const dnaHashB64 = encodeHashToBase64(this.curPlaceDvm.cell.cell_id[0])
-      let _reply = ipc.sendSync('dnaHash', dnaHashB64);
+      let _reply = ipc.sendSync('dnaHash', this.curPlaceDvm.cell.dnaHash);
     }
 
     /** Grab place cells */
@@ -113,42 +108,72 @@ export class PlaceApp extends HappElement {
   async onAddClone(cloneName: string, settings: PlaceProperties): Promise<PlaceDvm> {
     console.log("onAddClone()", cloneName);
     const cellDef = { modifiers: {properties: settings, origin_time: settings.startTime}, cloneName}
-    const [_cloneIndex, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
+    const [cloneIndex, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
+    const cloneId = "" + PlaceDvm.DEFAULT_BASE_ROLE_NAME + "." + cloneIndex
     this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     //this._curPlaceId = dvm.cell.clone_id;
-    console.log("Place clone created:", dvm.hcl.toString(), dvm.cell.name, dvm.cell.clone_id);
+    console.log("Place clone created:", dvm.hcl.toString(), dvm.cell.name, dvm.cell.cloneId);
     /** Create Game Entry */
-    const game: Game = {name: cloneName, dna_hash: dvm.cell.cell_id[0], settings}
+    const game: Game = {name: cloneName, dna_hash: dvm.cell.id[0], settings}
     await this.placeDashboardDvm.zvm.createGame(game);
+    await this.disableClone(cloneId);
+    this._clones[encodeHashToBase64(game.dna_hash)] = cloneId;
     return dvm as PlaceDvm;
   }
 
 
   /** */
-  async onRefreshClone(game: Game) {
-    console.log("onRefreshClone()", game.name);
-    const cloneB64 = encodeHashToBase64(game.dna_hash);
+  async onRefreshClone(game_or_dnaHash: Game | DnaHashB64) {
+    console.log("onRefreshClone()", game_or_dnaHash);
+    /** Get DVM for Clone */
     let cloneId = null;
-    /** Look for clone with this dnaHash */
-    for (const clone of Object.values(this._placeCells.clones)) {
-      if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
-        cloneId = clone.clone_id;
-        break;
-      }
-    }
     let dvm: PlaceDvm;
-    if (cloneId == null) {
-      dvm = await this.onAddClone(game.name, game.settings);
+    let cloneDnaB64;
+    if (typeof game_or_dnaHash === 'object') {
+      const game: Game = game_or_dnaHash;
+      cloneDnaB64 = encodeHashToBase64(game.dna_hash);
+      /** Look for clone with this dnaHash */
+      for (const clone of Object.values(this._placeCells.clones)) {
+        if (encodeHashToBase64(clone.cell_id[0]) == cloneDnaB64) {
+          cloneId = clone.clone_id;
+          break;
+        }
+      }
+      /** Create Clone if it doesn't exist */
+      if (cloneId == null) {
+        dvm = await this.onAddClone(game.name, game.settings);
+      } else {
+        dvm = this.getPlaceDvm(cloneId);
+      }
     } else {
+      cloneId = this._clones[game_or_dnaHash];
+      cloneDnaB64 = game_or_dnaHash;
       dvm = this.getPlaceDvm(cloneId);
     }
+
     //console.log("onRefreshClone()", dvm);
     const snapshot = await dvm.placeZvm.getLatestSnapshot();
-    console.log("onRefreshClone()", snapshot);
-    this._latestSnapshots[cloneB64] = snapshot;
-    //this.requestUpdate();
+    console.log("onRefreshClone() snapshot", snapshot);
+    this._latestSnapshots[cloneDnaB64] = snapshot;
     const dashboard = this.shadowRoot!.querySelectorAll('place-dashboard')[0] as PlaceDashboard;
-    dashboard.requestUpdate();
+    //dashboard.requestUpdate();
+    this.requestUpdate();
+  }
+
+
+  /** */
+  async disableClone(cloneId: CloneId): Promise<void> {
+    const request = {app_id: this.hvm.appId, clone_cell_id: cloneId};
+    console.log("disableClone()", request);
+    await this.conductorAppProxy.disableCloneCell(request);
+  }
+
+
+  /** */
+  async enableClone(cloneId: CloneId): Promise<ClonedCell> {
+    const request = {app_id: this.hvm.appId, clone_cell_id: cloneId};
+    console.log("enableClone()", request);
+    return this.conductorAppProxy.enableCloneCell(request);
   }
 
 
@@ -159,6 +184,7 @@ export class PlaceApp extends HappElement {
     /** Look for clone with this dnaHash */
     for (const clone of Object.values(this._placeCells.clones)) {
       if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
+        const _cloned = await this.enableClone(clone.clone_id);
         this._curPlaceCloneId = clone.clone_id;
         return;
       }
@@ -169,9 +195,10 @@ export class PlaceApp extends HappElement {
   }
 
 
-  onExitGame(cloneId: CloneId) {
-    // FIXME
-    //this._adminWs.disableCell()
+  /** */
+  async onExitGame(cloneDnaHash: DnaHashB64) {
+    await this.onRefreshClone(cloneDnaHash);
+    await this.disableClone(this._clones[cloneDnaHash]);
     this._curPlaceCloneId = null;
   }
 

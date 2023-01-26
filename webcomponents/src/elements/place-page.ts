@@ -18,7 +18,6 @@ import {PlaceZvm} from "../viewModel/place.zvm";
 import {Placement, PlaceProperties, Snapshot} from "../bindings/place.types";
 import {toHHMMSS} from "../time";
 
-
 export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
 
 
@@ -63,6 +62,10 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   _pixelsPlaced: number = 0;
   _loopCount: number = 0;
 
+  /** used for stopping setInterval on exit */
+  _interval: NodeJS.Timer;
+
+
   /** Getters */
 
   get playfieldElem(): HTMLCanvasElement | null {
@@ -91,7 +94,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
 
   /** After each render */
   async updated(changedProperties: any) {
-    console.log("*** updated() called !")
+    //console.log("   <place-page>.updated()")
 
     if (this._mustInitPixi) {
       const properties = await this._zvm.getProperties()
@@ -372,7 +375,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     }
 
     /** Start refresh loop and try to publish snapshot every x seconds */
-    setInterval(async () => {
+    this._interval = setInterval(async () => {
       this._loopCount += 1
       if (!this._canAutoRefresh) {
         return;
@@ -893,7 +896,8 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
         <div id="horizontal-div" style="display:flex; flex-direction:row;; height: 100%;">
           <div style="width:84px; display:flex; flex-direction:column">
             <button style="margin:0px 5px 5px 5px;" @click=${() => {
-              this.dispatchEvent(new CustomEvent('exit', {detail: this.cell.clone_id, bubbles: true, composed: true}));
+              clearInterval(this._interval);
+              this.dispatchEvent(new CustomEvent('exit', {detail: this.cell.dnaHash, bubbles: true, composed: true}));
             }}>Exit</button>
             <button class=" ${this._selectedColor? "colorButton" : "selected"} " style=""
                     @click=${() => {

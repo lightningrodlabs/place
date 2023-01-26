@@ -377,7 +377,7 @@ export class PlaceZvm extends ZomeViewModel {
   async getMyRenderTime(bucketIndex: number): Promise<number> {
     const bucketSize = this.getMaybeProperties()!.bucketSizeSec;
     const nextBucketTime = (bucketIndex + 1) * bucketSize;
-    const rank = await this.zomeProxy.getAuthorRank({author: this.agentPubKey, bucketIndex: bucketIndex - 1}); // Must get rank of previous bucket to determine this bucket's render time
+    const rank = await this.zomeProxy.getAuthorRank({author: this.cell.agentPubKey, bucketIndex: bucketIndex - 1}); // Must get rank of previous bucket to determine this bucket's render time
     this.perspective.myRanks[bucketIndex] = rank
     const offset = (rank - 1) * (bucketSize / 10)
     //console.log("MyRank for " + this.getRelativeBucketIndex(bucketIndex) + ", is: " + rank + "; offset = " + offset + " secs")

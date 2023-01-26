@@ -111,6 +111,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
     }
   }
 
+
   /** */
   render() {
     const gamesCount = Object.values(this._zvm.perspective.allGames).length;
@@ -138,7 +139,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
               : html`<sl-badge type="neutral" pill>unjoined</sl-badge>`
             }
             <!-- <small>${encodeHashToBase64(game.dna_hash)}</small> -->
-              <small>${determineBucketTime(maybeSnapshot.timeBucketIndex, game.settings)}</small>
+              <small>${maybeSnapshot? determineBucketTime(maybeSnapshot.timeBucketIndex, game.settings): ""}</small>
               <sl-details summary="Parameters">
                 <div>startTime: ${game.settings.startTime}</div>
                 <div>canvasSize: ${game.settings.canvasSize}</div>
@@ -174,7 +175,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
         <sl-input label="Canvas size (pixels):" id="createcanvasSizeInput" type="number" value="10" help-text="Must be even"></sl-input>
         <sl-input label="Timeframe duration (sec):" id="createbucketSizeInput" type="number" value="60" help-text="${MIN_BUCKET_SIZE_SEC} - ${MAX_BUCKET_SIZE_SEC}"></sl-input>
         <sl-input label="Pixels per timeframe:" id="createPpbInput" type="number" value="10"></sl-input>
-        <sl-input label="Snapshot interval (in timeframes):" id="createIntervalInput" value="2" type="number"></sl-input>
+        <sl-input label="Snapshot interval (in timeframes):" id="createIntervalInput" value="1" type="number"></sl-input>
         <span id="createHelper" style="display: none;margi-top:10px;color:red;"></span>
           <sl-button type="primary" @click=${this.onCreateGame} style="padding-top:10px;">
             create
