@@ -6,10 +6,9 @@ import {
   PlacePage,
   DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm, PlaceDashboardPerspective,
 } from "@place/elements";
-import {CellContext, CellsForRole, CloneId, Dictionary, HappElement, HCL, HvmDef} from "@ddd-qc/lit-happ";
+import {CellContext, CellsForRole, CloneId, delay, Dictionary, HappElement, HCL, HvmDef} from "@ddd-qc/lit-happ";
 import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.types";
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
-
 
 let HC_APP_PORT: number;
 let HC_ADMIN_PORT: number;
@@ -80,7 +79,7 @@ export class PlaceApp extends HappElement {
 
   /** */
   async happInitialized() {
-    console.log("happInitialized()")
+    console.log("happInitialized()", HC_ADMIN_PORT)
     //new ContextProvider(this, cellContext, this.taskerDvm.installedCell);
     //this._curPlaceCellId = this.placeDvm.cell.cell_id;
     /** Authorize all zome calls */
@@ -108,8 +107,8 @@ export class PlaceApp extends HappElement {
   async onAddClone(cloneName: string, settings: PlaceProperties): Promise<PlaceDvm> {
     console.log("onAddClone()", cloneName);
     const cellDef = { modifiers: {properties: settings, origin_time: settings.startTime}, cloneName}
-    const [cloneIndex, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
-    const cloneId = "" + PlaceDvm.DEFAULT_BASE_ROLE_NAME + "." + cloneIndex
+    const [clonedCell, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
+    const cloneId = clonedCell.clone_id;
     this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     //this._curPlaceId = dvm.cell.clone_id;
     console.log("Place clone created:", dvm.hcl.toString(), dvm.cell.name, dvm.cell.cloneId);
@@ -205,7 +204,7 @@ export class PlaceApp extends HappElement {
 
   /** */
   render() {
-    console.log("<place-app>.render()")
+    console.log("*** <place-app>.render()")
     if (!this._loaded) {
       return html`<span>Loading...</span>`;
     }

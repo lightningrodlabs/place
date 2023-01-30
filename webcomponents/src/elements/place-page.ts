@@ -12,16 +12,11 @@ import {sharedStyles} from "../sharedStyles";
 
 import {color2index, COLOR_PALETTE, IMAGE_SCALE} from "../constants";
 import {buffer2Texture, randomSnapshotData, setPixel, snapshotIntoFrame} from "../imageBuffer";
-import {ZomeElement} from "@ddd-qc/lit-happ";
+import {delay, ZomeElement} from "@ddd-qc/lit-happ";
 import {destructurePlacement, PlacePerspective, PlaceState, snapshot_to_str} from "../viewModel/place.perspective";
 import {PlaceZvm} from "../viewModel/place.zvm";
 import {Placement, PlaceProperties, Snapshot} from "../bindings/place.types";
 import {toHHMMSS} from "../time";
-
-export const delay = (ms:number) => new Promise(r => setTimeout(r, ms))
-
-
-
 
 
 /**

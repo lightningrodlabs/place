@@ -3,6 +3,8 @@
     "target": "es2018",
     "module": "esnext",
     "moduleResolution": "node",
+    "checkJs": false,
+    "allowJs": true,
     "noEmitOnError": true,
     "lib": ["es2017", "dom"],
     "strict": false,
@@ -13,7 +15,6 @@
     "sourceMap": true,
     "inlineSources": true,
     "declaration": true,
-    "composite": true,
-    "allowJs": true
+    "composite": true
   }
 }

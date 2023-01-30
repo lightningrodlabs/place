@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { app } from 'electron'
 import { ElectronHolochainOptions, StateSignal, PathOptions } from '@lightningrodlabs/electron-holochain'
-import {MAIN_APP_ID, COMMUNITY_PROXY_URL, DNA_VERSION_FILENAME, ADMIN_WS} from './constants'
+import {MAIN_APP_ID, COMMUNITY_PROXY_URL, DNA_VERSION_FILENAME, getAdminPort} from './constants'
 import * as fs from "fs";
 import {log} from "./logger";
 
@@ -64,7 +64,7 @@ export const BINARY_PATHS: PathOptions | undefined = app.isPackaged
 /**
  *
  */
-export function createHolochainOptions(uid: string, storagePath: string): ElectronHolochainOptions {
+export async function createHolochainOptions(uid: string, storagePath: string): Promise<ElectronHolochainOptions> {
   const options: ElectronHolochainOptions = {
     happPath: whereDnaPath,
     datastorePath: path.join(storagePath, 'databases-' + app.getVersion()),
@@ -72,7 +72,7 @@ export function createHolochainOptions(uid: string, storagePath: string): Electr
     appId: MAIN_APP_ID + '-' + uid,
     //appId: MAIN_APP_ID,
     appWsPort: 0,
-    adminWsPort: ADMIN_WS,
+    adminWsPort: await getAdminPort(),
     //proxyUrl: COMMUNITY_PROXY_URL,
     //bootstrapUrl: "",
     //uid,

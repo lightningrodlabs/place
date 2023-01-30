@@ -1,6 +1,6 @@
 {
   "name": "we-applet",
-  "version": "0.2.0-hc-brc.2",
+  "version": "0.2.0-hc-beta.1.0",
   "scripts": {
     "build": "rm -rf dist && tsc && rollup --config rollup.config.js",
     "build:watch": "tsc -w --preserveWatchOutput",

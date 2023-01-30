@@ -1,6 +1,6 @@
 {
   "name": "place-app",
-  "version": "0.2.0-hc-brc.2",
+  "version": "0.2.0-hc-beta.1.0",
   "description": "A playground for pixels",
   "author": "Harris-Braun Enterprises, LLC and contributors",
   "license": "CAL-1.0",
@@ -66,7 +66,7 @@
   },
   "dependencies": {
     "@electron/remote": "^2.0.8",
-    "@lightningrodlabs/electron-holochain": "^0.5.2",
+    "@lightningrodlabs/electron-holochain": "^0.6.0",
     "electron-prompt": "^1.7.0",
     "electron-log": "^4.4.6",
     "command-exists": "^1.2.8",
@@ -75,6 +75,7 @@
     "fix-path": "^2.1.0",
     "lint": "^0.7.0",
     "tslib": "^2.3.1",
-    "split": "^1.0.1"
+    "split": "^1.0.1",
+    "ws": "^8.5.0"
   }
 }
