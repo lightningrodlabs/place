@@ -130,7 +130,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
             ${maybeSnapshot && joined
               //? html`<div>${maybeSnapshot.timeBucketIndex}</div>`
               ? html`<canvas  id="canvas-${encodeHashToBase64(game.dna_hash)}" width="150" height="150" class="place-preview">`
-              : html`<sl-skeleton class="square"></sl-skeleton>`
+              : html`<sl-skeleton class="square" style="position:fixed;"></sl-skeleton>`
             }
             </div>
             <strong><abbr title="by ${author}">${game.name}</abbr></strong>

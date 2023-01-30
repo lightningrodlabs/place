@@ -194,6 +194,8 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     this._pixiApp.renderer.plugins.interaction.cursorStyles.copy = "copy";
     this._pixiApp.renderer.plugins.interaction.cursorStyles.grab = "grab";
 
+    //this._pixiApp.renderer.plugins.interaction.moveWhenInside = true;
+
     /** Setup viewport */
 
     this._viewport = new Viewport({
@@ -775,6 +777,15 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
       this.requestUpdate();
   }
 
+
+
+  /** */
+  onExit() {
+    clearInterval(this._interval);
+    this._viewport.destroy();
+    this.dispatchEvent(new CustomEvent('exit', {detail: this.cell.dnaHash, bubbles: true, composed: true}));
+  }
+
   /** Render for real-time editing of frame */
   renderNormal() {
     //console.log("<place-page> renderNormal()");
@@ -890,10 +901,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     return html`
         <div id="horizontal-div" style="display:flex; flex-direction:row;; height: 100%;">
           <div style="width:84px; display:flex; flex-direction:column">
-            <button style="margin:0px 5px 5px 5px;" @click=${() => {
-              clearInterval(this._interval);
-              this.dispatchEvent(new CustomEvent('exit', {detail: this.cell.dnaHash, bubbles: true, composed: true}));
-            }}>Exit</button>
+            <button style="margin:0px 5px 5px 5px;" @click=${() => {this.onExit()}}>Exit</button>
             <button class=" ${this._selectedColor? "colorButton" : "selected"} " style=""
                     @click=${() => {
                       this.disableCursor()

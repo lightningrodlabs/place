@@ -227,7 +227,11 @@ export class PlaceApp extends HappElement {
                           .latestSnapshots="${this._latestSnapshots}"
                           @create-new-game="${(e:any) => {e.stopPropagation(); this.onAddClone(e.detail.name, e.detail.settings)}}"
                           @clone-selected="${(e:any) => {e.stopPropagation(); this.onSelectClone(e.detail)}}"
-                          @refresh-requested="${(e:any) => {e.stopPropagation(); this.onRefreshClone(e.detail)}}"
+                          @refresh-requested="${async (e:any) => {e.stopPropagation();
+                            await this.enableClone(this._clones[e.detail]);
+                            await this.onRefreshClone(e.detail);
+                            await this.disableClone(this._clones[e.detail]);
+    }}}"
          ></place-dashboard>
        </cell-context>
     `;

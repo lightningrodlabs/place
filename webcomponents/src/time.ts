@@ -16,7 +16,10 @@ export const toHHMMSS = function (str: string) {
 
 /** */
 export function determineBucketTime(bucketIndex: number, settings: PlaceProperties): string {
-  const bucketTime = bucketIndex * settings.bucketSizeSec - settings.startTime;
+  const bucketTime: number = bucketIndex * settings.bucketSizeSec - settings.startTime;
+  if (bucketTime < 0) {
+    return "00:00:00"
+  }
   return toHHMMSS(bucketTime.toString());
 }
 
