@@ -45,9 +45,6 @@ console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
 
 /** */
 export class PlaceApp extends HappElement {
-  // constructor() {
-  //   super(HC_APP_PORT);
-  // }
 
   /** */
   constructor(socket?: AppWebsocket, appId?: InstalledAppId) {

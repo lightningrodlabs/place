@@ -31,7 +31,7 @@ export default {
       "process.env.NODE_ENV": '"production"',
     }),
     copy({
-      targets: [{ src: "icon.png", dest: "dist" }],
+      targets: [{ src: "../assets/logo.svg", dest: "dist" }],
     }),
     commonjs({}),
     /** Minify JS */
