@@ -1,62 +1,30 @@
-import {
-  AdminWebsocket,
-  AppWebsocket,
-  InstalledAppInfo,
-  // InstalledAppletInfo,
-} from "@holochain/client";
-import {
-  WeApplet,
-  AppletRenderers,
-  WeServices,
-  // WeInfo,
-} from "@lightningrodlabs/we-applet";
-
-import { PlaceApplet } from "./place-applet";
-
-
-// +++++++++++ to be removed if implemented in @lightningrodlabs/we-applet
-export interface WeInfo {
-  logoSrc: string;
-  name: string;
-}
-export interface InstalledAppletInfo {
-  weInfo: WeInfo,
-  installedAppInfo: InstalledAppInfo,
-}
-// ++++++++++++
-
+import {AdminWebsocket, AppWebsocket} from "@holochain/client";
+import {WeApplet, AppletRenderers, WeServices, AppletInfo} from "@lightningrodlabs/we-applet";
+import {PlaceApp} from "place";
 
 const placeApplet: WeApplet = {
   async appletRenderers(
     appWebsocket: AppWebsocket,
     adminWebsocket: AdminWebsocket,
     weServices: WeServices,
-    appletAppInfo: InstalledAppletInfo[],
+    appletAppInfo: AppletInfo[],
   ): Promise<AppletRenderers> {
     return {
       full(element: HTMLElement, registry: CustomElementRegistry) {
-
+        console.log("placeApplet.full()", appWebsocket.client.socket.url)
         if ((appletAppInfo as any).length > 1) {
-          console.error("Wrong type of appletAppInfo passed. Expected only a single 'InstalledAppletInfo' but got multiple.")
+          console.error("Wrong type of appletAppInfo passed. Expected only a single 'AppletInfo' but got multiple.")
         } else {
-          registry.define("place-applet", PlaceApplet);
-          element.innerHTML = `<place-applet style="flex: 1; display: flex;"></place-applet>`;
-          let appletElement = element.querySelector("place-applet") as any;
+          registry.define("place-app", PlaceApp);
 
-          appletElement.appWebsocket =  appWebsocket;
-          //appletElement.profilesStore = weServices.profilesStore;
-          appletElement.appletAppInfo = appletAppInfo;
+          const app = new PlaceApp(appWebsocket, "place-applet");
+          element.appendChild(app);
         }
       },
       blocks: [],
     };
   },
 };
-
-
-
-
-
 
 
 export default placeApplet;

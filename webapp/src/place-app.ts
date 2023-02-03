@@ -1,12 +1,19 @@
 import { html } from "lit";
 import { state, property } from "lit/decorators.js";
-import {AdminWebsocket, ClonedCell, DnaHashB64, encodeHashToBase64} from "@holochain/client";
+import {
+  AdminWebsocket,
+  AppWebsocket,
+  ClonedCell,
+  DnaHashB64,
+  encodeHashToBase64,
+  InstalledAppId
+} from "@holochain/client";
 
 import {
   PlacePage,
-  DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm, PlaceDashboardPerspective,
+  DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm,
 } from "@place/elements";
-import {CellContext, CellsForRole, CloneId, delay, Dictionary, HappElement, HCL, HvmDef} from "@ddd-qc/lit-happ";
+import {CellContext, CellsForRole, CloneId, Dictionary, HappElement, HCL, HvmDef} from "@ddd-qc/lit-happ";
 import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.types";
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 
@@ -38,8 +45,13 @@ console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
 
 /** */
 export class PlaceApp extends HappElement {
-  constructor() {
-    super(HC_APP_PORT);
+  // constructor() {
+  //   super(HC_APP_PORT);
+  // }
+
+  /** */
+  constructor(socket?: AppWebsocket, appId?: InstalledAppId) {
+    super(socket? socket : HC_APP_PORT, appId);
   }
 
   static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
@@ -203,8 +215,19 @@ export class PlaceApp extends HappElement {
 
 
   /** */
+  async onRefreshRequested(game: Game) {
+    // e.stopPropagation();
+    // const game: Game = e.detail;
+    const dnaHash = encodeHashToBase64(game.dna_hash);
+    await this.enableClone(this._clones[dnaHash]);
+    await this.onRefreshClone(game);
+    await this.disableClone(this._clones[dnaHash]);
+  }
+
+
+  /** */
   render() {
-    console.log("*** <place-app>.render()")
+    console.log("*** <place-app>.render()...")
     if (!this._loaded) {
       return html`<span>Loading...</span>`;
     }
@@ -227,11 +250,7 @@ export class PlaceApp extends HappElement {
                           .latestSnapshots="${this._latestSnapshots}"
                           @create-new-game="${(e:any) => {e.stopPropagation(); this.onAddClone(e.detail.name, e.detail.settings)}}"
                           @clone-selected="${(e:any) => {e.stopPropagation(); this.onSelectClone(e.detail)}}"
-                          @refresh-requested="${async (e:any) => {e.stopPropagation();
-                            await this.enableClone(this._clones[e.detail]);
-                            await this.onRefreshClone(e.detail);
-                            await this.disableClone(this._clones[e.detail]);
-    }}}"
+                          @refresh-requested="${(e:any) => {e.stopPropagation(); this.onRefreshRequested(e.detail);}}"
          ></place-dashboard>
        </cell-context>
     `;

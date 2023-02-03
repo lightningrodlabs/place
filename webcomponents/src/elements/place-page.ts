@@ -341,10 +341,12 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     //g_viewport.addChild(logText)
 
     this._viewport.on("zoomed", (e:any) => {
-      //console.log("zoomed event fired: " + viewport.scale.x)
+      console.log("zoomed event fired:", this._viewport);
       //console.log({e})
-      this._grid.visible = this._viewport.scale.x > 2;
-      this.requestUpdate()
+      if (this._viewport) {
+        this._grid.visible = this._viewport.scale.x > 2;
+        this.requestUpdate()
+      }
     })
     this.fitCanvas(this._zvm.getMaybeProperties()!)
 
@@ -936,7 +938,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
               //this._mustInitPixi = true;
               this.requestUpdate();}}>Details</button>
           </div>
-          <div id="vertical-div" style="display:flex; flex-direction:column; height: 100%;">
+          <div id="vertical-div" style="display:flex; flex-direction:column; width:100%;">
             <canvas id="playfield" class="appCanvas" style=""></canvas>
             ${footer}
         </div>
@@ -949,7 +951,6 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   /** */
   static get scopedElements() {
     return {
-      //"place-snapshot": PlaceSnapshot,
     };
   }
 

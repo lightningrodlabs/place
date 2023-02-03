@@ -6,39 +6,40 @@
     <title>Place Applet Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
-  <body style="margin:0;background:#faf1ea;height:100vh">
+  <body style="margin:0;background:#faf1ea;height:100vh;background: #9bb791">
     <div id="container"></div>
-
+    <script>
+      if (global === undefined) {
+        var global = window;
+      }
+    </script>
     <script type="module">
-      import Applet from "../out-tsc";
-      //import { HolochainClient } from "@holochain-open-dev/cell-client";
-      import { ProfilesStore, ProfilesService } from "@holochain-open-dev/profiles";
-      import { ProfilesZomeMock } from "@holochain-open-dev/profiles/mocks";
+
+      //import { ProfilesStore, ProfilesService } from "@holochain-open-dev/profiles";
+      //import { ProfilesZomeMock } from "@holochain-open-dev/profiles/mocks";
       import { AppWebsocket, AdminWebsocket } from "@holochain/client";
+      import Applet from "../out-tsc";
 
       const container = document.getElementById("container");
 
+
+      /** */
       async function setup() {
-        const appWs = await AppWebsocket.connect(
-          `ws://localhost:${process.env.HC_PORT}`
-        );
+        console.log("we-applet demo setup()");
+        console.log("setup()", process.env.HC_APP_PORT, process.env.HC_ADMIN_PORT)
+        const appWs = await AppWebsocket.connect(`ws://localhost:${process.env.HC_APP_PORT}`);
+        const adminWs = await AdminWebsocket.connect(`ws://localhost:${process.env.HC_ADMIN_PORT}`);
 
-        const adminWs = await AdminWebsocket.connect(
-          `ws://localhost:${process.env.ADMIN_PORT}`
-        );
+        const apps = await adminWs.listApps({});
+        console.log("setup() apps", apps);
 
-        const appInfo = await appWs.appInfo({
-          installed_app_id: "place-applet",
-        });
+        const appInfo = await appWs.appInfo({ installed_app_id: "place-applet" });
+        console.log("setup() appInfo", appInfo);
 
         const renderers = await Applet.appletRenderers(
           appWs,
           adminWs,
-          {
-            profilesStore: new ProfilesStore(
-              new ProfilesService(new ProfilesZomeMock())
-            ),
-          },
+          {},
           [{ weInfo: { name: "Demo Group", logoSrc: "" }, installedAppInfo: appInfo }]
         );
         renderers.full(container, window.customElements);

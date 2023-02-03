@@ -12,9 +12,9 @@
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "importHelpers": true,
+    "skipLibCheck": true,
     "sourceMap": true,
     "inlineSources": true,
-    "declaration": true,
-    "composite": true
+    "declaration": true
   }
 }
