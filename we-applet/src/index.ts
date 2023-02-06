@@ -17,7 +17,7 @@ const placeApplet: WeApplet = {
         } else {
           registry.define("place-app", PlaceApp);
 
-          const app = new PlaceApp(appWebsocket, "place-applet");
+          const app = new PlaceApp(appWebsocket, adminWebsocket, "place-applet");
           element.appendChild(app);
         }
       },

@@ -47,7 +47,7 @@ console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
 export class PlaceApp extends HappElement {
 
   /** */
-  constructor(socket?: AppWebsocket, appId?: InstalledAppId) {
+  constructor(socket?: AppWebsocket, private _adminWs?: AdminWebsocket, appId?: InstalledAppId) {
     super(socket? socket : HC_APP_PORT, appId);
   }
 
@@ -62,14 +62,11 @@ export class PlaceApp extends HappElement {
   /** DnaHashB64 -> CloneId */
   private _clones: Dictionary<CloneId> = {}
 
-  private _adminWs: AdminWebsocket;
-
 
   /** -- Getters -- */
 
   get placeDashboardDvm(): PlaceDashboardDvm { return this.hvm.getDvm(PlaceDashboardDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDashboardDvm }
   //get placeDvm(): PlaceDvm { return this.hvm.getDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDvm }
-
 
   get curPlaceDvm(): PlaceDvm {
     return this.getPlaceDvm(this._curPlaceCloneId == null? undefined: this._curPlaceCloneId);
@@ -84,6 +81,8 @@ export class PlaceApp extends HappElement {
     }
     return maybeDvm as PlaceDvm;
   }
+
+
   /** -- Methods -- */
 
   /** */
@@ -92,10 +91,16 @@ export class PlaceApp extends HappElement {
     //new ContextProvider(this, cellContext, this.taskerDvm.installedCell);
     //this._curPlaceCellId = this.placeDvm.cell.cell_id;
     /** Authorize all zome calls */
-    this._adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
-    //console.log({ adminWs });
-    await this.hvm.authorizeAllZomeCalls(this._adminWs);
-    console.log("*** Zome call authorization complete");
+    if (!this._adminWs) {
+      this._adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
+    }
+    if (this._adminWs) {
+      await this.hvm.authorizeAllZomeCalls(this._adminWs);
+      console.log("*** Zome call authorization complete");
+    } else {
+      console.warn("No adminWebsocket provided (Zome call authorization done)")
+    }
+
     /** Probe */
     await this.hvm.probeAll();
     /** Send dnaHash to electron */
