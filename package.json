@@ -28,9 +28,9 @@
     "build:dna"              : "npm run build:zome && bash scripts/pack-dna.sh",
     "build:happ"             : "npm run build:dna && $npm_package_config_bin/hc app pack dna/workdir_dashboard -o artifacts/place.happ && cp artifacts/place.happ electron/bin/place.happ && npm run hash-zome",
 
+    "build:webapp"           : "npm run build -w webcomponents && npm run build -w webapp",
     "build:webapp-chaperone" : "npm run build -w place-chaperone",
     "build:chaperone-mainnet": "npm run build -w webcomponents && npm run build:webapp-chaperone && PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run package -w place-chaperone",
-    "build:we"               : "npm run build -w we-applet",
 
     "test"                   : "npm run build:happ && npm run build -w webcomponents && npm t -w tests",
 

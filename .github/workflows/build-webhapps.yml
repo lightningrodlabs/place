@@ -7,50 +7,58 @@ jobs:
   build-webhapps:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      # install hc tool
-      - name: Install hc tool and wasm target
-        shell: bash # important because this runs shell scripts
-        run: |
-          npm run ci:hc-install
-      # Install Hash Zome
-      - name: Install Hash Zome
-        run: |
-          npm run install:hash-zome
-      # build dna
-      - name: Build DNA
-        run: |
-          npm run build:happ
-      # Hash Zome
-      - name: Hash Zome
-        run: |
-          npm run hash-zome
-      # Setup npm
-      - name: Install nodejs dependencies
+      - uses: actions/checkout@v3
+      # Install npm dependencies
+      - name: Install npm dependencies
+        shell: bash
         run: |
           npm install
+      # Download submodules
+      - name: Download submodules
+        shell: bash
+        run: |
+          npm run install:submodules
+      # install rust tools
+      - name: install rust tools
+        shell: bash
+        run: |
+          npm run install:rust
+      # install hc tool
+      - name: Install hc tool
+        shell: bash
+        run: |
+          npm run install:hc
+      # Install hash-zome
+      - name: Install hash-zome
+        run: |
+          npm run install:hash-zome
+      # Build happ
+      - name: Build happ
+        shell: bash
+        run: |
+          npm run build:happ
       # Build webapp
       - name: Build webapp
         run: |
-          npm run prepare-test
+          npm run build:webapp
       # Package web-happ
       - name: Package web-happ
         run: |
-          npm run dist:webhapp
+          npm run package:webapp
       # build we-applet
       - name: build we-applet
         shell: bash
         run: |
-          npm run build:we
+          npm run build -w we-applet
       # Package we-applet
       - name: Package we-applet
         shell: bash
         run: |
-          npm run dist:we
+          npm run package:we-applet
       # Regroup artifacts
       - name: Regroup artifacts
         run: |
-          mkdir artifacts
+          mkdir -p artifacts
           cp electron/bin/model_zome_hash.txt ./artifacts          
           cp target/wasm32-unknown-unknown/release/place_model.wasm ./artifacts
           cp target/wasm32-unknown-unknown/release/place.wasm ./artifacts
