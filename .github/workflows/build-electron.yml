@@ -1,9 +1,9 @@
-name: test-workflow x64
+name: build-electron
 
-on: workflow_dispatch
+on:
+  workflow_call:
 
 env:
-  PLACE_VERSION: 0.2.0-hc-beta.1.0
   USE_HARD_LINKS: false
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     uses: ./.github/workflows/build-webhapps.yml
 
   # upload the app package for each target os
-  build-binaries:
+  build-electron:
     needs: call-build-webhapps
     strategy:
       fail-fast: false
@@ -25,6 +25,12 @@ jobs:
     steps:
       # Checkout repo
       - uses: actions/checkout@v3
+      # Set NPM shell (windows-only)
+      - name: Set NPM shell (windows-only)
+        if: ${{ runner.os == 'Windows' }}
+        shell: bash
+        run: |
+          npm config set script-shell "C:\\Program Files\\git\\bin\\bash.exe"
       # Download previously uploaded artifacts
       - uses: actions/download-artifact@master
         with:
@@ -93,32 +99,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cp electron/out-builder/Place* ./artifacts
-      # upload binary for each platform
-      - name: upload binary (ubuntu only)
-        if: ${{ runner.os == 'Linux' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # List uploaded files
+      - name: List artifacts folder
+        run: ls -R
         working-directory: artifacts
-        run: |
-          gh release upload "manual-release" "Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "manual-release" "place-webapp-ui.zip" --clobber
-          gh release upload "manual-release" "place-we_applet-ui.zip" --clobber            
-          gh release upload "manual-release" "place-we_applet.webhapp" --clobber          
-          gh release upload "manual-release" "place.webhapp" --clobber
-          gh release upload "manual-release" "place.happ" --clobber
-          gh release upload "manual-release" "place.dna" --clobber
-          gh release upload "manual-release" "place.wasm" --clobber
-          gh release upload "manual-release" "place_model.wasm" --clobber
-      - name: upload binary (macos only)
-        if: ${{ runner.os == 'macOs' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload "manual-release" "artifacts/Place-$PLACE_VERSION.dmg" --clobber
-      - name: upload binary (Windows only)
-        if: ${{ runner.os == 'Windows' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release delete-asset "manual-release" "Place.Setup.$env:PLACE_VERSION.exe" -y          
-          gh release upload "manual-release" "artifacts//Place Setup $env:PLACE_VERSION.exe" --clobber
+      # "upload" artifacts
+      - uses: actions/upload-artifact@master
+        with:
+          name: all-happ-artifact
+          path: artifacts
