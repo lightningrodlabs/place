@@ -9,16 +9,6 @@ env:
   USE_HARD_LINKS: false
 
 jobs:
-  # the create-release would be used once we want to create a specific release based on if the commit has a tag
-  create-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: taiki-e/create-gh-release-action@v1
-        env:
-          # (required)
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   # Build the dna & webhapps
   call-build-webhapps:
     uses: ./.github/workflows/build-webhapps.yml
@@ -36,7 +26,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       # Checkout repo
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # Download previously uploaded artifacts
       - uses: actions/download-artifact@master
         with:

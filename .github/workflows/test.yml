@@ -24,12 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       # Checkout repo
-      - uses: actions/checkout@v2
-      # Check if exist
-      #- name: tsc
-      #   continue-on-error: true
-      #  run: |
-      #     tsc --version
+      - uses: actions/checkout@v3
       # Download previously uploaded artifacts
       - uses: actions/download-artifact@master
         with:
@@ -41,17 +36,12 @@ jobs:
       # Dispatch artifacts
       - name: Dispatch artifacts
         run: |
-          cp ./place.happ ./electron/bin
-          cp ./model_zome_hash.txt ./electron/bin
-      # Setup npm
-      - name: Install nodejs dependencies
+          cp artifacts/place.happ electron/bin
+          cp artifacts/model_zome_hash.txt electron/bin
+      # Install npm dependencies
+      - name: Install npm dependencies
         run: |
           npm install
-      # build webcomponents
-      - name: build webcomponents
-        shell: bash
-        run: |
-          npm run build:webcomponents
       # build webapp
       - name: build webapp
         shell: bash
@@ -62,8 +52,8 @@ jobs:
         shell: bash
         run: |
           npm run build -w electron
-      # Package electron
-      - name: Package electron
+      # Dist electron
+      - name: Dist electron
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,33 +75,34 @@ jobs:
         run: ls -R
         working-directory: electron/out-builder
       # Build chaperone app
-      - name: Build chaperone app (ubuntu only)
-        continue-on-error: true
-        if: ${{ runner.os == 'Linux' }}
-        run: |
-          npm run build:chaperone-mainnet
-      # Check workdir folder
-      - name: Check workdir folder
-        continue-on-error: true
-        run: ls -R
-        working-directory: dna/workdir
-#      #
+#      - name: Build chaperone app (ubuntu only)
+#        continue-on-error: true
+#        if: ${{ runner.os == 'Linux' }}
+#        run: |
+#          npm run build:chaperone-mainnet
 #      - name: list releases
 #        continue-on-error: true
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #        run: |
 #          gh release list
+      # Move binary for each platform
+      - name: Move binary
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp electron/out-builder/Place* ./artifacts
       # upload binary for each platform
       - name: upload binary (ubuntu only)
         if: ${{ runner.os == 'Linux' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: artifacts
         run: |
-          gh release upload "manual-release" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "manual-release" "webapp-chaperone/ui-chaperone.zip" --clobber
-          gh release upload "manual-release" "webapp/ui.zip" --clobber           
-          gh release upload "manual-release" "place_we-applet.webhapp" --clobber          
+          gh release upload "manual-release" "Place-$PLACE_VERSION.AppImage" --clobber
+          gh release upload "manual-release" "place-webapp-ui.zip" --clobber
+          gh release upload "manual-release" "place-we_applet-ui.zip" --clobber            
+          gh release upload "manual-release" "place_we_applet.webhapp" --clobber          
           gh release upload "manual-release" "place.webhapp" --clobber
           gh release upload "manual-release" "place.happ" --clobber
           gh release upload "manual-release" "place.dna" --clobber
@@ -122,11 +113,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "manual-release" "electron/out-builder/Place-$PLACE_VERSION.dmg" --clobber
+          gh release upload "manual-release" "artifacts/Place-$PLACE_VERSION.dmg" --clobber
       - name: upload binary (Windows only)
         if: ${{ runner.os == 'Windows' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete-asset "manual-release" "Place.Setup.$env:PLACE_VERSION.exe" -y          
-          gh release upload "manual-release" "electron/out-builder/Place Setup $env:PLACE_VERSION.exe" --clobber
+          gh release upload "manual-release" "artifacts//Place Setup $env:PLACE_VERSION.exe" --clobber
