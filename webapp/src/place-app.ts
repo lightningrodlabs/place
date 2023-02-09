@@ -47,8 +47,8 @@ console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
 export class PlaceApp extends HappElement {
 
   /** */
-  constructor(socket?: AppWebsocket, private _adminWs?: AdminWebsocket, appId?: InstalledAppId) {
-    super(socket? socket : HC_APP_PORT, appId);
+  constructor(appWs?: AppWebsocket, private _adminWs?: AdminWebsocket, appId?: InstalledAppId) {
+    super(appWs? appWs : HC_APP_PORT, appId);
   }
 
   static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;

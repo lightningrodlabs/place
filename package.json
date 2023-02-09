@@ -14,13 +14,13 @@
     "electron"
   ],
   "scripts": {
-    "install:submodules"     : "bash scripts/npm/install-submodules.sh $npm_package_config_hc_version",
+    "install:submodules"     : "bash scripts/install-submodules.sh $npm_package_config_hc_version",
     "install:rust"           : "bash submodules/hc-prebuilt/install-rust.sh",
     "install:hash-zome"      : "bash submodules/hc-prebuilt/install-hash-zome.sh $npm_package_config_bin",
     "install:hc"             : "bash submodules/hc-prebuilt/install-hc-cli.sh $npm_package_config_bin $npm_package_config_hc_version",
     "install:zits"           : "cargo install zits --version $npm_package_config_zits_version",
 
-    "version"                : "$npm_package_config_bin/hc --version && holochain --version && lair-keystore --version",
+    "version"                : "$npm_package_config_bin/hc --version & holochain --version & lair-keystore --version & tsc --version",
 
     "hash-zome"              : "bash submodules/hc-prebuilt/hash-zome.sh $npm_package_config_bin ./target/wasm32-unknown-unknown/release/place_integrity.wasm electron/bin/model_zome_hash.txt",
 
@@ -56,7 +56,7 @@
     "playground"             : "run-singleton \"holochain-playground\"",
 
     "package:webapp"         : "rm -rf artifacts/place-webapp-ui.zip && bestzip artifacts/place-webapp-ui.zip webapp/dist/* && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
-    "package:we-applet"      : "rm -rf artifacts/place-we_applet-ui.zip && bestzip artifacts/place-we_applet-ui.zip we-applet/dist/* && $npm_package_config_bin/hc web-app pack ./we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp",
+    "package:we-applet"      : "rm -rf artifacts/place-we_applet-ui.zip && bestzip artifacts/place-we_applet-ui.zip we-applet/dist/* && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp",
 
     "dist:webapp"            : "npm run build:happ && npm run build -w webcomponents && npm run build -w webapp && npm run package:webapp",
     "dist:we"                : "npm run package:webapp && npm run package:we-applet",
@@ -70,9 +70,11 @@
 
     "update-version"         : "bash scripts/update-version-number.sh $(cat ./package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')",
 
-    "clean"                  : "bash scripts/clean.sh && npm run clean:npm",
+    "clean"                  : "bash scripts/clean.sh",
     "clean:npm"              : "bash scripts/clean-npm.sh",
-    "clean:hc"               : "rm -rf .hc*"
+    "clean:hc"               : "rm -rf .hc*",
+    "clean:all"              : "npm run clean:agents & npm run clean:npm & npm run clean"
+
   },
   "devDependencies": {
     "@joseph184/rollup-plugin-node-builtins": "^2.1.4",
@@ -92,7 +94,6 @@
     "rollup-plugin-serve": "^1.1.0",
     "rollup-plugin-terser": "^7.0.2",
     "run-singleton-cli": "^0.0.5",
-    "typescript": "^4.9.0",
     "watch-cli": "^0.2.3",
     "bestzip": "^2.2.0",
     "concurrently": "^6.2.1",
@@ -100,7 +101,9 @@
     "cross-env": "^7.0.3",
     "new-port-cli": "^1.0.0",
     "rollup-plugin-copy": "^3.4.0",
-    "json-parse-better-errors": "^1.0.2"
+    "json-parse-better-errors": "^1.0.2",
+    "tslib": "^2.4.0",
+    "typescript": "^4.9.0"
   },
   "engines": {
     "npm": ">=7.0.0"

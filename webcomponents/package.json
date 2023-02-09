@@ -34,7 +34,7 @@
     "@types/tinycolor2": "^1.4.3",
     "cqfill": "^0.6.0",
     "fast-xml-parser": "^3.20.0",
-    "lit": "^2.2.0",
+    "lit": "^2.3.0",
     "lit-flatpickr": "^0.4.0",
     "lodash-es": "^4.17.21",
     "pixi-viewport": "^4.34.4",
