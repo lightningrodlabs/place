@@ -2,6 +2,6 @@
 manifest_version: "1"
 name: place
 ui:
-  bundled: "../ui.zip"
+  bundled: "../../artifacts/place-webapp-ui.zip"
 happ_manifest:
   bundled: "../../artifacts/place.happ"

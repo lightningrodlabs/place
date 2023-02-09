@@ -6,7 +6,6 @@ on:
       - v[0-9]+.*
 
 env:
-  PLACE_VERSION: 0.2.0-hc-beta.1.0
   USE_HARD_LINKS: false
 
 jobs:
@@ -104,11 +103,11 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: artifacts
         run: |
-          gh release upload "${GITHUB_REF#refs/tags/}" "electron/out-builder/Place-$PLACE_VERSION.AppImage" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "webapp-chaperone/ui-chaperone.zip" --clobber
-          gh release upload "${GITHUB_REF#refs/tags/}" "webapp/ui.zip" --clobber             
-          gh release upload "${GITHUB_REF#refs/tags/}" "place_we-applet.webhapp" --clobber          
+          gh release upload "${GITHUB_REF#refs/tags/}" "Place*.AppImage" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "place-webapp-ui.zip" --clobber             
+          gh release upload "${GITHUB_REF#refs/tags/}" "place-we_applet.webhapp" --clobber          
           gh release upload "${GITHUB_REF#refs/tags/}" "place.webhapp" --clobber
           gh release upload "${GITHUB_REF#refs/tags/}" "place.happ" --clobber
           gh release upload "${GITHUB_REF#refs/tags/}" "place.dna" --clobber
@@ -118,11 +117,13 @@ jobs:
         if: ${{ runner.os == 'macOs' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: artifacts
         run: |
-          gh release upload "${GITHUB_REF#refs/tags/}" "electron/out-builder/Place-$PLACE_VERSION.dmg" --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" "Place*.dmg" --clobber
       - name: upload binary (Windows only)
         if: ${{ runner.os == 'Windows' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: artifacts
         run: |       
-          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "electron/out-builder/Place Setup $env:PLACE_VERSION.exe" --clobber
+          gh release upload "$($env:GITHUB_REF -replace "refs/tags/")" "Place*.exe" --clobber

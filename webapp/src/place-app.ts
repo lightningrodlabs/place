@@ -123,6 +123,7 @@ export class PlaceApp extends HappElement {
     const cellDef = { modifiers: {properties: settings, origin_time: settings.startTime}, cloneName}
     const [clonedCell, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
     const cloneId = clonedCell.clone_id;
+    this._clones[dvm.cell.dnaHash] = cloneId;
     this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     //this._curPlaceId = dvm.cell.clone_id;
     console.log("Place clone created:", dvm.hcl.toString(), dvm.cell.name, dvm.cell.cloneId);
@@ -130,7 +131,6 @@ export class PlaceApp extends HappElement {
     const game: Game = {name: cloneName, dna_hash: dvm.cell.id[0], settings}
     await this.placeDashboardDvm.zvm.createGame(game);
     await this.disableClone(cloneId);
-    this._clones[encodeHashToBase64(game.dna_hash)] = cloneId;
     return dvm as PlaceDvm;
   }
 

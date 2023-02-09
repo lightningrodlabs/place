@@ -30,4 +30,3 @@ rm electron/tsconfig.tsbuildinfo
 # WE APPLET
 rm -rf we-applet/out-tsc
 rm we-applet/.hc_live*
-rm we-applet/ui-applet.zip

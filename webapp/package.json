@@ -6,13 +6,10 @@
   "typings": "./dist/index.d.ts",
   "scripts": {
     "lint": "eslint --ext .ts .",
-    "tsc": "tsc",
+    "tsc": "rm -rf dist && tsc",
     "build": "rm -rf dist && tsc && rollup -c rollup.config.js && cd dist && cp * ../../electron/web",
-    "build:watch": "run-singleton \"tsc -w --incremental --preserveWatchOutput\"",
-    "start": "concurrently --names tsc,dev-server \"npm run build:watch\" \"web-dev-server --config ./web-dev-server.config.mjs\"",
-    "package": "rm -rf ui.zip && cd dist && bestzip ../ui.zip *",
-    "dist:webhapp": " hc web-app pack ./webhapp.workdir -o ../artifacts/place.webhapp"
-
+    "build:watch": "tsc -w --incremental --preserveWatchOutput",
+    "start": "cp index.html dist && cp logo.svg dist && concurrently --names tsc,dev-server \"npm run build:watch\" \"web-dev-server --config ./web-dev-server.config.mjs\""
   },
   "devDependencies": {
     "@babel/preset-env": "^7.15.0",
@@ -35,7 +32,6 @@
     "rollup-plugin-node-globals": "^1.4.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-workbox": "^6.2.0",
-    "run-singleton-cli": "^0.0.5",
     "tslib": "^2.4.0",
     "typescript": "^4.9.0"
   },

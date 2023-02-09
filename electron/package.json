@@ -12,7 +12,7 @@
   "scripts": {
     "lint": "eslint --ext .ts .",
     "build": "tsc",
-    "start": "tsc && electron .",
+    "start": "electron .",
     "dist:build": "electron-builder build",
     "dist-tar": "electron-builder --linux tar.gz",
     "dist-linux": "electron-builder --linux AppImage"
