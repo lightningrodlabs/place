@@ -25,7 +25,7 @@
     "hash-zome"              : "bash submodules/hc-prebuilt/hash-zome.sh $npm_package_config_bin ./target/wasm32-unknown-unknown/release/place_integrity.wasm electron/bin/model_zome_hash.txt",
 
     "build:zome"             : "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
-    "build:dna"              : "npm run build:zome && bash scripts/pack-dna.sh",
+    "build:dna"              : "npm run build:zome && bash scripts/pack-dna.sh $npm_package_config_bin",
     "build:happ"             : "npm run build:dna && $npm_package_config_bin/hc app pack dna/workdir_dashboard -o artifacts/place.happ && cp artifacts/place.happ electron/bin/place.happ && npm run hash-zome",
 
     "build:webapp"           : "npm run build -w webcomponents && npm run build -w webapp",
