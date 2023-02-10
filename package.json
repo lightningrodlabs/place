@@ -68,7 +68,7 @@
     "serve:holo"             : "PLACE_APP_CONTEXT='holo-host' PLACE_CHAPERONE_SERVER_URL='http://localhost:24274/' vue-cli-service serve",
     "self-hosted"            : "nix-shell --command 'holo-dev-server -p 24274 artifacts/place.happ'",
 
-    "update-version"         : "bash scripts/update-version-number.sh $(cat ./package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')",
+    "update-version"         : "bash scripts/update-version-number.sh $npm_package_version",
 
     "clean"                  : "bash scripts/clean.sh",
     "clean:npm"              : "bash scripts/clean-npm.sh",

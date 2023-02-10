@@ -35,4 +35,7 @@ electron/web/index.html
 Cargo.lock
 package-lock.json
 
-artifacts/
+release/
+artifacts/*
+submodules/**/*
+bin/
