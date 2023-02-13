@@ -42,7 +42,7 @@ if (IS_ELECTRON) {
   HC_ADMIN_PORT = Number(urlAdminPort);
   const NETWORK_ID = searchParams.get("UID");
   console.log(NETWORK_ID);
-  DEFAULT_PLACE_DEF.id = DEFAULT_PLACE_DEF.id + '-' + NETWORK_ID;  // override installed_app_id
+  DEFAULT_PLACE_DEF.id = "electron-place" + '-' + NETWORK_ID;  // override installed_app_id
 } else {
   try {
     HC_APP_PORT = Number(process.env.HC_APP_PORT);
@@ -108,6 +108,15 @@ export class PlaceApp extends HappElement {
   async happInitialized() {
     console.log("happInitialized()", HC_ADMIN_PORT, HC_APP_PORT, this.hvm.appId);
 
+    /** Check AdminWs */
+    if (!this._adminWs) {
+      this._adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
+      //if (this._adminWs) {
+      //  const apps = await this._adminWs.listApps({});
+      //  console.log("Installed apps:", apps);
+      //}
+    }
+
     /** Send dnaHash to electron */
     if (IS_ELECTRON) {
       //const ipc = window.require('electron').ipcRenderer;
@@ -119,15 +128,16 @@ export class PlaceApp extends HappElement {
     console.log("this._placeCells", printCellsForRole(PlaceDvm.DEFAULT_BASE_ROLE_NAME, this._placeCells));
     for (const [cloneId, cell] of Object.entries(this._placeCells.clones)) {
       this._clones[encodeHashToBase64(cell.cell_id[0])] = cloneId;
-      await this.enableClone(cloneId);
+      try {
+        await this.enableClone(cloneId);
+      } catch(e) {
+        console.warn("EnableClone failed for " + cloneId, e);
+      }
     }
     console.log("this._clones", this._clones);
 
 
     /** Authorize all zome calls */
-    if (!this._adminWs) {
-      this._adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
-    }
     if (this._adminWs) {
       await this.hvm.authorizeAllZomeCalls(this._adminWs);
       console.log("*** Zome call authorization complete");
@@ -202,8 +212,11 @@ export class PlaceApp extends HappElement {
     console.log("onRefreshClone() snapshot", snapshot);
     this._latestSnapshots[cloneDnaB64] = snapshot;
     const dashboard = this.shadowRoot!.querySelectorAll('place-dashboard')[0] as PlaceDashboard;
-    dashboard.requestUpdate();
-    //this.requestUpdate();
+    if (dashboard) {
+      dashboard.requestUpdate();
+    } else {
+      this.requestUpdate();
+    }
   }
 
 

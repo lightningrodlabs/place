@@ -37,7 +37,7 @@
     "prepare-test"           : "npm run clean:hc & npm run build:happ && bash scripts/ts-bindings.sh && npm run build -w webcomponents",
     "devtest"                : "npm run prepare-test && npm run tsc -w webapp && npm run start",
     "prodtest"               : "npm run prepare-test && npm run build -w webapp && npm run start",
-    "devtest:we"             : "npm run prepare-test && npm run tsc -w webapp && npm run devtest -w we-applet",
+    "devtest:we"             : "npm run prepare-test && npm run build -w webapp && npm run devtest -w we-applet",
     "devtest:electron"       : "npm run dist:webapp && npm run build -w electron && npm run start -w electron",
 
     "start:happ"             : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network mdns",
@@ -52,6 +52,9 @@
     "network"                : "npm run build:happ && concurrently-repeat \"npm run start\"",
     "network-proxied"        : "npm run build:happ && concurrently-repeat \"npm run start:agent-proxied\"",
     "network-playground"     : "npm run build:happ && concurrently-repeat \"npm run start:agent:playground\"",
+
+    "start:launcher"         : "echo pass | hc-launch --piped -n 1 artifacts/place.webhapp network mdns",
+
 
     "playground"             : "run-singleton \"holochain-playground\"",
 
