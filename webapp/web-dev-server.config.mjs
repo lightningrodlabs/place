@@ -11,6 +11,8 @@ const builtins = fromRollup(rollupBuiltins);
 /** Use Hot Module replacement by adding --hmr to the start command */
 const hmr = process.argv.includes('--hmr');
 
+console.log("web-dev-server.process.env.HC_PORT =", process.env.HC_PORT)
+
 export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
   open: true,
   watch: !hmr,
@@ -32,7 +34,6 @@ export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
   plugins: [
     replace({
       "preventAssignment": true,
-      'process.env.ENV': JSON.stringify(process.env.ENV),
       'process.env.APP_DEV': JSON.stringify(process.env.APP_DEV),
       'process.env.HC_APP_PORT': JSON.stringify(process.env.HC_PORT || 8888),
       'process.env.HC_ADMIN_PORT': JSON.stringify(process.env.ADMIN_PORT || 8889),

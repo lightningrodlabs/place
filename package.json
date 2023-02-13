@@ -55,7 +55,7 @@
 
     "playground"             : "run-singleton \"holochain-playground\"",
 
-    "package:webapp"         : "rm -rf artifacts/place-webapp-ui.zip && cd webapp/dist && bestzip ../../artifacts/place-webapp-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
+    "package:webapp"         : "npm run build:webapp && rm -rf artifacts/place-webapp-ui.zip && cd webapp/dist && bestzip ../../artifacts/place-webapp-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
     "package:we-applet"      : "rm -rf artifacts/place-we_applet-ui.zip && cd we-applet/dist && bestzip ../../artifacts/place-we_applet-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp",
 
     "dist:webapp"            : "npm run build:happ && npm run build -w webcomponents && npm run build -w webapp && npm run package:webapp",

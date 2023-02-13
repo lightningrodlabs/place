@@ -13,15 +13,25 @@ import {
   PlacePage,
   DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm,
 } from "@place/elements";
-import {CellContext, CellsForRole, CloneId, Dictionary, HappElement, HCL, HvmDef} from "@ddd-qc/lit-happ";
+import {
+  CellContext,
+  CellsForRole,
+  CloneId,
+  Dictionary,
+  HappElement,
+  HCL,
+  HvmDef,
+  printCellsForRole
+} from "@ddd-qc/lit-happ";
 import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.types";
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
+import {CellId} from "@holochain/client/lib/types";
 
 let HC_APP_PORT: number;
 let HC_ADMIN_PORT: number;
-export const IS_ELECTRON = (window.location.port === ""); // No HREF PORT when run by Electron
+export const MY_ELECTRON_API = 'electronBridge' in window? window.electronBridge as Object : undefined;
+export const IS_ELECTRON = typeof MY_ELECTRON_API !== 'undefined'
 if (IS_ELECTRON) {
-  const APP_ID = 'main-app'
   const searchParams = new URLSearchParams(window.location.search);
   const urlPort = searchParams.get("APP");
   if(!urlPort) {
@@ -32,23 +42,31 @@ if (IS_ELECTRON) {
   HC_ADMIN_PORT = Number(urlAdminPort);
   const NETWORK_ID = searchParams.get("UID");
   console.log(NETWORK_ID);
-  DEFAULT_PLACE_DEF.id = APP_ID + '-' + NETWORK_ID;  // override installed_app_id
+  DEFAULT_PLACE_DEF.id = DEFAULT_PLACE_DEF.id + '-' + NETWORK_ID;  // override installed_app_id
 } else {
-  HC_APP_PORT = Number(process.env.HC_APP_PORT);
-  HC_ADMIN_PORT = Number(process.env.HC_ADMIN_PORT);
+  try {
+    HC_APP_PORT = Number(process.env.HC_APP_PORT);
+    HC_ADMIN_PORT = Number(process.env.HC_ADMIN_PORT);
+  } catch (e) {
+    console.log("process.env not defined")
+  }
 }
 
-console.log("APP_ID =", DEFAULT_PLACE_DEF.id)
+console.log("DEFAULT_PLACE_DEF.id =", DEFAULT_PLACE_DEF.id)
 console.log("HC_APP_PORT", HC_APP_PORT);
 console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
+console.log("IS_ELECTRON", IS_ELECTRON);
 
 
-/** */
+/**
+ *
+ */
 export class PlaceApp extends HappElement {
 
   /** */
   constructor(appWs?: AppWebsocket, private _adminWs?: AdminWebsocket, appId?: InstalledAppId) {
-    super(appWs? appWs : HC_APP_PORT, appId);
+    console.log("PlaceApp", appId)
+    super(appWs? appWs : HC_APP_PORT? HC_APP_PORT : 0, appId);
   }
 
   static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
@@ -85,11 +103,27 @@ export class PlaceApp extends HappElement {
 
   /** -- Methods -- */
 
+
   /** */
   async happInitialized() {
-    console.log("happInitialized()", HC_ADMIN_PORT)
-    //new ContextProvider(this, cellContext, this.taskerDvm.installedCell);
-    //this._curPlaceCellId = this.placeDvm.cell.cell_id;
+    console.log("happInitialized()", HC_ADMIN_PORT, HC_APP_PORT, this.hvm.appId);
+
+    /** Send dnaHash to electron */
+    if (IS_ELECTRON) {
+      //const ipc = window.require('electron').ipcRenderer;
+      let _reply = (MY_ELECTRON_API as any).sendSync('dnaHash', this.curPlaceDvm.cell.dnaHash);
+    }
+
+    /** Grab Place cells */
+    this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
+    console.log("this._placeCells", printCellsForRole(PlaceDvm.DEFAULT_BASE_ROLE_NAME, this._placeCells));
+    for (const [cloneId, cell] of Object.entries(this._placeCells.clones)) {
+      this._clones[encodeHashToBase64(cell.cell_id[0])] = cloneId;
+      await this.enableClone(cloneId);
+    }
+    console.log("this._clones", this._clones);
+
+
     /** Authorize all zome calls */
     if (!this._adminWs) {
       this._adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
@@ -98,19 +132,18 @@ export class PlaceApp extends HappElement {
       await this.hvm.authorizeAllZomeCalls(this._adminWs);
       console.log("*** Zome call authorization complete");
     } else {
-      console.warn("No adminWebsocket provided (Zome call authorization done)")
+      console.warn("No adminWebsocket provided (Zome call authorization must already be done)")
     }
 
     /** Probe */
     await this.hvm.probeAll();
-    /** Send dnaHash to electron */
-    if (IS_ELECTRON) {
-      const ipc = window.require('electron').ipcRenderer;
-      let _reply = ipc.sendSync('dnaHash', this.curPlaceDvm.cell.dnaHash);
+
+
+    /** Disable all clones */
+    for (const [cloneId, cell] of Object.entries(this._placeCells.clones)) {
+      await this.disableClone(cloneId);
     }
 
-    /** Grab place cells */
-    this._placeCells = await this.conductorAppProxy.fetchCells(DEFAULT_PLACE_DEF.id, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
 
     /** Done */
     this._loaded = true;
@@ -119,7 +152,7 @@ export class PlaceApp extends HappElement {
 
   /** */
   async onAddClone(cloneName: string, settings: PlaceProperties): Promise<PlaceDvm> {
-    console.log("onAddClone()", cloneName);
+    console.log("onAddClone()", cloneName, this.hvm.appId);
     const cellDef = { modifiers: {properties: settings, origin_time: settings.startTime}, cloneName}
     const [clonedCell, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
     const cloneId = clonedCell.clone_id;
@@ -169,8 +202,8 @@ export class PlaceApp extends HappElement {
     console.log("onRefreshClone() snapshot", snapshot);
     this._latestSnapshots[cloneDnaB64] = snapshot;
     const dashboard = this.shadowRoot!.querySelectorAll('place-dashboard')[0] as PlaceDashboard;
-    //dashboard.requestUpdate();
-    this.requestUpdate();
+    dashboard.requestUpdate();
+    //this.requestUpdate();
   }
 
 
@@ -183,7 +216,7 @@ export class PlaceApp extends HappElement {
 
 
   /** */
-  async enableClone(cloneId: CloneId): Promise<ClonedCell> {
+  async enableClone(cloneId: CloneId | CellId): Promise<ClonedCell> {
     const request = {app_id: this.hvm.appId, clone_cell_id: cloneId};
     console.log("enableClone()", request);
     return this.conductorAppProxy.enableCloneCell(request);
@@ -197,6 +230,10 @@ export class PlaceApp extends HappElement {
     /** Look for clone with this dnaHash */
     for (const clone of Object.values(this._placeCells.clones)) {
       if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
+        const appInfo = await this.conductorAppProxy.appInfo({installed_app_id: this.hvm.appId});
+        console.log({appInfo});
+        //const cells = await this.conductorAppProxy.fetchCells(DEFAULT_PLACE_DEF.id, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
+        //console.log("cells", this.printCellsForRole("rPlace", cells));
         const _cloned = await this.enableClone(clone.clone_id);
         this._curPlaceCloneId = clone.clone_id;
         return;
@@ -218,18 +255,25 @@ export class PlaceApp extends HappElement {
 
   /** */
   async onRefreshRequested(game: Game) {
-    // e.stopPropagation();
-    // const game: Game = e.detail;
     const dnaHash = encodeHashToBase64(game.dna_hash);
-    await this.enableClone(this._clones[dnaHash]);
-    await this.onRefreshClone(game);
-    await this.disableClone(this._clones[dnaHash]);
+    const maybeClone = this._clones[dnaHash];
+    if (!maybeClone) {
+      console.warn("onRefreshRequested() aborted. Clone for game not found", game.name);
+      return;
+    }
+    try {
+      await this.enableClone(this._clones[dnaHash]);
+      await this.onRefreshClone(game);
+      await this.disableClone(this._clones[dnaHash]);
+    } catch (e) {
+      console.warn("onRefreshRequested() failed.", e);
+    }
   }
 
 
   /** */
   render() {
-    console.log("*** <place-app>.render()...")
+    console.log("*** <place-app>.render()", this._loaded)
     if (!this._loaded) {
       return html`<span>Loading...</span>`;
     }

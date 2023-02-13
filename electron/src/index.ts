@@ -92,7 +92,8 @@ const createMainWindow = async (appPort: string): Promise<BrowserWindow> => {
     backgroundColor: BACKGROUND_COLOR,
     // use these settings so that the ui can check paths
     webPreferences: {
-      contextIsolation: false,
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
       nodeIntegration: true,
       devTools: true,
       webgl: true,
@@ -102,7 +103,7 @@ const createMainWindow = async (appPort: string): Promise<BrowserWindow> => {
   }
   let mainWindow = new BrowserWindow(options)
 
-  /** Things to setup at start */
+  /** Things to set up at start */
   let { x, y } = g_userSettings.get('windowPosition');
   mainWindow.setPosition(x, y);
 

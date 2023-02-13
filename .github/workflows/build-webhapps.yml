@@ -37,12 +37,8 @@ jobs:
         shell: bash
         run: |
           npm run build:happ
-      # Build webapp
-      - name: Build webapp
-        run: |
-          npm run build:webapp
-      # Package web-happ
-      - name: Package web-happ
+      # Build & Package web-happ
+      - name: Build & Package web-happ
         run: |
           npm run package:webapp
       # build we-applet
