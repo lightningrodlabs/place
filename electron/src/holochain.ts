@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { app } from 'electron'
 import { ElectronHolochainOptions, StateSignal, PathOptions } from '@lightningrodlabs/electron-holochain'
-import {MAIN_APP_ID, COMMUNITY_PROXY_URL, DNA_VERSION_FILENAME, getAdminPort} from './constants'
+import {MAIN_APP_ID, DNA_VERSION_FILENAME, getAdminPort} from './constants'
 import * as fs from "fs";
 import {log} from "./logger";
 

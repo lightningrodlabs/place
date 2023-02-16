@@ -27,11 +27,13 @@ import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.typ
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 import {CellId} from "@holochain/client/lib/types";
 
+export let BUILD_MODE: string;
 let HC_APP_PORT: number;
 let HC_ADMIN_PORT: number;
-export const MY_ELECTRON_API = 'electronBridge' in window? window.electronBridge as Object : undefined;
+export const MY_ELECTRON_API = 'electronBridge' in window? window.electronBridge as any : undefined;
 export const IS_ELECTRON = typeof MY_ELECTRON_API !== 'undefined'
 if (IS_ELECTRON) {
+  BUILD_MODE = MY_ELECTRON_API.BUILD_MODE;
   const searchParams = new URLSearchParams(window.location.search);
   const urlPort = searchParams.get("APP");
   if(!urlPort) {
@@ -48,13 +50,20 @@ if (IS_ELECTRON) {
     HC_APP_PORT = Number(process.env.HC_APP_PORT);
     HC_ADMIN_PORT = Number(process.env.HC_ADMIN_PORT);
   } catch (e) {
-    console.log("process.env not defined")
+    console.log("HC_APP_PORT not defined")
+  }
+  try {
+    BUILD_MODE = process.env.BUILD_MODE;
+  } catch (e) {
+    console.log("BUILD_MODE not defined. Defaulting to 'prod'");
+    BUILD_MODE = 'prod';
   }
 }
 
 console.log("DEFAULT_PLACE_DEF.id =", DEFAULT_PLACE_DEF.id)
 console.log("HC_APP_PORT", HC_APP_PORT);
 console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
+console.log("BUILD_MODE =", BUILD_MODE)
 console.log("IS_ELECTRON", IS_ELECTRON);
 
 

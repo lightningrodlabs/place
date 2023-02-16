@@ -36,9 +36,12 @@
 
     "prepare-test"           : "npm run clean:hc & npm run build:happ && bash scripts/ts-bindings.sh && npm run build -w webcomponents",
     "devtest"                : "npm run prepare-test && npm run tsc -w webapp && npm run start",
-    "prodtest"               : "npm run prepare-test && npm run build -w webapp && npm run start",
     "devtest:we"             : "npm run prepare-test && npm run build -w webapp && npm run devtest -w we-applet",
-    "devtest:electron"       : "npm run dist:webapp && npm run build -w electron && npm run start -w electron",
+    "devtest:electron"       : "npm run dist:webapp && npm run build -w electron && BUILD_MODE='dev' npm run start -w electron",
+
+    "prodtest"               : "npm run prepare-test && npm run dist -w webapp && npm run start",
+    "prodtest:electron"      : "npm run prepare-test && npm run dist -w webapp && npm run start -w electron",
+
 
     "start:happ"             : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network mdns",
     "start:happ-proxied"     : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network --bootstrap https://bootstrap-staging.holo.host/ quic -p=kitsune-proxy://SYVd4CF3BdJ4DS7KwLLgeU3_DbHoZ34Y-qroZ79DOs8/kitsune-quic/h/165.22.32.11/p/5779/--",

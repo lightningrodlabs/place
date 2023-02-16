@@ -5,7 +5,7 @@ import {PlaceDashboardPerspective} from "../viewModel/place-dashboard.perspectiv
 import {PlaceDashboardZvm} from "../viewModel/place-dashboard.zvm";
 import {SlBadge, SlButton, SlCard, SlDetails, SlInput, SlSkeleton, SlTooltip} from "@scoped-elements/shoelace";
 import {Game, PlaceProperties, Snapshot} from "../bindings/place-dashboard.types";
-import {DnaHash, encodeHashToBase64} from "@holochain/client";
+import {encodeHashToBase64} from "@holochain/client";
 import {snapshotIntoFrame} from "../imageBuffer";
 import {determineBucketTime, validateSettings} from "../time";
 import {MAX_BUCKET_SIZE_SEC, MIN_BUCKET_SIZE_SEC} from "../bindings/place.types";

@@ -6,8 +6,8 @@
   "typings": "./dist/index.d.ts",
   "scripts": {
     "lint": "eslint --ext .ts .",
-    "tsc": "rm -rf dist && tsc",
-    "build": "rm -rf dist && tsc && rollup -c rollup.config.js && cd dist && cp * ../../electron/web",
+    "build": "rm -rf dist && tsc",
+    "dist": "rm -rf dist && tsc && rollup -c rollup.config.js && cd dist && cp * ../../electron/web",
     "build:watch": "tsc -w --incremental --preserveWatchOutput",
     "start": "cp index.html dist && cp logo.svg dist && concurrently --names tsc,dev-server \"npm run build:watch\" \"web-dev-server --config ./web-dev-server.config.mjs\""
   },
