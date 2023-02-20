@@ -60,7 +60,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
     try {
       if (name.length < 2) throw Error("Name too short");
       validateSettings(settings);
-    } catch (e:any) {
+    } catch (e) {
       console.log({e})
       helper.style.display = "block";
       helper.innerHTML = e.message;
@@ -74,7 +74,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
 
   async updated() {
     /** Fill in canvases */
-    for (const [author, joined, game] of Object.values(this.perspective.allGames)) {
+    for (const [_author, joined, game] of Object.values(this.perspective.allGames)) {
       const maybeSnapshot = this.latestSnapshots[encodeHashToBase64(game.dna_hash)];
       if (!maybeSnapshot || !joined) {
         continue;
@@ -86,7 +86,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
         continue;
       }
       const snapshotFrame = snapshotIntoFrame(maybeSnapshot.imageData, game.settings.canvasSize)
-      console.log("" + maybeSnapshot.timeBucketIndex + ".snapshotFrame", snapshotFrame)
+     // console.log("" + maybeSnapshot.timeBucketIndex + ".snapshotFrame", snapshotFrame)
 
       const ctx = canvas.getContext("2d");
       ctx.imageSmoothingEnabled = false;

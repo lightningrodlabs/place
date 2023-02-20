@@ -16,7 +16,7 @@ import {
 import {
   CellContext,
   CellsForRole,
-  CloneId,
+  CloneId, delay,
   Dictionary,
   HappElement,
   HCL,
@@ -26,6 +26,7 @@ import {
 import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.types";
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 import {CellId} from "@holochain/client/lib/types";
+import { Mutex } from 'async-mutex';
 
 export let BUILD_MODE: string;
 let HC_APP_PORT: number;
@@ -90,6 +91,10 @@ export class PlaceApp extends HappElement {
   private _clones: Dictionary<CloneId> = {}
 
 
+  /** cloneName -> mutex */
+  private _refreshLocks: Dictionary<Mutex> = {};
+
+
   /** -- Getters -- */
 
   get placeDashboardDvm(): PlaceDashboardDvm { return this.hvm.getDvm(PlaceDashboardDvm.DEFAULT_BASE_ROLE_NAME)! as PlaceDashboardDvm }
@@ -114,8 +119,8 @@ export class PlaceApp extends HappElement {
 
 
   /** */
-  async happInitialized() {
-    console.log("happInitialized()", HC_ADMIN_PORT, HC_APP_PORT, this.hvm.appId);
+  async hvmConstructed() {
+    console.log("hvmConstructed()", HC_ADMIN_PORT, HC_APP_PORT, this.hvm.appId);
 
     /** Check AdminWs */
     if (!this._adminWs) {
@@ -135,6 +140,8 @@ export class PlaceApp extends HappElement {
     /** Grab Place cells */
     this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     console.log("this._placeCells", printCellsForRole(PlaceDvm.DEFAULT_BASE_ROLE_NAME, this._placeCells));
+
+    /** Enable all clones */
     for (const [cloneId, cell] of Object.entries(this._placeCells.clones)) {
       this._clones[encodeHashToBase64(cell.cell_id[0])] = cloneId;
       try {
@@ -154,17 +161,21 @@ export class PlaceApp extends HappElement {
       console.warn("No adminWebsocket provided (Zome call authorization must already be done)")
     }
 
-    /** Probe */
-    await this.hvm.probeAll();
-
-
     /** Disable all clones */
-    for (const [cloneId, cell] of Object.entries(this._placeCells.clones)) {
+    for (const [cloneId, _cell] of Object.entries(this._placeCells.clones)) {
       await this.disableClone(cloneId);
     }
+  }
 
 
-    /** Done */
+  /** */
+  //async perspectiveInitializedOffline(): Promise<void> {}
+
+
+  /** */
+  async perspectiveInitializedOnline(): Promise<void> {
+    console.log("<place-app>.perspectiveInitializedOnline()");
+    await this.hvm.probeAll();
     this._loaded = true;
   }
 
@@ -178,7 +189,7 @@ export class PlaceApp extends HappElement {
     this._clones[dvm.cell.dnaHash] = cloneId;
     this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     //this._curPlaceId = dvm.cell.clone_id;
-    console.log("Place clone created:", dvm.hcl.toString(), dvm.cell.name, dvm.cell.cloneId);
+    console.log("hPlace clone created:", dvm.hcl.toString(), dvm.cell.name);
     /** Create Game Entry */
     const game: Game = {name: cloneName, dna_hash: dvm.cell.id[0], settings}
     await this.placeDashboardDvm.zvm.createGame(game);
@@ -216,7 +227,7 @@ export class PlaceApp extends HappElement {
       dvm = this.getPlaceDvm(cloneId);
     }
 
-    //console.log("onRefreshClone()", dvm);
+    //console.log("onRefreshClone().getLatestSnapshot()");
     const snapshot = await dvm.placeZvm.getLatestSnapshot();
     console.log("onRefreshClone() snapshot", snapshot);
     this._latestSnapshots[cloneDnaB64] = snapshot;
@@ -241,7 +252,9 @@ export class PlaceApp extends HappElement {
   async enableClone(cloneId: CloneId | CellId): Promise<ClonedCell> {
     const request = {app_id: this.hvm.appId, clone_cell_id: cloneId};
     console.log("enableClone()", request);
-    return this.conductorAppProxy.enableCloneCell(request);
+    const clone = this.conductorAppProxy.enableCloneCell(request);
+    /** Done */
+    return clone;
   }
 
 
@@ -256,8 +269,9 @@ export class PlaceApp extends HappElement {
         console.log({appInfo});
         //const cells = await this.conductorAppProxy.fetchCells(DEFAULT_PLACE_DEF.id, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
         //console.log("cells", this.printCellsForRole("rPlace", cells));
-        const _cloned = await this.enableClone(clone.clone_id);
-        this._curPlaceCloneId = clone.clone_id;
+        const selected = await this.enableClone(clone.clone_id);
+        console.log("onSelectClone() clone enabled:", selected.name);
+        this._curPlaceCloneId = selected.clone_id;
         return;
       }
     }
@@ -277,19 +291,38 @@ export class PlaceApp extends HappElement {
 
   /** */
   async onRefreshRequested(game: Game) {
+    /** Clone must be known */
     const dnaHash = encodeHashToBase64(game.dna_hash);
     const maybeClone = this._clones[dnaHash];
     if (!maybeClone) {
       console.warn("onRefreshRequested() aborted. Clone for game not found", game.name);
       return;
     }
+    /** Lock refresh */
+    if (!this._refreshLocks[game.name]) {
+      this._refreshLocks[game.name] = new Mutex();
+    }
+    if (this._refreshLocks[game.name].isLocked()) {
+      console.log(`onRefreshRequested() skipped for ${game.name}. Reason: Already refreshing.`);
+      return;
+    }
+    const release = await this._refreshLocks[game.name].acquire();
+
+    /** Refresh */
     try {
       await this.enableClone(this._clones[dnaHash]);
       await this.onRefreshClone(game);
+    } catch (e) {
+      console.warn("onRefreshRequested() failed during onRefreshClone().", e);
+    }
+    try {
       await this.disableClone(this._clones[dnaHash]);
     } catch (e) {
-      console.warn("onRefreshRequested() failed.", e);
+      console.warn("onRefreshRequested() failed during disableClone().", e);
     }
+
+    /** Release */
+    this._refreshLocks[game.name].release();
   }
 
 
@@ -305,7 +338,7 @@ export class PlaceApp extends HappElement {
       return html`
        <cell-context .cell="${this.curPlaceDvm.cell}">
          <place-page style="height:100vh"
-                     @exit="${(e:any) => {e.stopPropagation(); this.onExitGame(e.detail)}}"
+                     @exit="${async (e:any) => {e.stopPropagation(); await this.onExitGame(e.detail)}}"
          ></place-page>
        </cell-context>
     `;
@@ -316,9 +349,9 @@ export class PlaceApp extends HappElement {
        <cell-context .cell="${this.placeDashboardDvm.cell}">
          <place-dashboard style="height:100vh"
                           .latestSnapshots="${this._latestSnapshots}"
-                          @create-new-game="${(e:any) => {e.stopPropagation(); this.onAddClone(e.detail.name, e.detail.settings)}}"
-                          @clone-selected="${(e:any) => {e.stopPropagation(); this.onSelectClone(e.detail)}}"
-                          @refresh-requested="${(e:any) => {e.stopPropagation(); this.onRefreshRequested(e.detail);}}"
+                          @create-new-game="${async (e:any) => {e.stopPropagation(); await this.onAddClone(e.detail.name, e.detail.settings)}}"
+                          @clone-selected="${ async (e:any) => {e.stopPropagation(); await this.onSelectClone(e.detail)}}"
+                          @refresh-requested="${ async (e:any) => {e.stopPropagation(); await this.onRefreshRequested(e.detail);}}"
          ></place-dashboard>
        </cell-context>
     `;

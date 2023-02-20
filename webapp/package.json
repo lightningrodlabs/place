@@ -9,7 +9,7 @@
     "build": "rm -rf dist && tsc",
     "dist": "rm -rf dist && tsc && rollup -c rollup.config.js && cd dist && cp * ../../electron/web",
     "build:watch": "tsc -w --incremental --preserveWatchOutput",
-    "start": "cp index.html dist && cp logo.svg dist && concurrently --names tsc,dev-server \"npm run build:watch\" \"web-dev-server --config ./web-dev-server.config.mjs\""
+    "start": "concurrently --names tsc,dev-server \"npm run build:watch\" \"web-dev-server --config ./web-dev-server.config.mjs\""
   },
   "devDependencies": {
     "@babel/preset-env": "^7.15.0",
@@ -35,11 +35,12 @@
     "typescript": "^4.9.0"
   },
   "dependencies": {
-    "@ddd-qc/cell-proxy": "0.13.1",
-    "@ddd-qc/lit-happ": "0.13.1",
+    "@ddd-qc/cell-proxy": "0.14.1",
+    "@ddd-qc/lit-happ": "0.14.1",
     "@holochain/client": "0.12.0",
     "@lit-labs/context": "^0.1.3",
     "@place/elements": "file:../webcomponents",
-    "lit": "^2.3.0"
+    "lit": "^2.3.0",
+    "async-mutex": "0.4.0"
   }
 }

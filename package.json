@@ -35,8 +35,8 @@
     "test"                   : "npm run build:happ && npm run build -w webcomponents && npm t -w tests",
 
     "prepare-test"           : "npm run clean:hc & npm run build:happ && bash scripts/ts-bindings.sh && npm run build -w webcomponents",
-    "devtest"                : "npm run prepare-test && npm run tsc -w webapp && npm run start",
-    "devtest:we"             : "npm run prepare-test && npm run build -w webapp && npm run devtest -w we-applet",
+    "devtest"                : "npm run prepare-test && npm run build -w webapp && npm run start",
+    "devtest:we"             : "npm run prepare-test && npm run dist:webapp && npm run devtest -w we-applet",
     "devtest:electron"       : "npm run dist:webapp && npm run build -w electron && BUILD_MODE='dev' npm run start -w electron",
 
     "prodtest"               : "npm run prepare-test && npm run dist -w webapp && npm run start",
@@ -58,13 +58,12 @@
 
     "start:launcher"         : "echo pass | hc-launch --piped -n 1 artifacts/place.webhapp network mdns",
 
-
     "playground"             : "run-singleton \"holochain-playground\"",
 
-    "package:webapp"         : "npm run build:webapp && rm -rf artifacts/place-webapp-ui.zip && cd webapp/dist && bestzip ../../artifacts/place-webapp-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
+    "package:webapp"         : "rm -rf artifacts/place-webapp-ui.zip && cd webapp/dist && bestzip ../../artifacts/place-webapp-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
     "package:we-applet"      : "rm -rf artifacts/place-we_applet-ui.zip && cd we-applet/dist && bestzip ../../artifacts/place-we_applet-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp",
 
-    "dist:webapp"            : "npm run build:happ && npm run build -w webcomponents && npm run build -w webapp && npm run package:webapp",
+    "dist:webapp"            : "npm run build:happ && npm run build -w webcomponents && npm run dist -w webapp && npm run package:webapp",
     "dist:we"                : "npm run package:webapp && npm run package:we-applet",
     "dist:electron"          : "bash submodules/hc-prebuilt/copy-binaries.sh electron/bin && npm run dist:build -w electron",
 
@@ -78,7 +77,7 @@
 
     "clean"                  : "bash scripts/clean.sh",
     "clean:npm"              : "bash scripts/clean-npm.sh",
-    "clean:hc"               : "rm -rf .hc*",
+    "clean:hc"               : "rm -rf .hc* & rm -rf electron/web/*.js",
     "clean:all"              : "npm run clean:agents & npm run clean:npm & npm run clean"
 
   },

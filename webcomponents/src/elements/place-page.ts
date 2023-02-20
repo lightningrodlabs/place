@@ -152,7 +152,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     /** Wait a second for pixi to startup? */
     await delay(1 * 1000);
 
-    /** Get latest snapshot from DHT and store it */
+    /** Get the latest snapshot from DHT and store it */
     await this._zvm.pullLatestSnapshotFromDht();
     console.log("Latest in store: " + snapshot_to_str(this._zvm.getLatestStoredSnapshot()!))
 
@@ -341,9 +341,9 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     //g_viewport.addChild(logText)
 
     this._viewport.on("zoomed", (e:any) => {
-      console.log("zoomed event fired:", this._viewport);
+      console.log("zoomed event fired:", this._viewport, this._grid);
       //console.log({e})
-      if (this._viewport) {
+      if (this._viewport && this._grid) {
         this._grid.visible = this._viewport.scale.x > 2;
         this.requestUpdate()
       }
@@ -567,7 +567,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
       //const disabled = maybeSnapshot? null : "disabled";
       let label = "" + relBucketIndex
       const button = html`
-          <button class="" style="" @click=${() => {this.viewSnapshotAt(iBucketIndex)}}>
+          <button class="" style="" @click=${async () => { await this.viewSnapshotAt(iBucketIndex)}}>
             ${label}
           </button>`
       snapshotButtons[relBucketIndex] = button
@@ -735,12 +735,12 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     //console.log("<place-page> render() - " + this._state);
     switch(this._state) {
       case PlaceState.Uninitialized:
-      case PlaceState.Initializing: return this.renderStartup(); break;
+      case PlaceState.Initializing: return this.renderStartup();
       case PlaceState.Initialized:
-      case PlaceState.Publishing: return this.renderPublishToNow(); break;
-      case PlaceState.Live: return this.renderNormal(); break;
-      case PlaceState.Retrospection: return this.renderNormal(); break;
-      case PlaceState.Loading: return this.renderNormal(); break;
+      case PlaceState.Publishing: return this.renderPublishToNow();
+      case PlaceState.Live: return this.renderNormal();
+      case PlaceState.Retrospection: return this.renderNormal();
+      case PlaceState.Loading: return this.renderNormal();
       default: break;
     }
     return this.renderNormal();
@@ -757,7 +757,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   }
 
 
-  /** Render to do when syncing to latest frame */
+  /** Render to do when syncing to the latest frame */
   renderPublishToNow() {
     let localBirthDate = new Date(this._zvm.getMaybeProperties()!.startTime * 1000).toLocaleString()
     const nowIndex = this._zvm.epochToBucketIndex(Date.now() / 1000)
@@ -837,11 +837,11 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
                          //console.log("my-date-picker onOpen!");
                          this._canAutoRefresh = false;
                        }}"
-                       .onClose="${(dates:any) => {
+                       .onClose="${async (dates:any) => {
                          //console.log("my-date-picker onClose!", dates);
-                         this.onDatePicked(dates[0]);
+                         await this.onDatePicked(dates[0]);
                          this._canAutoRefresh = true;
-                         this.changeState(PlaceState.Loading);
+                         await this.changeState(PlaceState.Loading);
                        }}"
         ></lit-flatpickr>`
 

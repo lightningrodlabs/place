@@ -40,7 +40,7 @@ export default {
       preferBuiltins: false,
     }),
     copy({
-      targets: [{ src: "./logo.svg", dest: "dist" }],
+      targets: [{ src: "logo.svg", dest: "dist" }],
     }),
     typescript({ experimentalDecorators: true, outDir: DIST_FOLDER }),
     //builtins(),

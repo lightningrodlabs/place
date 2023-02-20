@@ -138,7 +138,7 @@ export class PlaceZvm extends ZomeViewModel {
         count += 1;
       }
       console.log("publishUpTo() added to store: " + count)
-      console.log("publishUpTo()    store count: " + Object.values(this.perspective.snapshots.length));
+      console.log("publishUpTo()    store count: " + this.perspective.snapshots? Object.values(this.perspective.snapshots).length : "unknown");
     } catch (e) {
       console.error("publishUpTo() failed:")
       console.error({e})
@@ -179,14 +179,13 @@ export class PlaceZvm extends ZomeViewModel {
       console.log("publishSameUpTo() added to store: " + vec_length)
       console.log("publishSameUpTo()    store count: " + Object.values(this.perspective.snapshots.length));
     } catch (e) {
-      console.error("publishSameUpTo() failed:")
-      console.error({e})
+      console.error("publishSameUpTo() failed:", e)
     }
   }
 
 
   /**
-   * Get latest entries of each type for current time bucket and update local store accordingly
+   * Get the latest entries of each type for current time bucket and update local store accordingly
    */
   async pullLatestSnapshotFromDht() {
     console.log("pullLatestSnapshotFromDht() - START")
