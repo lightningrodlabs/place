@@ -31,7 +31,19 @@ export class PlaceDashboardZvm extends ZomeViewModel {
 
 
   /** */
-  async probeAll() {
+  async initializePerspectiveOnline(): Promise<void> {
+    await this.probeGames()
+  }
+
+
+  /** */
+  probeAllInner() {
+    /* await */ this.initializePerspectiveOnline();
+  }
+
+
+  /** */
+  async probeGames() {
     console.log("PlaceDashboardZvm.probeAll()")
     const allGames = await this.zomeProxy.listAllGames();
     const myGames = await this.zomeProxy.listMyGames();
@@ -49,6 +61,7 @@ export class PlaceDashboardZvm extends ZomeViewModel {
     this._perspective = {allGames: tuples};
     this.notifySubscribers();
   }
+
 
 
   /** -- Perspective -- */

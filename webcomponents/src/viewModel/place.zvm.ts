@@ -1,8 +1,8 @@
-import {EntryHashB64, ActionHashB64, AgentPubKeyB64, encodeHashToBase64} from '@holochain/client';
+import {ActionHashB64, AgentPubKeyB64, encodeHashToBase64} from '@holochain/client';
 import {DestructuredPlacement, PlaceAtInput, Placement, PlaceProperties} from "../bindings/place.types";
 import {Snapshot} from "../bindings/place.types";
 import {destructurePlacement, PlacementDetails, PublishCallback, snapshot_to_str} from "./place.perspective";
-import {CellProxy, ZomeViewModel} from "@ddd-qc/lit-happ";
+import {ZomeViewModel} from "@ddd-qc/lit-happ";
 import {defaultPerspective, PlacePerspective} from "./place.perspective";
 import {PlaceProxy} from "../bindings/place.proxy";
 
@@ -38,11 +38,6 @@ export class PlaceZvm extends ZomeViewModel {
     return true;
   }
 
-
-  /** */
-  async probeAll() {
-    // FIXME
-  }
 
 
   /** -- Perspective -- */
@@ -108,7 +103,7 @@ export class PlaceZvm extends ZomeViewModel {
 
 
   /**
-   * Get latest entries of each type for current time bucket and update local store
+   * Get the latest entries of each type for current time bucket and update local store
    * with all snapshots & placements since last known snapshot
    */
   async publishUpTo(nowIndex: number, cb: PublishCallback, cbData?: any) {
@@ -147,7 +142,7 @@ export class PlaceZvm extends ZomeViewModel {
 
 
   /**
-   * Get latest snapshot and placements, publish next snapshot,
+   * Get the latest snapshot and placements, publish next snapshot,
    * then publish same snapshot until 'now'
    */
   async publishSameUpTo(nowIndex: number, cb: PublishCallback, cbData?: any) {
@@ -330,7 +325,7 @@ export class PlaceZvm extends ZomeViewModel {
     nowIndex -= nowIndex % this._dnaProperties!.snapshotIntervalInBuckets;
     const myRenderTime = await this.getMyRenderTime(nowIndex)
     let latestSnapshot = await this.getLatestSnapshot();
-    /* Must not already by published */
+    /* Must not already be published */
     if (latestSnapshot.timeBucketIndex >= nowIndex) {
       console.warn(`publishNextSnapshot() Aborted: latest snapshot already published.`)
       return null;
