@@ -5,10 +5,10 @@ Holochain experimental app to mimic reddit-place (pixel wars)
 
 ### Setup
 1. Install the required tools 
-    1. [`holochain`](https://github.com/holochain/holochain): `cargo install holochain` (or use nix-shell)
-    2. [`hc`](https://github.com/holochain/holochain/tree/develop/crates/hc): `cargo install hc` (or use nix-shell)
-    3. Rust wasm target: `npm run install:rust`
-    3. zits: `npm run install:zits`
+   1. Rust wasm target: `npm run install:rust` 
+   1. [`holochain`](https://github.com/holochain/holochain): `cargo install holochain` (or use nix-shell)
+   4. `npm run install:hc`
+   3. `npm run install:zits`
 4. Install nodejs dependencies `npm install`    
 4. Install other dependencies
    5. `npm run install:submodules`
