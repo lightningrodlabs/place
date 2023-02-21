@@ -12,7 +12,7 @@ Holochain experimental app to mimic reddit-place (pixel wars)
 4. Install nodejs dependencies `npm install`    
 4. Install other dependencies
    5. `npm run install:submodules`
-   2. `npm run install:hash-zome`
+   5. `npm run install:hash-zome`
 
 ### Web
 `npm run devtest`
