@@ -3,40 +3,41 @@
 Holochain experimental app to mimic reddit-place (pixel wars)
 ## Dev testing
 
-### General
+### Setup
 1. Install the required tools (or use nix-shell)
     1. [`holochain`](https://github.com/holochain/holochain)
     2. [`hc`](https://github.com/holochain/holochain/tree/develop/crates/hc)
-    3. Run `npm run ci:hc-install`
-2. Run `npm run hash-zome-install`
+4. Install nodejs dependencies `npm install`    
+4. `npm run install:submodules`
+4. `npm run install:rust` 
+3. `npm run install:zits` 
+2. `npm run install:hash-zome` 
 3. Build the DNA `npm run build:happ`
-4. Install nodejs dependencies `npm install`
-5. Build the happ `npm run build`
 
-### holo host (self-hosted)
+### holo host - OUTDATED (self-hosted)
 
 1. Build the chaperone specific happ: `npm run build:chaperone`
 2. Launch the local holo-dev-server: `npm run self-hosted`
 3. Launch the happ for chaperone: `npm run start:chaperone`
 
 
-### holo hosting web environment
+### holo hosting web environment - OUTDATED
 
 1. Build the chaperone specific happ: `npm run build:chaperone`
 2. Launch the happ for holo main-net: `npm run start:holo-mainnet`
 
 ### Web
-`npm run start`
+`npm run devtest`
 
 ### Electron
-`npm run electron`
+`npm run devtest:electron`
 
 ## Releasing (manual)
 
-### For Holo host
+### For Holo host - OUTDATED
 After building the dna and chaperone app, the `*.happ` and `ui-chaperone.zip` files will be available in the `/workdir` folder.
 
-### For Launcher
+### For Launcher - OUTDATED
 
 `npm run build:webapp`
 the `*.webhapp` file will be available in the `/workdir` folder.

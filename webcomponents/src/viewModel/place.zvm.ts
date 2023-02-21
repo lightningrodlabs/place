@@ -146,7 +146,7 @@ export class PlaceZvm extends ZomeViewModel {
    * then publish same snapshot until 'now'
    */
   async publishSameUpTo(nowIndex: number, cb: PublishCallback, cbData?: any) {
-    console.log("publishSameUpTo() called")
+    console.log("publishSameUpTo()")
     try {
       const interval = this._dnaProperties!.snapshotIntervalInBuckets;
       const nowSnapshotIndex =  nowIndex - (nowIndex % interval);
@@ -165,14 +165,14 @@ export class PlaceZvm extends ZomeViewModel {
         return;
       }
       const authors = await this.zomeProxy.getPublishersAt(latestSnapshot.timeBucketIndex + interval)
-      console.log("Attempting to store " + snapshot_to_str(newSnapshot!))
+      console.log("Attempting to store " + snapshot_to_str(newSnapshot))
       /** Store it */
-      await this.storeSnapshot(newSnapshot!, authors)
+      await this.storeSnapshot(newSnapshot, authors)
       /** Publish same snapshot since latest until 'now' */
       const vec_length = await this.publishSameSnapshotUpto(latestSnapshot.timeBucketIndex, nowSnapshotIndex)
       cb(newSnapshot!, cbData)
       console.log("publishSameUpTo() added to store: " + vec_length)
-      console.log("publishSameUpTo()    store count: " + Object.values(this.perspective.snapshots.length));
+      console.log("publishSameUpTo()    store count: " + this.perspective.snapshots? Object.values(this.perspective.snapshots.length) : "none");
     } catch (e) {
       console.error("publishSameUpTo() failed:", e)
     }
