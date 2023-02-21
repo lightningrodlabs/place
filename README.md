@@ -4,15 +4,21 @@ Holochain experimental app to mimic reddit-place (pixel wars)
 ## Dev testing
 
 ### Setup
-1. Install the required tools (or use nix-shell)
-    1. [`holochain`](https://github.com/holochain/holochain)
-    2. [`hc`](https://github.com/holochain/holochain/tree/develop/crates/hc)
+1. Install the required tools 
+    1. [`holochain`](https://github.com/holochain/holochain): `cargo install holochain` (or use nix-shell)
+    2. [`hc`](https://github.com/holochain/holochain/tree/develop/crates/hc): `cargo install hc` (or use nix-shell)
+    3. Rust wasm target: `npm run install:rust`
+    3. zits: `npm run install:zits`
 4. Install nodejs dependencies `npm install`    
-4. `npm run install:submodules`
-4. `npm run install:rust` 
-3. `npm run install:zits` 
-2. `npm run install:hash-zome` 
-3. Build the DNA `npm run build:happ`
+4. Install other dependencies
+   5. `npm run install:submodules`
+   2. `npm run install:hash-zome`
+
+### Web
+`npm run devtest`
+
+### Electron
+`npm run devtest:electron`
 
 ### holo host - OUTDATED (self-hosted)
 
@@ -25,12 +31,6 @@ Holochain experimental app to mimic reddit-place (pixel wars)
 
 1. Build the chaperone specific happ: `npm run build:chaperone`
 2. Launch the happ for holo main-net: `npm run start:holo-mainnet`
-
-### Web
-`npm run devtest`
-
-### Electron
-`npm run devtest:electron`
 
 ## Releasing (manual)
 
