@@ -9,10 +9,9 @@ Holochain experimental app to mimic reddit-place (pixel wars)
    1. [`holochain`](https://github.com/holochain/holochain): `cargo install holochain` (or use nix-shell)
    4. `npm run install:hc`
    3. `npm run install:zits`
-4. Install nodejs dependencies `npm install`    
-4. Install other dependencies
-   5. `npm run install:submodules`
-   5. `npm run install:hash-zome`
+4. `npm install`    
+5. `npm run install:submodules`
+5. `npm run install:hash-zome`
 
 ### Web
 `npm run devtest`
