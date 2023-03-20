@@ -12,7 +12,8 @@
   },
   "scripts": {
     "lint": "eslint --ext .ts .",
-    "build": "tsc",
+    "import-webapp": "cp -v -r ../webapp/dist/* web",
+    "build": "npm run import-webapp && tsc",
     "start": "electron .",
     "dist:build": "electron-builder build",
     "dist:win": "electron-builder --win",

@@ -15,9 +15,8 @@ export const COMMUNITY_PROXY_URL =
 export const DNA_VERSION_FILENAME = "dna_version.txt";
 export const MODEL_ZOME_HASH_FILEPATH = 'bin/model_zome_hash.txt';
 export const MAIN_APP_ID = 'electron-place'
-export const APP_DATA_PATH = app.isPackaged
-  ? path.join(__dirname, '../../.dev-app-data')
-  : path.join(app.getPath('appData'), 'place')
+export const APP_DATA_PATH = /*app.isPackaged? path.join(__dirname, '../../.dev-app-data') :*/
+  path.join(app.getPath('appData'), 'place')
 export const USER_DATA_PATH = path.join(APP_DATA_PATH, 'users');
 
 
