@@ -58,6 +58,7 @@ jobs:
       - name: build webapp
         shell: bash
         run: |
+          npm run build -w webcomponents
           npm run dist -w webapp
       # build electron
       - name: build electron
