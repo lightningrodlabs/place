@@ -53,12 +53,14 @@ jobs:
       - name: Download submodules
         shell: bash
         run: |
-          npm run install:submodules          
+          npm run install:submodules   
+          npm run install:hc
+          npm run install:hash-zome       
       # build webapp
       - name: build webapp
         shell: bash
         run: |
-          npm run build:webapp
+          npm run dist:webapp
       # build electron
       - name: build electron
         shell: bash
