@@ -65,7 +65,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run dist:build -w electron
+          npm run dist:electron
 #      # Build tar.gz
 #      - name: Build tar.gz
 #        if: ${{ runner.os == 'Linux' }}
