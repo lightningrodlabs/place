@@ -1,30 +1,27 @@
-import {AdminWebsocket, AppWebsocket} from "@holochain/client";
-import {WeApplet, AppletRenderers, WeServices, AppletInfo} from "@lightningrodlabs/we-applet";
-import {PlaceApp} from "place";
+import {
+  AppAgentClient, EntryHash
+} from "@holochain/client";
 
-const placeApplet: WeApplet = {
-  async appletRenderers(
-    appWebsocket: AppWebsocket,
-    adminWebsocket: AdminWebsocket,
-    weServices: WeServices,
-    appletAppInfo: AppletInfo[],
-  ): Promise<AppletRenderers> {
-    return {
-      full(element: HTMLElement, registry: CustomElementRegistry) {
-        console.log("placeApplet.full()", appWebsocket.client.socket.url)
-        if ((appletAppInfo as any).length > 1) {
-          console.error("Wrong type of appletAppInfo passed. Expected only a single 'AppletInfo' but got multiple.")
-        } else {
-          registry.define("place-app", PlaceApp);
+import {
+  WeApplet,
+} from "@lightningrodlabs/we-applet";
 
-          const app = new PlaceApp(appWebsocket, adminWebsocket, "place-applet");
-          element.appendChild(app);
-        }
-      },
-      blocks: [],
-    };
-  },
+import "@holochain-open-dev/profiles/dist/elements/profiles-context.js";
+import "@lightningrodlabs/we-applet/dist/elements/we-services-context.js";
+import "@lightningrodlabs/we-applet/dist/elements/hrl-link.js";
+
+import {appletViews} from "./applet-view";
+import {crossAppletViews} from "./cross-applet-view";
+import {HrlWithContext, WeServices} from "@lightningrodlabs/we-applet/dist/types";
+
+
+/** */
+const applet: WeApplet = {
+  appletViews,
+  crossAppletViews,
+  attachmentTypes: async (appletClient: AppAgentClient, appletId: EntryHash, weServices: WeServices)=> {return {}},
+  search: async (appletClient: AppAgentClient, appletId: EntryHash, weServices: WeServices, searchFilter: string) => {return []},
 };
 
 
-export default placeApplet;
+export default applet;

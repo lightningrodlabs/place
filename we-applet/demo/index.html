@@ -6,42 +6,110 @@
     <title>Place Applet Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
   </head>
-  <body style="margin:0;background:#faf1ea;height:100vh;background: #9bb791">
-    <div id="container"></div>
-    <script>
-      if (global === undefined) {
-        var global = window;
-      }
-    </script>
-    <script type="module">
+  <body style="margin:0; height:100vh; background: #9bb791" >
 
-      import { AppWebsocket, AdminWebsocket } from "@holochain/client";
+    <script type="module">
+      import {
+        AdminWebsocket, AppAgentWebsocket, encodeHashToBase64, fakeDnaHash, decodeHashFromBase64
+      } from "@holochain/client";
+      import { fakeEntryHash } from '@holochain-open-dev/utils';
+      import { ProfilesClient } from '@holochain-open-dev/profiles';
+      import { ProfilesZomeMock } from "@holochain-open-dev/profiles/dist/mocks.js";
+      import { weServicesMock } from "@lightningrodlabs/we-applet/dist/mocks.js";
+
       import Applet from "../dist";
 
-      const container = document.getElementById("container");
-
+      import "@shoelace-style/shoelace/dist/components/button/button.js";
+      import "@shoelace-style/shoelace/dist/components/skeleton/skeleton.js";
+      import "@shoelace-style/shoelace/dist/components/details/details.js";
+      import "@shoelace-style/shoelace/dist/components/card/card.js";
+      import "@shoelace-style/shoelace/dist/components/tooltip/tooltip.js";
+      import "@shoelace-style/shoelace/dist/components/spinner/spinner.js";
+      import "@shoelace-style/shoelace/dist/components/input/input.js";
+      import "@shoelace-style/shoelace/dist/components/badge/badge.js";
 
       /** */
       async function setup() {
         console.log("we-applet demo setup()");
-        console.log("setup()", process.env.HC_APP_PORT, process.env.HC_ADMIN_PORT)
-        const appWs = await AppWebsocket.connect(`ws://localhost:${process.env.HC_APP_PORT}`);
-        const adminWs = await AdminWebsocket.connect(`ws://localhost:${process.env.HC_ADMIN_PORT}`);
+        console.log("setup()", process.env.BUILD_MODE, process.env.HC_APP_PORT, process.env.HC_ADMIN_PORT);
 
+        /** Store AppletId in LocalStorage, so we can retrieve it when refereshing webpage */
+        let placeAppletId;
+        let placeAppletIdB64 = window.localStorage['placeDemoAppletId'];
+        if (!placeAppletIdB64) {
+          placeAppletId = fakeEntryHash();
+          placeAppletIdB64 = encodeHashToBase64(placeAppletId);
+          window.localStorage['placeDemoAppletId'] = placeAppletIdB64;
+        } else {
+          placeAppletId = decodeHashFromBase64(placeAppletIdB64);
+        }
+
+
+        /** Create custom WeServiceMock */
+        console.log("placeAppletId", placeAppletIdB64);
+        const myWeServicesMock = weServicesMock;
+        myWeServicesMock.appletInfo = async (appletId) => {
+          const appletIdB64 = encodeHashToBase64(appletId);
+          console.log("myWeServicesMock.appletInfo()", appletIdB64, placeAppletIdB64);
+          if (appletIdB64 == placeAppletIdB64) {
+            return {
+              appletBundleId: await fakeEntryHash(),
+              appletName: "DevTestWeApplet",
+              groupIds: [await fakeDnaHash()],
+            }
+          }
+          return undefined;
+        };
+        // myWeServicesMock.entryInfo = async (hrl) => {
+        //   return {
+        //     appletId: placeAppletId,
+        //     entryInfo: {
+        //       icon_src: "",
+        //       name: "demo:" + encodeHashToBase64(hrl[1]),
+        //     }
+        //   }
+        // }
+
+
+        /** AppWebsocket */
+        // const appWs = await AppWebsocket.connect(`ws://localhost:${process.env.HC_APP_PORT}`);
+        // const appInfo = await appWs.appInfo({installed_app_id: "threads-applet"});
+        // console.log("setup() appInfo", appInfo);
+
+        /** AppAgentWebsocket */
+        const appAgentWs = await AppAgentWebsocket.connect(`ws://localhost:${process.env.HC_APP_PORT}`, "place-applet");
+        console.log(appAgentWs.appWebsocket);
+        const appInfo = await appAgentWs.appInfo();
+        console.log(appInfo);
+        const placeCellId = appInfo.cell_info['rPlace'][0].provisioned.cell_id;
+        const dashboardCellId = appInfo.cell_info['rPlaceDashboard'][0].provisioned.cell_id;
+        //console.log("main agentId", cellId[1]);
+        console.log("dashboardCellId", encodeHashToBase64(dashboardCellId[0]));
+        console.log("placeCellId", encodeHashToBase64(placeCellId[0]));
+
+        /** AdminWebsocket */
+        const adminWs = await AdminWebsocket.connect(`ws://localhost:${process.env.HC_ADMIN_PORT}`);
         const apps = await adminWs.listApps({});
         console.log("setup() apps", apps);
+        await adminWs.authorizeSigningCredentials(dashboardCellId);
+        //await adminWs.authorizeSigningCredentials(placeCellId);
 
-        const appInfo = await appWs.appInfo({ installed_app_id: "place-applet" });
-        console.log("setup() appInfo", appInfo);
+        /** Creating mock lobby app with profiles dna & zome */
+        const mockProfilesZome = new ProfilesZomeMock();
+        mockProfilesZome.myPubKey = dashboardCellId[1];
+        mockProfilesZome.create_profile({nickname: "Alex", fields: {}})
 
-        const renderers = await Applet.appletRenderers(
-          appWs,
-          adminWs,
-          {},
-          [{ weInfo: { name: "Demo Group", logoSrc: "" }, installedAppInfo: appInfo }]
+        console.log({Applet});
+        const renderers = await Applet.appletViews(
+                appAgentWs,
+                placeAppletId,
+                new ProfilesClient(mockProfilesZome, mockProfilesZome.roleName),
+                myWeServicesMock,
         );
-        renderers.full(container, window.customElements);
+        renderers.main(document.body);
       };
+
+      /** Run it */
       setup();
     </script>
   </body>

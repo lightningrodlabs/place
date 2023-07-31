@@ -1,19 +1,23 @@
 import nodeResolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
-import replace from "@rollup/plugin-replace";
+import copy from "rollup-plugin-copy";
+import babel from "@rollup/plugin-babel";
+
+// import replace from "@rollup/plugin-replace";
 // import builtins from "rollup-plugin-node-builtins";
 // import globals from "rollup-plugin-node-globals";
 
-import babel from "@rollup/plugin-babel";
-import { importMetaAssets } from "@web/rollup-plugin-import-meta-assets";
-import { terser } from "rollup-plugin-terser";
-import copy from "rollup-plugin-copy";
+//import { importMetaAssets } from "@web/rollup-plugin-import-meta-assets";
+//import { terser } from "rollup-plugin-terser";
+
+
+const DIST_FOLDER = "dist"
 
 export default {
   input: "out-tsc/index.js",
   output: {
     format: "es",
-    dir: 'dist',
+    dir: DIST_FOLDER,
     sourcemap: false
   },
   watch: {
@@ -22,22 +26,18 @@ export default {
   external: [],
 
   plugins: [
+    copy({
+      targets: [
+        { src: "../node_modules/@shoelace-style/shoelace/dist/themes/light.css", dest: DIST_FOLDER, rename: "styles.css" },
+        { src: "../assets/logo.svg", dest: DIST_FOLDER },
+        { src: "../assets/logo.svg", dest: "demo" }
+      ],
+    }),
     /** Resolve bare module imports */
     nodeResolve({
       browser: true,
       preferBuiltins: false,
     }),
-    replace({
-      "process.env.NODE_ENV": '"production"',
-    }),
-    copy({
-      targets: [{ src: "../assets/logo.svg", dest: "dist" }, { src: "../assets/logo.svg", dest: "demo" }],
-    }),
-    commonjs({}),
-    /** Minify JS */
-    terser(),
-    /** Bundle assets references via import.meta.url */
-    importMetaAssets(),
     /** Compile JS to a lower language target */
     babel({
       exclude: /node_modules/,
@@ -78,5 +78,6 @@ export default {
         ],
       ],
     }),
+    commonjs({}),
   ],
 };

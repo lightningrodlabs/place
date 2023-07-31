@@ -1,13 +1,18 @@
 import { html } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
+import {ContextProvider} from "@lit-labs/context";
 import {
   AdminWebsocket,
   AppWebsocket,
   ClonedCell,
   DnaHashB64,
-  encodeHashToBase64,
+  encodeHashToBase64, EntryHash, EntryHashB64,
   InstalledAppId
 } from "@holochain/client";
+
+import {
+  WeServices, weServicesContext,
+} from "@lightningrodlabs/we-applet";
 
 import {
   PlacePage,
@@ -27,24 +32,6 @@ import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.typ
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 import {CellId} from "@holochain/client/lib/types";
 import { Mutex } from 'async-mutex';
-
-//import {SlTabGroup} from "@shoelace-style/shoelace";
-
-import "@shoelace-style/shoelace/dist/components/button/button.js";
-import "@shoelace-style/shoelace/dist/components/skeleton/skeleton.js";
-import "@shoelace-style/shoelace/dist/components/details/details.js";
-import "@shoelace-style/shoelace/dist/components/card/card.js";
-import "@shoelace-style/shoelace/dist/components/tooltip/tooltip.js";
-import "@shoelace-style/shoelace/dist/components/spinner/spinner.js";
-import "@shoelace-style/shoelace/dist/components/input/input.js";
-import "@shoelace-style/shoelace/dist/components/badge/badge.js";
-
-
-//import "@shoelace-style/shoelace/dist/components/tab/tab.js";
-//import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
-//import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
-//import SlTabGroup from "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
-//import "@shoelace-style/shoelace/dist/components/rating/rating.js";
 
 
 export let BUILD_MODE: string;
@@ -94,9 +81,12 @@ console.log("IS_ELECTRON", IS_ELECTRON);
 export class PlaceApp extends HappElement {
 
   /** */
-  constructor(appWs?: AppWebsocket, private _adminWs?: AdminWebsocket, appId?: InstalledAppId) {
+  constructor(appWs?: AppWebsocket, private _adminWs?: AdminWebsocket, private _canAuthorizeZfns?: boolean,  appId?: InstalledAppId) {
     console.log("PlaceApp", appId)
     super(appWs? appWs : HC_APP_PORT? HC_APP_PORT : 0, appId);
+    if (_canAuthorizeZfns == undefined) {
+      this._canAuthorizeZfns = true;
+    }
   }
 
   static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
@@ -113,6 +103,30 @@ export class PlaceApp extends HappElement {
 
   /** cloneName -> mutex */
   private _refreshLocks: Dictionary<Mutex> = {};
+
+
+  /** -- We-applet specifics -- */
+
+  protected _weProvider?: unknown; // FIXME type: ContextProvider<this.getContext()> ?
+  public appletId?: EntryHashB64;
+
+
+  /**  */
+  static async fromWe(
+    appWs: AppWebsocket,
+    adminWs: AdminWebsocket,
+    canAuthorizeZfns: boolean,
+    appId: InstalledAppId,
+    weServices: WeServices,
+    thisAppletId: EntryHash,
+  ) : Promise<PlaceApp> {
+    const app = new PlaceApp(appWs, adminWs, canAuthorizeZfns, appId);
+    /** Provide it as context */
+    console.log(`\t\tProviding context "${weServicesContext}" | in host `, app);
+    app._weProvider = new ContextProvider(app, weServicesContext, weServices);
+    app.appletId = encodeHashToBase64(thisAppletId);
+    return app;
+  }
 
 
   /** -- Getters -- */
@@ -137,18 +151,27 @@ export class PlaceApp extends HappElement {
 
   /** -- Methods -- */
 
-
   /** */
   async hvmConstructed() {
-    console.log("hvmConstructed()", HC_ADMIN_PORT, HC_APP_PORT, this.hvm.appId);
+    console.log("hvmConstructed()", HC_ADMIN_PORT, HC_APP_PORT, this._canAuthorizeZfns);
 
     /** Check AdminWs */
-    if (!this._adminWs) {
+    if (!this._adminWs && this._canAuthorizeZfns) {
       this._adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
       //if (this._adminWs) {
       //  const apps = await this._adminWs.listApps({});
       //  console.log("Installed apps:", apps);
       //}
+    }
+    if (this._adminWs && this._canAuthorizeZfns) {
+      await this.hvm.authorizeAllZomeCalls(this._adminWs);
+      console.log("*** Zome call authorization complete");
+    } else {
+      if (!this._canAuthorizeZfns) {
+        console.warn("No adminWebsocket provided (Zome call authorization done)")
+      } else {
+        console.log("Zome call authorization done externally")
+      }
     }
 
     /** Send dnaHash to electron */
@@ -171,15 +194,6 @@ export class PlaceApp extends HappElement {
       }
     }
     console.log("this._clones", this._clones);
-
-
-    /** Authorize all zome calls */
-    if (this._adminWs) {
-      await this.hvm.authorizeAllZomeCalls(this._adminWs);
-      console.log("*** Zome call authorization complete");
-    } else {
-      console.warn("No adminWebsocket provided (Zome call authorization must already be done)")
-    }
 
     /** Disable all clones */
     for (const [cloneId, _cell] of Object.entries(this._placeCells.clones)) {
