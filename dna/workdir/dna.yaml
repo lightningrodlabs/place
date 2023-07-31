@@ -4,7 +4,7 @@ name: dPlace
 integrity:
   origin_time: 2022-09-25T13:55:49.200Z
   properties:
-    startTime: 1677006961
+    startTime: 1681322977
     canvasSize: 200
     bucketSizeSec: 120
     pixelsPerBucket: 20

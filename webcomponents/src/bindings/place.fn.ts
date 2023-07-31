@@ -24,7 +24,7 @@ export const placeFunctionNames: FunctionName[] = [
 
 /** Generate tuple array of function names with given zomeName */
 export function generatePlaceZomeFunctionsArray(zomeName: ZomeName): [ZomeName, FunctionName][] {
-   let fns: [ZomeName, FunctionName][] = [];
+   const fns: [ZomeName, FunctionName][] = [];
    for (const fn of placeFunctionNames) {
       fns.push([zomeName, fn]);
    }
