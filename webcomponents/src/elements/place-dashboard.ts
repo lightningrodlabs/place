@@ -1,19 +1,21 @@
 import {css, html} from "lit";
-import {property, state} from "lit/decorators.js";
+import {property, state, customElement} from "lit/decorators.js";
 import {Dictionary, ZomeElement} from "@ddd-qc/lit-happ";
 import {PlaceDashboardPerspective} from "../viewModel/place-dashboard.perspective";
 import {PlaceDashboardZvm} from "../viewModel/place-dashboard.zvm";
-import {SlBadge, SlButton, SlCard, SlDetails, SlInput, SlSkeleton, SlTooltip} from "@scoped-elements/shoelace";
 import {Game, PlaceProperties, Snapshot} from "../bindings/place-dashboard.types";
 import {encodeHashToBase64} from "@holochain/client";
 import {snapshotIntoFrame} from "../imageBuffer";
 import {determineBucketTime, validateSettings} from "../time";
 import {MAX_BUCKET_SIZE_SEC, MIN_BUCKET_SIZE_SEC} from "../bindings/place.types";
 
+//import {SlCard, SlTooltip, SlBadge, SlButton, SlInput, SlDetails, SlSkeleton} from "@shoelace-style/shoelace";
+
 
 /**
- * @element place-page
+ *
  */
+@customElement("place-dashboard")
 export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, PlaceDashboardZvm> {
   constructor() {
     super(PlaceDashboardZvm.DEFAULT_ZOME_NAME)
@@ -126,7 +128,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
         }
         return html `
           <sl-card class="card-game --sl-shadow-large">
-            <div slot="image" style="background: #0d0c0c;" @click=${() => {this.refreshGame(game)}}>
+            <div slot="image" style="background:#0d0c0c; width:100%;" @click=${() => {this.refreshGame(game)}}>
             ${maybeSnapshot && joined
               //? html`<div>${maybeSnapshot.timeBucketIndex}</div>`
               ? html`<canvas  id="canvas-${encodeHashToBase64(game.dna_hash)}" width="150" height="150" class="place-preview">`
@@ -185,18 +187,6 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
     `;
   }
 
-  /** */
-  static get scopedElements() {
-    return {
-      'sl-card': SlCard,
-      'sl-tooltip': SlTooltip,
-      'sl-badge': SlBadge,
-      'sl-button': SlButton,
-      'sl-input': SlInput,
-      'sl-details': SlDetails,
-      'sl-skeleton': SlSkeleton,
-    };
-  }
 
   static get styles() {
     return [css`

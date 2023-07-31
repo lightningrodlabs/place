@@ -42,7 +42,8 @@ pub fn list_all_games(_: ()) -> ExternResult<Vec<(AgentPubKey, Game)>> {
   std::panic::set_hook(Box::new(zome_panic_hook));
   let path = Path::from("games");
   let path_eh = path.path_entry_hash()?;
-  let all_pairs = get_typed_from_actions_links::<Game>(path_eh, LinkKind::Path, None)?;
+  let all = get_typed_from_actions_links::<Game>(path_eh, LinkKind::Path, None)?;
+  let all_pairs = all.into_iter().map(|(_, _, ah, game)| (ah, game)).collect();
   return Ok(all_pairs);
 }
 
@@ -52,6 +53,7 @@ pub fn list_my_games(_: ()) -> ExternResult<Vec<(AgentPubKey, Game)>> {
   debug!("*** list_my_games() CALLED");
   std::panic::set_hook(Box::new(zome_panic_hook));
   let me = agent_info()?.agent_latest_pubkey;
-  let all_pairs = get_typed_from_actions_links::<Game>(me, LinkKind::Participations, None)?;
+  let all = get_typed_from_actions_links::<Game>(me, LinkKind::Participations, None)?;
+  let all_pairs = all.into_iter().map(|(_, _, ah, game)| (ah, game)).collect();
   return Ok(all_pairs);
 }

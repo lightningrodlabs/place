@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { state, property } from "lit/decorators.js";
+import { state, property, customElement } from "lit/decorators.js";
 import {
   AdminWebsocket,
   AppWebsocket,
@@ -27,6 +27,25 @@ import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.typ
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 import {CellId} from "@holochain/client/lib/types";
 import { Mutex } from 'async-mutex';
+
+//import {SlTabGroup} from "@shoelace-style/shoelace";
+
+import "@shoelace-style/shoelace/dist/components/button/button.js";
+import "@shoelace-style/shoelace/dist/components/skeleton/skeleton.js";
+import "@shoelace-style/shoelace/dist/components/details/details.js";
+import "@shoelace-style/shoelace/dist/components/card/card.js";
+import "@shoelace-style/shoelace/dist/components/tooltip/tooltip.js";
+import "@shoelace-style/shoelace/dist/components/spinner/spinner.js";
+import "@shoelace-style/shoelace/dist/components/input/input.js";
+import "@shoelace-style/shoelace/dist/components/badge/badge.js";
+
+
+//import "@shoelace-style/shoelace/dist/components/tab/tab.js";
+//import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
+//import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
+//import SlTabGroup from "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
+//import "@shoelace-style/shoelace/dist/components/rating/rating.js";
+
 
 export let BUILD_MODE: string;
 let HC_APP_PORT: number;
@@ -71,6 +90,7 @@ console.log("IS_ELECTRON", IS_ELECTRON);
 /**
  *
  */
+@customElement("place-app")
 export class PlaceApp extends HappElement {
 
   /** */
@@ -138,7 +158,7 @@ export class PlaceApp extends HappElement {
     }
 
     /** Grab Place cells */
-    this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
+    this._placeCells = await this.appProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     console.log("this._placeCells", printCellsForRole(PlaceDvm.DEFAULT_BASE_ROLE_NAME, this._placeCells));
 
     /** Enable all clones */
@@ -187,7 +207,7 @@ export class PlaceApp extends HappElement {
     const [clonedCell, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
     const cloneId = clonedCell.clone_id;
     this._clones[dvm.cell.dnaHash] = cloneId;
-    this._placeCells = await this.conductorAppProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
+    this._placeCells = await this.appProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     //this._curPlaceId = dvm.cell.clone_id;
     console.log("hPlace clone created:", dvm.hcl.toString(), dvm.cell.name);
     /** Create Game Entry */
@@ -244,7 +264,7 @@ export class PlaceApp extends HappElement {
   async disableClone(cloneId: CloneId): Promise<void> {
     const request = {app_id: this.hvm.appId, clone_cell_id: cloneId};
     console.log("disableClone()", request);
-    await this.conductorAppProxy.disableCloneCell(request);
+    await this.appProxy.disableCloneCell(request);
   }
 
 
@@ -252,7 +272,7 @@ export class PlaceApp extends HappElement {
   async enableClone(cloneId: CloneId | CellId): Promise<ClonedCell> {
     const request = {app_id: this.hvm.appId, clone_cell_id: cloneId};
     console.log("enableClone()", request);
-    const clone = this.conductorAppProxy.enableCloneCell(request);
+    const clone = this.appProxy.enableCloneCell(request);
     /** Done */
     return clone;
   }
@@ -265,9 +285,9 @@ export class PlaceApp extends HappElement {
     /** Look for clone with this dnaHash */
     for (const clone of Object.values(this._placeCells.clones)) {
       if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
-        const appInfo = await this.conductorAppProxy.appInfo({installed_app_id: this.hvm.appId});
+        const appInfo = await this.appProxy.appInfo({installed_app_id: this.hvm.appId});
         console.log({appInfo});
-        //const cells = await this.conductorAppProxy.fetchCells(DEFAULT_PLACE_DEF.id, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
+        //const cells = await this.appProxy.fetchCells(DEFAULT_PLACE_DEF.id, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
         //console.log("cells", this.printCellsForRole("rPlace", cells));
         const selected = await this.enableClone(clone.clone_id);
         console.log("onSelectClone() clone enabled:", selected.name);

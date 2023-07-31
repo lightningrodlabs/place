@@ -33,11 +33,8 @@
   "dependencies": {
     "@place/elements": "file:../webcomponents",
     "place": "file:../webapp",
-    "@holochain/client": "0.12.0",
-    "@lightningrodlabs/we-applet": "0.2.0",
-    "@lit-labs/context": "^0.1.2",
-    "@open-wc/scoped-elements": "^2.0.1",
-    "lit": "^2.3.0"
+    "@lightningrodlabs/we-applet": "0.6.1",
+    "@open-wc/scoped-elements": "^2.0.1"
   },
   "private": true
 }

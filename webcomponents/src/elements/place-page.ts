@@ -1,5 +1,5 @@
 import {css, html} from "lit";
-import {property} from "lit/decorators.js";
+import {property, customElement} from "lit/decorators.js";
 
 import * as PIXI from 'pixi.js'
 //import {SCALE_MODES} from 'pixi.js'
@@ -22,6 +22,7 @@ import {toHHMMSS} from "../time";
 /**
  * @element place-page
  */
+@customElement("place-page")
 export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   constructor() {
     super(PlaceZvm.DEFAULT_ZOME_NAME)
@@ -947,12 +948,6 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     `;
   }
 
-
-  /** */
-  static get scopedElements() {
-    return {
-    };
-  }
 
   static get styles() {
     return [

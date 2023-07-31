@@ -1,17 +1,15 @@
 {
   "name": "place-dev",
-  "version": "0.2.0-hc-beta.1.0",
+  "version": "0.2.0",
   "config": {
-    "hc_version": "0.1.0",
-    "zits_version": "1.6.1",
+    "hc_version": "0.2.1",
+    "zits_version": "1.9.0",
     "bin": "bin"
   },
   "private": true,
   "workspaces": [
     "webcomponents",
-    "webapp",
-    "we-applet",
-    "electron"
+    "webapp"
   ],
   "scripts": {
     "install:submodules"     : "bash scripts/install-submodules.sh $npm_package_config_hc_version",
@@ -43,8 +41,8 @@
     "prodtest:electron"      : "npm run prepare-test && npm run dist -w webapp && npm run start -w electron",
 
 
-    "start:happ"             : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network mdns",
-    "start:happ-proxied"     : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network --bootstrap https://bootstrap-staging.holo.host/ quic -p=kitsune-proxy://SYVd4CF3BdJ4DS7KwLLgeU3_DbHoZ34Y-qroZ79DOs8/kitsune-quic/h/165.22.32.11/p/5779/--",
+    "start:happ"             : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network mem",
+    "start:happ-proxied"     : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network --bootstrap https://bootstrap.holo.host/ webrtc wss://signal.holo.host",
     "start:chaperone"        : "cross-env HC_PORT=33735 ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run start:happ\" \"sleep 5 && npm run start -w place-chaperone\"",
     "start"                  : "cross-env HC_PORT=33735 ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run start:happ\" \"sleep 5 && npm run start -w place\"",
     "start:agent-proxied"    : "cross-env HC_PORT=$(port) ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run start:happ-proxied\" \"sleep 5 && npm run start -w place\"",
@@ -56,7 +54,7 @@
     "network-proxied"        : "npm run build:happ && concurrently-repeat \"npm run start:agent-proxied\"",
     "network-playground"     : "npm run build:happ && concurrently-repeat \"npm run start:agent:playground\"",
 
-    "start:launcher"         : "echo pass | hc-launch --piped -n 1 artifacts/place.webhapp network mdns",
+    "start:launcher"         : "echo pass | hc-launch --piped -n 1 artifacts/place.webhapp network mem",
 
     "playground"             : "run-singleton \"holochain-playground\"",
 
@@ -76,7 +74,7 @@
     "update-version"         : "bash scripts/update-version-number.sh $npm_package_version",
 
     "dl-test-release"        : "rm -rf release & mkdir -p release & gh release download manual-release -D release -R lightningrodlabs/place",
-    
+
     "clean"                  : "bash scripts/clean.sh",
     "clean:npm"              : "bash scripts/clean-npm.sh",
     "clean:hc"               : "rm -rf .hc* & rm -rf electron/web/*.js",
@@ -110,7 +108,16 @@
     "rollup-plugin-copy": "^3.4.0",
     "json-parse-better-errors": "^1.0.2",
     "tslib": "^2.4.0",
-    "typescript": "^4.9.0"
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@holochain/client"             : "=0.14.1",
+    "@ddd-qc/cell-proxy"            : "0.19.4",
+    "@ddd-qc/lit-happ"              : "0.19.4",
+    "@holochain-open-dev/core-types": "0.6.3",
+    "@lit-labs/context"             : "0.2.0",
+    "lit"                           : "2.6.0",
+    "@shoelace-style/shoelace"      : "^2.4.0"
   },
   "engines": {
     "npm": ">=7.0.0"

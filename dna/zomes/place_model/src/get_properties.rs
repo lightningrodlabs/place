@@ -6,7 +6,7 @@ use crate::properties::PlaceProperties;
 pub fn get_properties(_:()) -> ExternResult<PlaceProperties> {
   //debug!("*** get_properties() called");
   let dna_info = dna_info()?;
-  let props = dna_info.properties;
+  let props = dna_info.modifiers.properties;
   //debug!("props = {:?}", props);
   let maybe_properties: Result<PlaceProperties, <PlaceProperties as TryFrom<SerializedBytes>>::Error> = props.try_into();
   if let Err(e) = maybe_properties {
