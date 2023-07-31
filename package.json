@@ -75,6 +75,8 @@
 
     "update-version"         : "bash scripts/update-version-number.sh $npm_package_version",
 
+    "dl-test-release"        : "rm -rf release & mkdir -p release & gh release download manual-release -D release -R lightningrodlabs/place",
+    
     "clean"                  : "bash scripts/clean.sh",
     "clean:npm"              : "bash scripts/clean-npm.sh",
     "clean:hc"               : "rm -rf .hc* & rm -rf electron/web/*.js",

@@ -49,11 +49,17 @@ jobs:
       - name: Install npm dependencies
         run: |
           npm install
+      # Download submodules
+      - name: Download submodules
+        shell: bash
+        run: |
+          npm run install:submodules     
       # build webapp
       - name: build webapp
         shell: bash
         run: |
-          npm run build:webapp
+          npm run build -w webcomponents
+          npm run dist -w webapp
       # build electron
       - name: build electron
         shell: bash
@@ -65,7 +71,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run dist:build -w electron
+          npm run dist:electron
 #      # Build tar.gz
 #      - name: Build tar.gz
 #        if: ${{ runner.os == 'Linux' }}
