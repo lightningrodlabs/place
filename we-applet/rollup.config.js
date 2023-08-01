@@ -29,8 +29,8 @@ export default {
     copy({
       targets: [
         { src: "../node_modules/@shoelace-style/shoelace/dist/themes/light.css", dest: DIST_FOLDER, rename: "styles.css" },
-        { src: "../assets/logo.svg", dest: DIST_FOLDER },
-        { src: "../assets/logo.svg", dest: "demo" }
+        { src: "../webapp/logo.svg", dest: DIST_FOLDER },
+        { src: "../webapp/logo.svg", dest: "demo" }
       ],
     }),
     /** Resolve bare module imports */
