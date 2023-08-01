@@ -3,12 +3,12 @@ import { fromRollup } from "@web/dev-server-rollup";
 import rollupReplace from "@rollup/plugin-replace";
 import rollupCommonjs from "@rollup/plugin-commonjs";
 import rollupBuiltins from 'rollup-plugin-node-builtins';
-import rollupGlobals from 'rollup-plugin-node-globals';
+//import rollupGlobals from 'rollup-plugin-node-globals';
 
 const replace = fromRollup(rollupReplace);
 const commonjs = fromRollup(rollupCommonjs);
 const builtins = fromRollup(rollupBuiltins);
-const globals = fromRollup(rollupGlobals);
+//const globals = fromRollup(rollupGlobals);
 
 const BUILD_MODE = process.env.BUILD_MODE? JSON.stringify(process.env.BUILD_MODE) : 'prod';
 console.log("web-dev-server BUILD_MODE =", BUILD_MODE);

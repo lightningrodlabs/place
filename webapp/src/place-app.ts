@@ -33,6 +33,9 @@ import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 import {CellId} from "@holochain/client/lib/types";
 import { Mutex } from 'async-mutex';
 
+//import "@shoelace-style/shoelace/dist/components/button/button";
+//import "@shoelace-style/shoelace";
+
 
 export let BUILD_MODE: string;
 let HC_APP_PORT: number;
@@ -67,10 +70,10 @@ if (IS_ELECTRON) {
   }
 }
 
-console.log("DEFAULT_PLACE_DEF.id =", DEFAULT_PLACE_DEF.id)
+console.log("DEFAULT_PLACE_DEF.id", DEFAULT_PLACE_DEF.id)
 console.log("HC_APP_PORT", HC_APP_PORT);
 console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
-console.log("BUILD_MODE =", BUILD_MODE)
+console.log("BUILD_MODE", BUILD_MODE)
 console.log("IS_ELECTRON", IS_ELECTRON);
 
 

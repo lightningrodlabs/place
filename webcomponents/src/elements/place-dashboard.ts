@@ -9,7 +9,7 @@ import {snapshotIntoFrame} from "../imageBuffer";
 import {determineBucketTime, validateSettings} from "../time";
 import {MAX_BUCKET_SIZE_SEC, MIN_BUCKET_SIZE_SEC} from "../bindings/place.types";
 
-//import {SlCard, SlTooltip, SlBadge, SlButton, SlInput, SlDetails, SlSkeleton} from "@shoelace-style/shoelace";
+import {SlCard, SlTooltip, SlBadge, SlButton, SlInput, SlDetails, SlSkeleton} from "@shoelace-style/shoelace";
 
 import "@shoelace-style/shoelace/dist/components/button/button.js";
 import "@shoelace-style/shoelace/dist/components/skeleton/skeleton.js";

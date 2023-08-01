@@ -24,6 +24,7 @@
     "pixi.js": "^6.2.2"
   },
   "dependencies": {
+    "@shoelace-style/shoelace": "^2.4.0",
     "@types/tinycolor2": "^1.4.3",
     "cqfill": "^0.6.0",
     "fast-xml-parser": "^3.20.0",

@@ -5,9 +5,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Place Applet Demo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="../dist/styles.css" rel="stylesheet" />
   </head>
   <body style="margin:0; height:100vh; background: #9bb791" >
-
+    <script type="module">
+      console.log("Waiting for Shoelace...")
+      await Promise.allSettled([
+        customElements.whenDefined('sl-button'),
+        //customElements.whenDefined('sl-card')
+      ]);
+      console.log("Shoelace READY!");
+    </script>
     <script type="module">
       import {
         AdminWebsocket, AppAgentWebsocket, encodeHashToBase64, fakeDnaHash, decodeHashFromBase64
@@ -19,14 +27,6 @@
 
       import Applet from "../dist";
 
-      import "@shoelace-style/shoelace/dist/components/button/button.js";
-      import "@shoelace-style/shoelace/dist/components/skeleton/skeleton.js";
-      import "@shoelace-style/shoelace/dist/components/details/details.js";
-      import "@shoelace-style/shoelace/dist/components/card/card.js";
-      import "@shoelace-style/shoelace/dist/components/tooltip/tooltip.js";
-      import "@shoelace-style/shoelace/dist/components/spinner/spinner.js";
-      import "@shoelace-style/shoelace/dist/components/input/input.js";
-      import "@shoelace-style/shoelace/dist/components/badge/badge.js";
 
       /** */
       async function setup() {
