@@ -18,14 +18,14 @@ import {
 
 
 let APP_ID = 'place'
-let HC_PORT:any = process.env.HC_PORT;
+let HC_APP_PORT:any = process.env.HC_APP_PORT;
 let NETWORK_ID: any = null
 
 
 // FIXME
 //const HC_PORT = process.env.HC_PORT
 //const HC_PORT = 8889
-console.log("HC_PORT = " + HC_PORT + " || " + process.env.HC_PORT);
+console.log("HC_APP_PORT = " + HC_APP_PORT + " || " + process.env.HC_APP_PORT);
 
 console.log('PLACE_CHAPERONE_SERVER_URL : ', process.env.PLACE_CHAPERONE_SERVER_URL)
 

@@ -2,7 +2,7 @@
   "name": "place-dev",
   "version": "0.2.0",
   "config": {
-    "hc_version": "0.2.1",
+    "hc_version": "0.2.2",
     "zits_version": "1.9.0",
     "bin": "bin"
   },
@@ -13,55 +13,80 @@
     "webapp"
   ],
   "scripts": {
-    "install:submodules": "bash scripts/install-submodules.sh $npm_package_config_hc_version",
-    "install:rust": "bash submodules/hc-prebuilt/install-rust.sh",
-    "install:hash-zome": "bash submodules/hc-prebuilt/install-hash-zome.sh $npm_package_config_bin",
-    "install:hc": "bash submodules/hc-prebuilt/install-hc-cli.sh $npm_package_config_bin $npm_package_config_hc_version",
-    "install:zits": "cargo install zits --version $npm_package_config_zits_version",
-    "version": "$npm_package_config_bin/hc --version & holochain --version & lair-keystore --version & tsc --version",
-    "hash-zome": "bash submodules/hc-prebuilt/hash-zome.sh $npm_package_config_bin ./target/wasm32-unknown-unknown/release/place_integrity.wasm electron/bin/model_zome_hash.txt",
-    "build:zome": "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
-    "build:dna": "npm run build:zome && bash scripts/pack-dna.sh $npm_package_config_bin",
-    "build:happ": "npm run build:dna && $npm_package_config_bin/hc app pack dna/workdir_dashboard -o artifacts/place.happ && cp artifacts/place.happ electron/bin/place.happ && npm run hash-zome",
-    "build:webapp": "npm run build -w webcomponents && npm run build -w webapp",
-    "build:webapp-chaperone": "npm run build -w place-chaperone",
-    "build:chaperone-mainnet": "npm run build -w webcomponents && npm run build:webapp-chaperone && PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run package -w place-chaperone",
-    "test": "npm run build:happ && npm run build -w webcomponents && npm t -w tests",
-    "prepare-test": "npm run clean:hc & npm run build:happ && bash scripts/ts-bindings.sh && npm run build -w webcomponents",
-    "devtest": "npm run prepare-test && npm run build -w webapp && npm run start",
-    "devtest:we": "npm run prepare-test && npm run dist:webapp && npm run devtest -w we-applet",
-    "devtest:electron": "npm run dist:webapp && npm run build -w electron && BUILD_MODE='dev' npm run start -w electron",
-    "prodtest": "npm run prepare-test && npm run dist -w webapp && npm run start",
-    "prodtest:electron": "npm run prepare-test && npm run dist -w webapp && npm run start -w electron",
-    "start:happ": "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network mem",
-    "start:happ-proxied": "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$ADMIN_PORT generate artifacts/place.happ --run=$HC_PORT -a place network --bootstrap https://bootstrap.holo.host/ webrtc wss://signal.holo.host",
-    "start:chaperone": "cross-env HC_PORT=33735 ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run start:happ\" \"sleep 5 && npm run start -w place-chaperone\"",
-    "start": "cross-env HC_PORT=33735 ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run start:happ\" \"sleep 5 && npm run start -w place\"",
-    "start:agent-proxied": "cross-env HC_PORT=$(port) ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run start:happ-proxied\" \"sleep 5 && npm run start -w place\"",
-    "start:agent:playground": "cross-env HC_PORT=$(port) ADMIN_PORT=$(port) concurrently \"npm run playground\" \"npm run build:watch -w webcomponents\" \"npm run start:happ\" \"sleep 5 && npm run start -w place\"",
-    "start:holo-mainnet": "PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run start:chaperone",
-    "start-proxied": "npm run build:happ && npm run build -w @place/elements && cross-env HC_PORT=$(port) concurrently -k \"npm run start:happ-proxied\" \"npm run start -w place\"",
-    "network": "npm run build:happ && concurrently-repeat \"npm run start\"",
-    "network-proxied": "npm run build:happ && concurrently-repeat \"npm run start:agent-proxied\"",
-    "network-playground": "npm run build:happ && concurrently-repeat \"npm run start:agent:playground\"",
-    "start:launcher": "echo pass | hc-launch --piped -n 1 artifacts/place.webhapp network mem",
-    "playground": "run-singleton \"holochain-playground\"",
-    "package:webapp": "rm -rf artifacts/place-webapp-ui.zip && cd webapp/dist && bestzip ../../artifacts/place-webapp-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
-    "package:we": "rm -rf artifacts/place-we_applet-ui.zip && cd we-applet/dist && rm -f *.map && bestzip ../../artifacts/place-we_applet-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp",
-    "dist:webapp": "npm run build:happ && npm run build -w webcomponents && npm run dist -w webapp && npm run package:webapp",
-    "dist:we": "npm run package:webapp && npm run package:we-applet",
-    "dist:electron": "bash submodules/hc-prebuilt/copy-binaries.sh electron/bin && npm run dist:build -w electron",
-    "hc-host:gen-agent": "sh ./scripts/gen-host-agent.sh",
-    "hc-host:run": "$npm_package_config_bin/hc sandbox r 0 -p=8888",
-    "serve:self-hosted": "PLACE_APP_CONTEXT='self-hosted' vue-cli-service serve",
-    "serve:holo": "PLACE_APP_CONTEXT='holo-host' PLACE_CHAPERONE_SERVER_URL='http://localhost:24274/' vue-cli-service serve",
-    "self-hosted": "nix-shell --command 'holo-dev-server -p 24274 artifacts/place.happ'",
-    "update-version": "bash scripts/update-version-number.sh $npm_package_version",
-    "dl-test-release": "rm -rf release & mkdir -p release & gh release download manual-release -D release -R lightningrodlabs/place",
-    "clean": "bash scripts/clean.sh",
-    "clean:npm": "bash scripts/clean-npm.sh",
-    "clean:hc": "rm -rf .hc* & rm -rf electron/web/*.js",
-    "clean:all": "npm run clean:agents & npm run clean:npm & npm run clean"
+    "install:submodules" : "bash scripts/install-submodules.sh $npm_package_config_hc_version",
+    "install:rust"       : "bash submodules/hc-prebuilt/install-rust.sh",
+    "install:hash-zome"  : "bash submodules/hc-prebuilt/install-hash-zome.sh $npm_package_config_bin",
+    "install:hc"         : "bash submodules/hc-prebuilt/install-hc-cli.sh $npm_package_config_bin $npm_package_config_hc_version",
+    "install:zits"       : "cargo install zits --version $npm_package_config_zits_version",
+    "version"            : "$npm_package_config_bin/hc --version & holochain --version & lair-keystore --version & tsc --version",
+    "hash-zome"          : "bash submodules/hc-prebuilt/hash-zome.sh $npm_package_config_bin ./target/wasm32-unknown-unknown/release/place_integrity.wasm electron/bin/model_zome_hash.txt",
+    "build:zome"         : "CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
+    "build:dna"          : "npm run build:zome && bash scripts/pack-dna.sh $npm_package_config_bin",
+    "build:happ"         : "npm run build:dna && $npm_package_config_bin/hc app pack dna/workdir_dashboard -o artifacts/place.happ && cp artifacts/place.happ electron/bin/place.happ && npm run hash-zome",
+    "build:devtest"      : "npm run clean:hc & npm run build:happ && bash scripts/ts-bindings.sh && npm run build -w webcomponents",
+    "build:webapp"       : "npm run build -w webcomponents && npm run build -w webapp",
+    "build:chaperone"    : "npm run build -w webapp-chaperone",
+    "build:holo-mainnet" : "npm run build -w webcomponents && npm run build:chaperone && PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run package -w place-chaperone",
+
+    "test"               : "npm run build:happ && npm run build -w webcomponents && npm t -w tests",
+
+    "new-sandbox:mem"    : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$HC_ADMIN_PORT generate artifacts/place.happ --run=$HC_APP_PORT -a place network mem",
+    "new-sandbox:local"  : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$HC_ADMIN_PORT generate artifacts/place.happ --run=$HC_APP_PORT -a place network --bootstrap http://127.0.0.1:$BOOT_PORT webrtc ws://127.0.0.1:$SIGNAL_PORT",
+    "new-sandbox:public" : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$HC_ADMIN_PORT generate artifacts/place.happ --run=$HC_APP_PORT -a place network --bootstrap https://bootstrap.holo.host/ webrtc wss://signal.holo.host",
+
+    "start:mem"          : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:mem\" \"sleep 5 && npm run start:ui -w webapp\"",
+    "start:local"        : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) concurrently \"npm run _save-ports\" \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:local\" \"sleep 5 && npm run start:ui -w webapp\"",
+    "start:public"       : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:public\" \"sleep 5 && npm run start:ui -w webapp\"",
+
+    "start:chaperone"    : "cross-env HC_APP_PORT=33735 HC_ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:mem\" \"sleep 5 && npm run start -w webapp-chaperone\"",
+    "start:holo-mainnet" : "PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run start:chaperone",
+
+    "devtest"            : "npm run build:devtest && npm run build -w webapp && npm run start:mem",
+    "devtest:we"         : "npm run build:devtest && npm run dist -w webapp && npm run package:webapp && npm run devtest -w we-applet",
+    "devtest:electron"   : "npm run build:devtest && npm run dist -w webapp && npm run package:webapp && npm run build -w electron && BUILD_MODE='dev' npm run start -w electron",
+    "prodtest"           : "npm run build:devtest && npm run dist -w webapp && npm run start:mem",
+    "prodtest:electron"  : "npm run build:devtest && npm run dist -w webapp && npm run start -w electron",
+
+    "package:webapp"     : "rm -rf artifacts/place-webapp-ui.zip && cd webapp/dist && bestzip ../../artifacts/place-webapp-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
+    "package:we"         : "rm -rf artifacts/place-we_applet-ui.zip && cd we-applet/dist && rm -f *.map && bestzip ../../artifacts/place-we_applet-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp",
+
+    "dist:we"            : "npm run package:webapp && npm run package:we",
+    "dist:electron"      : "bash submodules/hc-prebuilt/copy-binaries.sh electron/bin && npm run dist:build -w electron",
+
+    "_save-ports"        : "echo $HC_APP_PORT > .hc_app_$INDEX && echo $HC_ADMIN_PORT > .hc_admin_$INDEX",
+
+    "serve:run"          : "hc run-local-services --bootstrap-port $BOOT_PORT --signal-port $SIGNAL_PORT",
+    "serve:save"         : "echo SIGNAL_PORT=$SIGNAL_PORT && echo $SIGNAL_PORT > .hc_signalenv && echo $BOOT_PORT > .hc_bootenv && echo BOOT_PORT=$BOOT_PORT",
+    "serve"              : "cross-env BOOT_PORT=$(cat .hc_bootenv) SIGNAL_PORT=$(cat .hc_signalenv) npm run serve:run",
+    "network2"           : "npm run clean:hc & npm run build:devtest && cross-env BOOT_PORT=$(port) SIGNAL_PORT=$(port) concurrently \"npm run serve:save\" \"npm run serve:run\" \"cross-env INDEX=0 npm run start:local\" \"sleep 1 && cross-env INDEX=1 npm run start:local\"",
+    "network3"           : "npm run clean:hc & npm run build:devtest && cross-env BOOT_PORT=$(port) SIGNAL_PORT=$(port) concurrently \"npm run serve:save\" \"npm run serve:run\" \"cross-env INDEX=0 npm run start:local\" \"sleep 1 && cross-env INDEX=1 npm run start:local\" \"sleep 2 && cross-env INDEX=2 npm run start:local\"",
+    "network:we"         : "npm run clean:hc & npm run network:local2 -w we-applet",
+
+    "local:sandbox"      : "echo INDEX $INDEX & echo PORTS $BOOT_PORT $SIGNAL_PORT $HC_APP_PORT $HC_ADMIN_PORT & RUST_LOG=warn WASM_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$HC_ADMIN_PORT run $INDEX",
+    "_local"             : "cross-env BOOT_PORT=$(cat .hc_bootenv) SIGNAL_PORT=$(cat .hc_signalenv) HC_APP_PORT=$(cat .hc_app_$INDEX) HC_ADMIN_PORT=$(cat .hc_admin_$INDEX) BUILD_MODE='dev' ADD_PROFILES=1 concurrently \"npm run local:sandbox\" \"sleep 7 && npm run start:ui -w webapp\"",
+    "local0"             : "cross-env INDEX=0 npm run _local",
+    "local1"             : "cross-env INDEX=1 npm run _local",
+    "local2"             : "cross-env INDEX=2 npm run _local",
+
+    "start:launcher"     : "echo pass | hc-launch --piped -n 1 artifacts/place.webhapp network mem",
+
+    "hc-host:gen-agent"  : "sh ./scripts/gen-host-agent.sh",
+    "hc-host:run"        : "$npm_package_config_bin/hc sandbox r 0 -p=8888",
+    "serve:self-hosted"  : "PLACE_APP_CONTEXT='self-hosted' vue-cli-service serve",
+    "serve:holo"         : "PLACE_APP_CONTEXT='holo-host' PLACE_CHAPERONE_SERVER_URL='http://localhost:24274/' vue-cli-service serve",
+    "self-hosted"        : "nix-shell --command 'holo-dev-server -p 24274 artifacts/place.happ'",
+
+    "update-version"     : "bash scripts/update-version-number.sh $npm_package_version",
+
+    "dl-test-release"    : "rm -rf release & mkdir -p release & gh release download manual-release -D release -R lightningrodlabs/place",
+
+    "clean"              : "bash scripts/clean.sh",
+    "clean:npm"          : "bash scripts/clean-npm.sh",
+    "clean:hc"           : "rm -rf .hc* & rm -rf electron/web/*.js",
+    "clean:all"          : "npm run clean:agents & npm run clean:npm & npm run clean"
+
+
+
   },
   "devDependencies": {
     "@holochain-playground/cli": "^0.0.8",
@@ -96,7 +121,7 @@
     "@ddd-qc/cell-proxy": "0.19.4",
     "@ddd-qc/lit-happ": "0.19.4",
     "@holochain-open-dev/core-types": "0.6.3",
-    "@holochain/client": "=0.14.1",
+    "@holochain/client": "=0.16.1",
     "@lit-labs/context": "0.2.0",
     "@shoelace-style/shoelace": "2.4.0",
     "lit": "2.6.0"

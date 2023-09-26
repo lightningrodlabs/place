@@ -14,7 +14,7 @@ console.log("web-dev-server BUILD_MODE =", BUILD_MODE);
 /** Use Hot Module replacement by adding --hmr to the start command */
 const hmr = process.argv.includes('--hmr');
 
-console.log("web-dev-server.process.env.HC_PORT =", process.env.HC_PORT)
+console.log("web-dev-server.process.env.HC_APP_PORT =", process.env.HC_APP_PORT)
 
 export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
   open: true,
@@ -38,8 +38,8 @@ export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
     replace({
       "preventAssignment": true,
       'process.env.BUILD_MODE': BUILD_MODE,
-      'process.env.HC_APP_PORT': JSON.stringify(process.env.HC_PORT || 8888),
-      'process.env.HC_ADMIN_PORT': JSON.stringify(process.env.ADMIN_PORT || 8889),
+      'process.env.HC_APP_PORT': JSON.stringify(process.env.HC_APP_PORT || 8888),
+      'process.env.HC_ADMIN_PORT': JSON.stringify(process.env.HC_ADMIN_PORT || 8889),
       '  COMB =': 'window.COMB =',
       delimiters: ['', ''],
     }),

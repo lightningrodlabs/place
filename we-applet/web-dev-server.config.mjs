@@ -39,8 +39,8 @@ export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
     replace({
       "preventAssignment": true,
       'process.env.BUILD_MODE': BUILD_MODE,
-      'process.env.HC_APP_PORT': JSON.stringify(process.env.HC_PORT || 8888),
-      'process.env.HC_ADMIN_PORT': JSON.stringify(process.env.ADMIN_PORT || 8889),
+      'process.env.HC_APP_PORT': JSON.stringify(process.env.HC_APP_PORT || 8888),
+      'process.env.HC_ADMIN_PORT': JSON.stringify(process.env.HC_ADMIN_PORT || 8889),
       '  COMB =': 'window.COMB =',
       delimiters: ["", ""],
     }),
