@@ -4,8 +4,9 @@ import copy from "rollup-plugin-copy";
 import babel from "@rollup/plugin-babel";
 
 // import replace from "@rollup/plugin-replace";
-// import builtins from "rollup-plugin-node-builtins";
-// import globals from "rollup-plugin-node-globals";
+import builtins from "rollup-plugin-node-builtins";
+import html from "@web/rollup-plugin-html";
+
 
 //import { importMetaAssets } from "@web/rollup-plugin-import-meta-assets";
 //import { terser } from "rollup-plugin-terser";
@@ -14,11 +15,13 @@ import babel from "@rollup/plugin-babel";
 const DIST_FOLDER = "dist"
 
 export default {
-  input: "out-tsc/index.js",
+  input: "index.html",
   output: {
+    entryFileNames: "index.js",
+    //chunkFileNames: "[hash].js",
+    assetFileNames: "assets[extname]",
     format: "es",
     dir: DIST_FOLDER,
-    sourcemap: false
   },
   watch: {
     clearScreen: false,
@@ -28,16 +31,24 @@ export default {
   plugins: [
     copy({
       targets: [
-        { src: "../node_modules/@shoelace-style/shoelace/dist/themes/light.css", dest: DIST_FOLDER, rename: "styles.css" },
         { src: "../webapp/logo.svg", dest: DIST_FOLDER },
-        { src: "../webapp/logo.svg", dest: "demo" }
+        { src: "../webapp/logo.svg", dest: DIST_FOLDER + "/assets" },
+        { src: "../node_modules/@shoelace-style/shoelace/dist/themes/light.css", dest: DIST_FOLDER, rename: "styles.css" },
+        { src: '../node_modules/@shoelace-style/shoelace/dist/assets', dest: DIST_FOLDER }
       ],
+    }),
+    /** Enable using HTML as rollup entrypoint */
+    html({
+      //minify: true,
+      //injectServiceWorker: true,
+      //serviceWorkerPath: "dist/sw.js",
     }),
     /** Resolve bare module imports */
     nodeResolve({
       browser: true,
       preferBuiltins: false,
     }),
+    builtins(),
     /** Compile JS to a lower language target */
     babel({
       exclude: /node_modules/,

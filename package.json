@@ -4,7 +4,8 @@
   "config": {
     "hc_version": "0.2.2",
     "zits_version": "1.9.0",
-    "bin": "bin"
+    "bin": "bin",
+    "we_test_folder": "../we-main"
   },
   "private": true,
   "workspaces": [
@@ -34,9 +35,9 @@
     "new-sandbox:local"  : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$HC_ADMIN_PORT generate artifacts/place.happ --run=$HC_APP_PORT -a place network --bootstrap http://127.0.0.1:$BOOT_PORT webrtc ws://127.0.0.1:$SIGNAL_PORT",
     "new-sandbox:public" : "RUST_LOG=warn echo \"pass\" | $npm_package_config_bin/hc s --piped -f=$HC_ADMIN_PORT generate artifacts/place.happ --run=$HC_APP_PORT -a place network --bootstrap https://bootstrap.holo.host/ webrtc wss://signal.holo.host",
 
-    "start:mem"          : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:mem\" \"sleep 5 && npm run start:ui -w webapp\"",
-    "start:local"        : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) concurrently \"npm run _save-ports\" \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:local\" \"sleep 5 && npm run start:ui -w webapp\"",
-    "start:public"       : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:public\" \"sleep 5 && npm run start:ui -w webapp\"",
+    "start:mem"          : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) HAPP_BUILD_MODE='Debug' concurrently \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:mem\" \"sleep 5 && npm run start:ui -w webapp\"",
+    "start:local"        : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) HAPP_BUILD_MODE='Debug' concurrently \"npm run _save-ports\" \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:local\" \"sleep 5 && npm run start:ui -w webapp\"",
+    "start:public"       : "cross-env HC_APP_PORT=$(port) HC_ADMIN_PORT=$(port) HAPP_BUILD_MODE='Debug' concurrently \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:public\" \"sleep 5 && npm run start:ui -w webapp\"",
 
     "start:chaperone"    : "cross-env HC_APP_PORT=33735 HC_ADMIN_PORT=$(port) concurrently \"npm run build:watch -w webcomponents\" \"npm run new-sandbox:mem\" \"sleep 5 && npm run start -w webapp-chaperone\"",
     "start:holo-mainnet" : "PLACE_CHAPERONE_SERVER_URL='https://devnet-chaperone.holo.host' npm run start:chaperone",
@@ -48,9 +49,11 @@
     "prodtest:electron"  : "npm run build:devtest && npm run dist -w webapp && npm run start -w electron",
 
     "package:webapp"     : "rm -rf artifacts/place-webapp-ui.zip && cd webapp/dist && bestzip ../../artifacts/place-webapp-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
-    "package:we"         : "rm -rf artifacts/place-we_applet-ui.zip && cd we-applet/dist && rm -f *.map && bestzip ../../artifacts/place-we_applet-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp",
-
+    "package:we"         : "rm -rf artifacts/place-we_applet-ui.zip && cd we-applet/dist && rm -f *.map && bestzip ../../artifacts/place-we_applet-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp && npm run cp:we",
     "dist:we"            : "npm run package:webapp && npm run package:we",
+    "cp:we"              : "cp artifacts/place-we_applet.webhapp $npm_package_config_we_test_folder/testing-applets",
+
+
     "dist:electron"      : "bash submodules/hc-prebuilt/copy-binaries.sh electron/bin && npm run dist:build -w electron",
 
     "_save-ports"        : "echo $HC_APP_PORT > .hc_app_$INDEX && echo $HC_ADMIN_PORT > .hc_admin_$INDEX",
@@ -118,10 +121,12 @@
     "watch-cli": "^0.2.3"
   },
   "dependencies": {
-    "@ddd-qc/cell-proxy": "0.19.4",
-    "@ddd-qc/lit-happ": "0.19.4",
+    "@ddd-qc/cell-proxy": "=0.19.19",
+    "@ddd-qc/lit-happ": "=0.19.19",
+    "@ddd-qc/we-utils": "=0.19.19",
     "@holochain-open-dev/core-types": "0.6.3",
-    "@holochain/client": "=0.16.1",
+    "@holochain/client": "=0.16.2",
+    "@lightningrodlabs/we-applet": "0.10.0",
     "@lit-labs/context": "0.2.0",
     "@shoelace-style/shoelace": "2.4.0",
     "lit": "2.6.0"

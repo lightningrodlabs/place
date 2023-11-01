@@ -11,7 +11,8 @@ import {
 } from "@holochain/client";
 
 import {
-  WeServices, weServicesContext,
+  weClientContext,
+  WeServices,
 } from "@lightningrodlabs/we-applet";
 
 import {
@@ -22,8 +23,8 @@ import {
   CellContext,
   CellsForRole,
   CloneId, delay,
-  Dictionary,
-  HappElement,
+  Dictionary, HAPP_ENV,
+  HappElement, HappEnvType,
   HCL,
   HvmDef,
   printCellsForRole
@@ -32,49 +33,10 @@ import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.typ
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
 import {CellId} from "@holochain/client/lib/types";
 import { Mutex } from 'async-mutex';
-
+import {HC_ADMIN_PORT, HC_APP_PORT} from "./globals"
+import {HAPP_ELECTRON_API} from "@ddd-qc/lit-happ/dist/globals";
 //import "@shoelace-style/shoelace/dist/components/button/button";
 //import "@shoelace-style/shoelace";
-
-
-export let BUILD_MODE: string;
-let HC_APP_PORT: number;
-let HC_ADMIN_PORT: number;
-export const MY_ELECTRON_API = 'electronBridge' in window? window.electronBridge as any : undefined;
-export const IS_ELECTRON = typeof MY_ELECTRON_API !== 'undefined'
-if (IS_ELECTRON) {
-  BUILD_MODE = MY_ELECTRON_API.BUILD_MODE;
-  const searchParams = new URLSearchParams(window.location.search);
-  const urlPort = searchParams.get("APP");
-  if(!urlPort) {
-    console.error("Missing APP value in URL", window.location.search)
-  }
-  HC_APP_PORT = Number(urlPort);
-  const urlAdminPort = searchParams.get("ADMIN");
-  HC_ADMIN_PORT = Number(urlAdminPort);
-  const NETWORK_ID = searchParams.get("UID");
-  console.log(NETWORK_ID);
-  DEFAULT_PLACE_DEF.id = "electron-place" + '-' + NETWORK_ID;  // override installed_app_id
-} else {
-  try {
-    HC_APP_PORT = Number(process.env.HC_APP_PORT);
-    HC_ADMIN_PORT = Number(process.env.HC_ADMIN_PORT);
-  } catch (e) {
-    console.log("HC_APP_PORT not defined")
-  }
-  try {
-    BUILD_MODE = process.env.BUILD_MODE;
-  } catch (e) {
-    console.log("BUILD_MODE not defined. Defaulting to 'prod'");
-    BUILD_MODE = 'prod';
-  }
-}
-
-console.log("DEFAULT_PLACE_DEF.id", DEFAULT_PLACE_DEF.id)
-console.log("HC_APP_PORT", HC_APP_PORT);
-console.log("HC_ADMIN_PORT", HC_ADMIN_PORT);
-console.log("BUILD_MODE", BUILD_MODE)
-console.log("IS_ELECTRON", IS_ELECTRON);
 
 
 /**
@@ -94,6 +56,7 @@ export class PlaceApp extends HappElement {
 
   static readonly HVM_DEF: HvmDef = DEFAULT_PLACE_DEF;
 
+  @state() private _hasHolochainFailed = true;
   @state() private _loaded = false;
   @state() private _curPlaceCloneId: CloneId | null = null;
   @state() private _placeCells!: CellsForRole;
@@ -121,13 +84,13 @@ export class PlaceApp extends HappElement {
     canAuthorizeZfns: boolean,
     appId: InstalledAppId,
     weServices: WeServices,
-    thisAppletId: EntryHash,
+    thisAppletHash: EntryHash,
   ) : Promise<PlaceApp> {
     const app = new PlaceApp(appWs, adminWs, canAuthorizeZfns, appId);
     /** Provide it as context */
-    console.log(`\t\tProviding context "${weServicesContext}" | in host `, app);
-    app._weProvider = new ContextProvider(app, weServicesContext, weServices);
-    app.appletId = encodeHashToBase64(thisAppletId);
+    console.log(`\t\tProviding context "${weClientContext}" | in host `, app);
+    app._weProvider = new ContextProvider(app, weClientContext, weServices);
+    app.appletId = encodeHashToBase64(thisAppletHash);
     return app;
   }
 
@@ -160,7 +123,7 @@ export class PlaceApp extends HappElement {
 
     /** Check AdminWs */
     if (!this._adminWs && this._canAuthorizeZfns) {
-      this._adminWs = await AdminWebsocket.connect(`ws://localhost:${HC_ADMIN_PORT}`);
+      this._adminWs = await AdminWebsocket.connect(new URL(`ws://localhost:${HC_ADMIN_PORT}`));
       //if (this._adminWs) {
       //  const apps = await this._adminWs.listApps({});
       //  console.log("Installed apps:", apps);
@@ -178,10 +141,22 @@ export class PlaceApp extends HappElement {
     }
 
     /** Send dnaHash to electron */
-    if (IS_ELECTRON) {
+    if (HAPP_ENV == HappEnvType.Electron) {
       //const ipc = window.require('electron').ipcRenderer;
-      let _reply = (MY_ELECTRON_API as any).sendSync('dnaHash', this.curPlaceDvm.cell.dnaHash);
+      let _reply = (HAPP_ELECTRON_API as any).sendSync('dnaHash', this.placeDashboardDvm.cell.dnaHash);
     }
+
+    /** Probe EntryDefs */
+    const PLACE_DEFAULT_COORDINATOR_ZOME_NAME = "zPlace";
+    // const allAppEntryTypes = await this.placeDashboardDvm.fetchAllEntryDefs();
+    // console.log("happInitialized(), allAppEntryTypes", allAppEntryTypes);
+    // console.log(`${PLACE_DEFAULT_COORDINATOR_ZOME_NAME} entries`, allAppEntryTypes[PLACE_DEFAULT_COORDINATOR_ZOME_NAME]);
+    // if (!allAppEntryTypes[PLACE_DEFAULT_COORDINATOR_ZOME_NAME] || allAppEntryTypes[PLACE_DEFAULT_COORDINATOR_ZOME_NAME].length == 0) {
+    //   console.warn(`No entries found for ${PLACE_DEFAULT_COORDINATOR_ZOME_NAME}`);
+    // } else {
+    //   this._hasHolochainFailed = false;
+    // }
+    this._hasHolochainFailed = false;
 
     /** Grab Place cells */
     this._placeCells = await this.appProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
@@ -368,6 +343,9 @@ export class PlaceApp extends HappElement {
     console.log("*** <place-app>.render()", this._loaded)
     if (!this._loaded) {
       return html`<span>Loading...</span>`;
+    }
+    if(this._hasHolochainFailed) {
+      return html`<div style="width: auto; height: auto; font-size: 4rem;">Failed to connect to Holochain Conductor</div>`;
     }
 
     /** Render Current Place */

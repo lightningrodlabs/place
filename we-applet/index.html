@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+  <meta name="Description" content="Place we-applet" />
+  <link href="../node_modules/@shoelace-style/shoelace/dist/themes/light.css" rel="stylesheet"/>
+  <base href="." />
+  <title>Place we-applet</title>
+  <script>
+    if (global === undefined) {
+      var global = window;
+    }
+  </script>
+</head>
+
+<body style="margin:0px;height:100vh;background: antiquewhite">
+  <script type="module">
+    console.log("Place we-applet index.html START");
+    window.IN_WE = true;
+    console.log("Waiting for Shoelace...")
+    await Promise.allSettled([
+      customElements.whenDefined('sl-button'),
+      //customElements.whenDefined('sl-card')
+    ]);
+    console.log("Shoelace READY!");
+  </script>
+  <script type="module">
+    import setupPlaceApplet from "./out-tsc";
+    console.log("Imported setupPlaceApplet");
+    const happElem = await setupPlaceApplet();
+    document.body.append(happElem);
+  </script>
+</body>
+</html>

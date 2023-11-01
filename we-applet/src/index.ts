@@ -1,27 +1,25 @@
-import {
-  AppAgentClient, EntryHash
-} from "@holochain/client";
-
-import {
-  WeApplet,
-} from "@lightningrodlabs/we-applet";
-
-import "@holochain-open-dev/profiles/dist/elements/profiles-context.js";
-import "@lightningrodlabs/we-applet/dist/elements/we-services-context.js";
-import "@lightningrodlabs/we-applet/dist/elements/hrl-link.js";
-
-import {appletViews} from "./applet-view";
-import {crossAppletViews} from "./cross-applet-view";
-import {HrlWithContext, WeServices} from "@lightningrodlabs/we-applet/dist/types";
+import {AppletServices} from "@lightningrodlabs/we-applet";
+import {DevTestNames, setup} from "@ddd-qc/we-utils";
+import {createPlaceApplet} from "./createPlaceApplet";
 
 
 /** */
-const applet: WeApplet = {
-  appletViews,
-  crossAppletViews,
-  attachmentTypes: async (appletClient: AppAgentClient, appletId: EntryHash, weServices: WeServices)=> {return {}},
-  search: async (appletClient: AppAgentClient, appletId: EntryHash, weServices: WeServices, searchFilter: string) => {return []},
-};
+async function setupPlaceApplet() {
+
+  const filesNames: DevTestNames = {
+    installed_app_id: "place-we_applet",
+    provisionedRoleName: "rPlaceDashboard",
+  }
+
+  const appletServices: AppletServices = {
+    attachmentTypes: async (_appletClient) => ({}),
+    getEntryInfo: () => (undefined),
+    blockTypes: {},
+    search: async (appletClient, searchFilter) => {return []},
+  };
+
+  return setup(appletServices, createPlaceApplet, filesNames);
+}
 
 
-export default applet;
+export default setupPlaceApplet;
