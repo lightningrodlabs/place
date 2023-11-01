@@ -17,3 +17,11 @@ roles:
     dna:
       bundled: "../../artifacts/place.dna"
       clone_limit: 10
+      # HACKISH: Redefining the properties here because otherwise the values from the dna.yaml will be deleted...
+      modifiers:
+        properties:
+        startTime: 1698867207
+        canvasSize: 200
+        bucketSizeSec: 120
+        pixelsPerBucket: 20
+        snapshotIntervalInBuckets: 5
