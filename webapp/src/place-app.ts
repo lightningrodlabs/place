@@ -1,29 +1,26 @@
 import { html } from "lit";
 import { state, property, customElement } from "lit/decorators.js";
-import {ContextProvider} from "@lit-labs/context";
+import {ContextProvider} from "@lit/context";
 import {
   AdminWebsocket,
   AppWebsocket,
   ClonedCell,
-  DnaHashB64,
+  DnaHashB64, EnableCloneCellRequest,
   encodeHashToBase64, EntryHash, EntryHashB64,
   InstalledAppId
 } from "@holochain/client";
 
-import {
-  weClientContext,
-  WeServices,
-} from "@lightningrodlabs/we-applet";
+import {WeaveServices} from "@theweave/api";
 
 import {
-  PlacePage,
+  PlacePage, weClientContext,
   DEFAULT_PLACE_DEF, PlaceDvm, PlaceDashboard, PlaceDashboardDvm,
 } from "@place/elements";
 import {
   CellContext,
   CellsForRole,
   CloneId, delay,
-  Dictionary, HAPP_ENV,
+  Dictionary, EntryId, HAPP_ENV,
   HappElement, HappEnvType,
   HCL,
   HvmDef,
@@ -31,10 +28,10 @@ import {
 } from "@ddd-qc/lit-happ";
 import {PlaceProperties, Snapshot} from "@place/elements/dist/bindings/place.types";
 import {Game} from "@place/elements/dist/bindings/place-dashboard.types";
-import {CellId} from "@holochain/client/lib/types";
 import { Mutex } from 'async-mutex';
 import {HC_ADMIN_PORT, HC_APP_PORT} from "./globals"
 import {HAPP_ELECTRON_API} from "@ddd-qc/lit-happ/dist/globals";
+import {WeServicesEx} from "@ddd-qc/we-utils";
 //import "@shoelace-style/shoelace/dist/components/button/button";
 //import "@shoelace-style/shoelace";
 
@@ -75,7 +72,7 @@ export class PlaceApp extends HappElement {
 
   protected _weProvider?: unknown; // FIXME type: ContextProvider<this.getContext()> ?
   public appletId?: EntryHashB64;
-
+  protected _weServices?: WeServicesEx;
 
   /**  */
   static async fromWe(
@@ -83,13 +80,14 @@ export class PlaceApp extends HappElement {
     adminWs: AdminWebsocket,
     canAuthorizeZfns: boolean,
     appId: InstalledAppId,
-    weServices: WeServices,
+    weServices: WeaveServices,
     thisAppletHash: EntryHash,
   ) : Promise<PlaceApp> {
     const app = new PlaceApp(appWs, adminWs, canAuthorizeZfns, appId);
     /** Provide it as context */
+    app._weServices = new WeServicesEx(weServices, [new EntryId(thisAppletHash)]);
     console.log(`\t\tProviding context "${weClientContext}" | in host `, app);
-    app._weProvider = new ContextProvider(app, weClientContext, weServices);
+    app._weProvider = new ContextProvider(app, weClientContext, app._weServices);
     app.appletId = encodeHashToBase64(thisAppletHash);
     return app;
   }
@@ -123,7 +121,7 @@ export class PlaceApp extends HappElement {
 
     /** Check AdminWs */
     if (!this._adminWs && this._canAuthorizeZfns) {
-      this._adminWs = await AdminWebsocket.connect(new URL(`ws://localhost:${HC_ADMIN_PORT}`));
+      this._adminWs = await AdminWebsocket.connect({url: new URL(`ws://localhost:${HC_ADMIN_PORT}`)});
       //if (this._adminWs) {
       //  const apps = await this._adminWs.listApps({});
       //  console.log("Installed apps:", apps);
@@ -143,7 +141,7 @@ export class PlaceApp extends HappElement {
     /** Send dnaHash to electron */
     if (HAPP_ENV == HappEnvType.Electron) {
       //const ipc = window.require('electron').ipcRenderer;
-      let _reply = (HAPP_ELECTRON_API as any).sendSync('dnaHash', this.placeDashboardDvm.cell.dnaHash);
+      let _reply = (HAPP_ELECTRON_API as any).sendSync('dnaHash', this.placeDashboardDvm.cell.address.dnaId.b64);
     }
 
     /** Probe EntryDefs */
@@ -198,12 +196,12 @@ export class PlaceApp extends HappElement {
     const cellDef = { modifiers: {properties: settings, origin_time: settings.startTime}, cloneName}
     const [clonedCell, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
     const cloneId = clonedCell.clone_id;
-    this._clones[dvm.cell.dnaHash] = cloneId;
+    this._clones[dvm.cell.address.dnaId.b64] = cloneId;
     this._placeCells = await this.appProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     //this._curPlaceId = dvm.cell.clone_id;
     console.log("hPlace clone created:", dvm.hcl.toString(), dvm.cell.name);
     /** Create Game Entry */
-    const game: Game = {name: cloneName, dna_hash: dvm.cell.id[0], settings}
+    const game: Game = {name: cloneName, dna_hash: dvm.cell.address.dnaId.hash, settings}
     await this.placeDashboardDvm.zvm.createGame(game);
     await this.disableClone(cloneId);
     return dvm as PlaceDvm;
@@ -261,8 +259,8 @@ export class PlaceApp extends HappElement {
 
 
   /** */
-  async enableClone(cloneId: CloneId | CellId): Promise<ClonedCell> {
-    const request = {app_id: this.hvm.appId, clone_cell_id: cloneId};
+  async enableClone(cloneId: CloneId/* | CellId*/): Promise<ClonedCell> {
+    const request: EnableCloneCellRequest = {/*app_id: this.hvm.appId,*/ clone_cell_id: cloneId};
     console.log("enableClone()", request);
     const clone = this.appProxy.enableCloneCell(request);
     /** Done */
@@ -277,7 +275,7 @@ export class PlaceApp extends HappElement {
     /** Look for clone with this dnaHash */
     for (const clone of Object.values(this._placeCells.clones)) {
       if (encodeHashToBase64(clone.cell_id[0]) == cloneB64) {
-        const appInfo = await this.appProxy.appInfo({installed_app_id: this.hvm.appId});
+        const appInfo = await this.appProxy.appInfo(/*{installed_app_id: this.hvm.appId}*/);
         console.log({appInfo});
         //const cells = await this.appProxy.fetchCells(DEFAULT_PLACE_DEF.id, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
         //console.log("cells", this.printCellsForRole("rPlace", cells));

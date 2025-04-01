@@ -1,5 +1,5 @@
 use hdk::prelude::*;
-use hdk::hash_path::path::{TypedPath, Component};
+use hdi::hash_path::path::{TypedPath, Component};
 use zome_utils::*;
 #[allow(unused_imports)]
 use place_model::*;

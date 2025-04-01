@@ -16,3 +16,5 @@ export * from './viewModel/place-dashboard.dvm';
 
 export * from './sharedStyles';
 
+export * from './constants';
+

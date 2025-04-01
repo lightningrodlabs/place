@@ -1,5 +1,5 @@
 import { DnaViewModel, ZvmDef } from "@ddd-qc/lit-happ";
-import {AppSignalCb} from "@holochain/client";
+import {SignalCb} from "@holochain/client";
 import {PlaceDashboardZvm} from "./place-dashboard.zvm";
 
 
@@ -13,7 +13,7 @@ export class PlaceDashboardDvm extends DnaViewModel {
   static readonly DEFAULT_BASE_ROLE_NAME = "rPlaceDashboard";
   static readonly ZVM_DEFS: ZvmDef[] = [PlaceDashboardZvm];
 
-  readonly signalHandler?: AppSignalCb;
+  readonly signalHandler?: SignalCb;
 
 
   /** QoL Helpers */
@@ -24,6 +24,6 @@ export class PlaceDashboardDvm extends DnaViewModel {
 
   protected hasChanged(): boolean {return true}
 
-  get perspective(): void {return}
+  get perspective(): Object {return {}}
 
 }

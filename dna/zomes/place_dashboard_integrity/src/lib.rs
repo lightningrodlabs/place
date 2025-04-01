@@ -15,16 +15,19 @@ pub struct Game {
    pub settings: PlaceProperties,
 }
 
-#[hdk_entry_defs]
+#[derive(Serialize, Deserialize, SerializedBytes, Clone)]
+#[hdk_entry_types]
 #[unit_enum(PlaceDashboardEntryTypes)]
 pub enum PlaceDashboardEntry {
-   #[entry_def(required_validations = 2, visibility = "public")]
+   #[entry_type(required_validations = 2, visibility = "public")]
    Game(Game),
 }
 
 
 /// List of all Link kinds handled by this Zome
 #[hdk_link_types]
+#[derive(Serialize, Deserialize)]
+#[repr(u8)]
 pub enum LinkKind {
    Path,
    Participants,

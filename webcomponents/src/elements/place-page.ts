@@ -59,7 +59,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   _loopCount: number = 0;
 
   /** used for stopping setInterval on exit */
-  _interval: NodeJS.Timer;
+  _interval: any;
 
 
   /** Getters */
@@ -786,7 +786,7 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
   onExit() {
     clearInterval(this._interval);
     this._viewport.destroy();
-    this.dispatchEvent(new CustomEvent('exit', {detail: this.cell.dnaHash, bubbles: true, composed: true}));
+    this.dispatchEvent(new CustomEvent('exit', {detail: this.cell.address.dnaId.b64, bubbles: true, composed: true}));
   }
 
   /** Render for real-time editing of frame */

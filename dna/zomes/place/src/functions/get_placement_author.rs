@@ -19,7 +19,7 @@ pub fn get_placement_author(input: GetPlacementAuthorInput) -> ExternResult<Opti
   std::panic::set_hook(Box::new(zome_panic_hook));
   debug!("*** get_placement_author() CALLED - {}", input.bucket_index);
   let placementEh = hash_entry(Placement::from(input.placement))?;
-  let maybe_details = get_details(placementEh, GetOptions::latest())?;
+  let maybe_details = get_details(placementEh, GetOptions::network())?;
   let Some(Details::Entry(entry_details)) = maybe_details else {
     //return error("No entry found at given address");
     return Ok(None);

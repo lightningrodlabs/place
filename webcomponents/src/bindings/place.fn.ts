@@ -9,8 +9,6 @@ export const placeFunctionNames: FunctionName[] = [
 	"get_zome_info", 
 	"get_dna_info",
 	"get_properties",
-
-
 	"get_author_rank",
 	"get_local_snapshots",
 	"get_placement_author",
@@ -21,7 +19,8 @@ export const placeFunctionNames: FunctionName[] = [
 	"place_pixel_at",
 	"publish_next_snapshot_at",
 	"publish_starting_snapshot",
-	"publish_same_snapshot_upto",];
+	"publish_same_snapshot_upto",
+];
 
 
 /** Generate tuple array of function names with given zomeName */

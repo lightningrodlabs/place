@@ -124,7 +124,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
 
 
   /** */
-  render() {
+  override render() {
     const gamesCount = Object.values(this._zvm.perspective.allGames).length;
     console.log("<place-dashboard> render()", this._initialized, gamesCount);
 
@@ -197,7 +197,7 @@ export class PlaceDashboard extends ZomeElement<PlaceDashboardPerspective, Place
   }
 
 
-  static get styles() {
+  static override get styles() {
     return [css`
 
       #card-create-new {

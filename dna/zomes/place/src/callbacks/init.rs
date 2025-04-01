@@ -1,10 +1,11 @@
-use hdk::hash_path::path::Component;
+use hdi::hash_path::path::Component;
 use hdk::prelude::*;
 use zome_utils::now;
 #[allow(unused_imports)]
 use place_model::*;
 use place_integrity::*;
 use crate::*;
+
 
 /// Zome Callback
 #[hdk_extern]

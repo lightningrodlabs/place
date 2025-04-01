@@ -11,7 +11,8 @@ export const placeDashboardFunctionNames: FunctionName[] = [
 	"get_properties",
 	"create_game",
 	"list_all_games",
-	"list_my_games",];
+	"list_my_games",
+];
 
 
 /** Generate tuple array of function names with given zomeName */

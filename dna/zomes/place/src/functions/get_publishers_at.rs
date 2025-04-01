@@ -17,7 +17,7 @@ pub fn get_publishers_at(time_bucket_index: u32) -> ExternResult<Vec<AgentPubKey
     return Ok(vec![])
   }
   let snapshotEh = hash_entry(maybe_snapshot.unwrap())?;
-  let maybe_details = get_details(snapshotEh, GetOptions::latest())?;
+  let maybe_details = get_details(snapshotEh, GetOptions::network())?;
   let mut publishers: Vec<AgentPubKeyB64> = Vec::new();
   if let Some(Details::Entry(entry_details)) = maybe_details {
     for action in entry_details.actions {

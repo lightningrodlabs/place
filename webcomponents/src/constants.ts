@@ -1,3 +1,9 @@
+import {createContext} from "@lit/context";
+import {WeServicesEx} from "@ddd-qc/we-utils";
+
+export const weClientContext = createContext<WeServicesEx>('we_client');
+
+
 //export const WORLD_SIZE = 100
 export const IMAGE_SCALE = 10
 

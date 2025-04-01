@@ -81,7 +81,7 @@ export class PlaceDashboardZvm extends ZomeViewModel {
       Promise.reject("Game with same name already exists: " + game.name);
     }
     const eh = await this.zomeProxy.createGame(game);
-    this._perspective.allGames[game.name] = [this.cell.agentPubKey, true, game];
+    this._perspective.allGames[game.name] = [this.cell.address.agentId.b64, true, game];
     this.notifySubscribers();
     return eh
   }

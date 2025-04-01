@@ -21,11 +21,11 @@ pub fn get_placements_at(time_bucket_index: u32) -> ExternResult<Vec<Placement>>
    let bucket_path = get_bucket_path(time);
    debug!("*** get_placements_at() bucket_path: {}", path_to_str(&bucket_path.clone().typed(LinkKind::Placements)?));
    /// Get placements at given bucket path
-   let mut pairs: Vec<(Placement, Link)> = get_typed_from_links(
+   let mut pairs: Vec<(Placement, Link)> = get_typed_from_links(link_input(
       bucket_path.path_entry_hash()?,
       LinkKind::Placements,
       None,
-   )?;
+   ))?;
    /// Sort by Link timestamp
    pairs.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp));
    debug!("****** sorted pairs:");
