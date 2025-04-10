@@ -102,4 +102,8 @@ export class PlaceDashboardProxy extends ZomeProxy {
   async listMyGames(): Promise<[AgentArray, Game][]> {
     return this.call('list_my_games', null);
   }
+
+  async getRecordAuthor(dh: AnyDhtArray): Promise<AgentArray> {
+    return this.call('get_record_author', dh);
+  }
 }

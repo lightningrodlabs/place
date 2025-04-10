@@ -20,6 +20,7 @@ export const placeFunctionNames: FunctionName[] = [
 	"publish_next_snapshot_at",
 	"publish_starting_snapshot",
 	"publish_same_snapshot_upto",
+	"get_record_author",
 ];
 
 

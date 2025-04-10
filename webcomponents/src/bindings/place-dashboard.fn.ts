@@ -12,6 +12,7 @@ export const placeDashboardFunctionNames: FunctionName[] = [
 	"create_game",
 	"list_all_games",
 	"list_my_games",
+	"get_record_author",
 ];
 
 

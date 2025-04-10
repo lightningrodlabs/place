@@ -121,8 +121,8 @@
   "dependencies": {
     "@holochain/client": "=0.18.0",
     "@theweave/api": "=0.4.0-alpha.3",
-    "@ddd-qc/cell-proxy": "=0.31.10",
-    "@ddd-qc/lit-happ": "=0.31.10",
+    "@ddd-qc/cell-proxy": "=0.31.12",
+    "@ddd-qc/lit-happ": "=0.31.12",
     "@ddd-qc/we-utils": "=0.31.10",
     "@holochain-open-dev/core-types": "0.7.0",
     "@lit/context": "1.0.1",

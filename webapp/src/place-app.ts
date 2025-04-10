@@ -32,6 +32,7 @@ import { Mutex } from 'async-mutex';
 import {HC_ADMIN_PORT, HC_APP_PORT} from "./globals"
 import {HAPP_ELECTRON_API} from "@ddd-qc/lit-happ/dist/globals";
 import {WeServicesEx} from "@ddd-qc/we-utils";
+import {CellAddress} from "@ddd-qc/cell-proxy/dist/types";
 //import "@shoelace-style/shoelace/dist/components/button/button";
 //import "@shoelace-style/shoelace";
 
@@ -43,9 +44,23 @@ import {WeServicesEx} from "@ddd-qc/we-utils";
 export class PlaceApp extends HappElement {
 
   /** */
-  constructor(appWs?: AppWebsocket, private _adminWs?: AdminWebsocket, private _canAuthorizeZfns?: boolean,  appId?: InstalledAppId) {
-    console.log("PlaceApp", appId)
-    super(appWs? appWs : HC_APP_PORT? HC_APP_PORT : 0, appId);
+  constructor(
+    appWs?: AppWebsocket,
+    private _adminWs?: AdminWebsocket,
+    private _canAuthorizeZfns?: boolean,
+    appId?: InstalledAppId,
+    ) {
+    console.log("<place-app>.ctor()", appId)
+
+    const adminUrl = _adminWs
+      ? undefined
+      : HC_ADMIN_PORT
+        ? new URL(`ws://localhost:${HC_ADMIN_PORT}`)
+        : undefined;
+
+
+    super(appWs? appWs : HC_APP_PORT? HC_APP_PORT : 0, appId, adminUrl);
+
     if (_canAuthorizeZfns == undefined) {
       this._canAuthorizeZfns = true;
     }
@@ -117,32 +132,14 @@ export class PlaceApp extends HappElement {
 
   /** */
   async hvmConstructed() {
-    console.log("hvmConstructed()", HC_ADMIN_PORT, HC_APP_PORT, this._canAuthorizeZfns);
-
-    /** Check AdminWs */
-    if (!this._adminWs && this._canAuthorizeZfns) {
-      this._adminWs = await AdminWebsocket.connect({url: new URL(`ws://localhost:${HC_ADMIN_PORT}`)});
-      //if (this._adminWs) {
-      //  const apps = await this._adminWs.listApps({});
-      //  console.log("Installed apps:", apps);
-      //}
-    }
-    if (this._adminWs && this._canAuthorizeZfns) {
-      await this.hvm.authorizeAllZomeCalls(this._adminWs);
-      console.log("*** Zome call authorization complete");
-    } else {
-      if (!this._canAuthorizeZfns) {
-        console.warn("No adminWebsocket provided (Zome call authorization done)")
-      } else {
-        console.log("Zome call authorization done externally")
-      }
-    }
+    console.log("<place-app>.hvmConstructed()", HC_ADMIN_PORT, HC_APP_PORT, this._adminWs);
 
     /** Send dnaHash to electron */
     if (HAPP_ENV == HappEnvType.Electron) {
       //const ipc = window.require('electron').ipcRenderer;
       let _reply = (HAPP_ELECTRON_API as any).sendSync('dnaHash', this.placeDashboardDvm.cell.address.dnaId.b64);
     }
+    this.appProxy.getCellProxy(this.placeDashboardDvm.cell.address).setCanThrottle(false);
 
     /** Probe EntryDefs */
     const PLACE_DEFAULT_COORDINATOR_ZOME_NAME = "zPlace";
@@ -168,6 +165,7 @@ export class PlaceApp extends HappElement {
       } catch(e) {
         console.warn("EnableClone failed for " + cloneId, e);
       }
+      this.appProxy.getCellProxy(CellAddress.from(cell.cell_id)).setCanThrottle(false);
     }
     console.log("this._clones", this._clones);
 
@@ -200,6 +198,7 @@ export class PlaceApp extends HappElement {
     this._placeCells = await this.appProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);
     //this._curPlaceId = dvm.cell.clone_id;
     console.log("hPlace clone created:", dvm.hcl.toString(), dvm.cell.name);
+    this.appProxy.getCellProxy(CellAddress.from(clonedCell.cell_id)).setCanThrottle(false);
     /** Create Game Entry */
     const game: Game = {name: cloneName, dna_hash: dvm.cell.address.dnaId.hash, settings}
     await this.placeDashboardDvm.zvm.createGame(game);
@@ -370,12 +369,4 @@ export class PlaceApp extends HappElement {
     `;
   }
 
-
-  static get scopedElements() {
-    return {
-      "place-page": PlacePage,
-      "place-dashboard": PlaceDashboard,
-      "cell-context": CellContext,
-    };
-  }
 }

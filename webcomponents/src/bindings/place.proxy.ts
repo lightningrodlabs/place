@@ -134,4 +134,8 @@ export class PlaceProxy extends ZomeProxy {
   async publishSameSnapshotUpto(input: BucketRangeInput): Promise<ActionArray[]> {
     return this.call('publish_same_snapshot_upto', input);
   }
+
+  async getRecordAuthor(dh: AnyDhtArray): Promise<AgentArray> {
+    return this.call('get_record_author', dh);
+  }
 }

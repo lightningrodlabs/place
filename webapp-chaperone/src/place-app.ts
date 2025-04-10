@@ -111,11 +111,4 @@ export class PlaceApp extends ScopedElementsMixin(LitElement) {
     `;
   }
 
-
-  /** */
-  static get scopedElements() {
-    return {
-      "place-controller": PlaceController,
-    };
-  }
 }
