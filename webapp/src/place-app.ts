@@ -101,6 +101,7 @@ export class PlaceApp extends HappElement {
     const app = new PlaceApp(appWs, adminWs, canAuthorizeZfns, appId);
     /** Provide it as context */
     app._weServices = new WeServicesEx(weServices, [new EntryId(thisAppletHash)]);
+    console.log("fromWe()", app._weServices)
     console.log(`\t\tProviding context "${weClientContext}" | in host `, app);
     app._weProvider = new ContextProvider(app, weClientContext, app._weServices);
     app.appletId = encodeHashToBase64(thisAppletHash);
@@ -190,9 +191,9 @@ export class PlaceApp extends HappElement {
 
   /** */
   async onAddClone(cloneName: string, settings: PlaceProperties): Promise<PlaceDvm> {
-    console.log("onAddClone()", cloneName, this.hvm.appId);
+    console.log("onAddClone()", cloneName, this.hvm.appId, this._weServices);
     const cellDef = { modifiers: {properties: settings, origin_time: settings.startTime}, cloneName}
-    const [clonedCell, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef);
+    const [clonedCell, dvm] = await this.hvm.cloneDvm(PlaceDvm.DEFAULT_BASE_ROLE_NAME, cellDef, this._weServices);
     const cloneId = clonedCell.clone_id;
     this._clones[dvm.cell.address.dnaId.b64] = cloneId;
     this._placeCells = await this.appProxy.fetchCells(this.hvm.appId, PlaceDvm.DEFAULT_BASE_ROLE_NAME);

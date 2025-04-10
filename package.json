@@ -4,8 +4,7 @@
   "config": {
     "hc_version": "0.4.1",
     "zits_version": "1.16.3",
-    "bin": "bin",
-    "we_test_folder": "../we-main"
+    "bin": "bin"
   },
   "private": true,
   "workspaces": [
@@ -49,9 +48,14 @@
     "prodtest:electron"  : "npm run build:devtest && npm run dist -w webapp && npm run start -w electron",
 
     "package:webapp"     : "rm -rf artifacts/place-webapp-ui.zip && cd webapp/dist && bestzip ../../artifacts/place-webapp-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack webapp/webhapp.workdir -o artifacts/place.webhapp",
-    "package:we"         : "rm -rf artifacts/place-we_applet-ui.zip && cd we-applet/dist && rm -f *.map && bestzip ../../artifacts/place-we_applet-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp && npm run cp:we",
+    "package:we"         : "rm -rf artifacts/place-we_applet-ui.zip && cd we-applet/dist && rm -f *.map && bestzip ../../artifacts/place-we_applet-ui.zip * && cd ../.. && $npm_package_config_bin/hc web-app pack we-applet/webhapp.workdir -o artifacts/place-we_applet.webhapp",
     "dist:we"            : "npm run package:webapp && npm run package:we",
-    "cp:we"              : "cp artifacts/place-we_applet.webhapp $npm_package_config_we_test_folder/testing-applets",
+
+
+    "prodtest:we"        : "cross-env BOOTSTRAP_PORT=$(port) SIGNAL_PORT=$(port) concurrently \"npm run serve:run\" \"npm run prodtest:we-launch\"",
+    "prodtest:we-launch" : "weave \"-b http://127.0.0.1:$BOOTSTRAP_PORT\" \"-s ws://127.0.0.1:$SIGNAL_PORT\" --dev-config testdata/we.prodtest.config.json --agent-idx 1",
+
+    "prodtestfull:we"    : "npm run build:devtest && npm run dist:we && npm run prodtest:we",
 
 
     "dist:electron"      : "bash submodules/hc-prebuilt/copy-binaries.sh electron/bin && npm run dist:build -w electron",
@@ -92,6 +96,7 @@
 
   },
   "devDependencies": {
+    "@theweave/cli": "0.13.0-rc.1",
     "@joseph184/rollup-plugin-node-builtins": "^2.1.4",
     "@rollup/plugin-commonjs": "^18.0.0",
     "@rollup/plugin-node-resolve": "^13.0.4",
@@ -122,8 +127,8 @@
   "dependencies": {
     "@holochain/client": "=0.18.0",
     "@theweave/api": "=0.4.0-alpha.3",
-    "@ddd-qc/cell-proxy": "=0.31.12",
-    "@ddd-qc/lit-happ": "=0.31.12",
+    "@ddd-qc/cell-proxy": "=0.31.13",
+    "@ddd-qc/lit-happ": "=0.31.13",
     "@ddd-qc/we-utils": "=0.31.10",
     "@holochain-open-dev/core-types": "0.7.0",
     "@lit/context": "1.0.1",
