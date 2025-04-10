@@ -1,14 +1,14 @@
 import {
-  AppAgentWebsocket,
-  } from "@holochain/client";
+  AppWebsocket,
+} from "@holochain/client";
 
 import {
   RenderInfo,
-  WeServices,
-} from "@lightningrodlabs/we-applet";
+  WeaveServices,
+} from "@theweave/api";
 
-import "@lightningrodlabs/we-applet/dist/elements/we-client-context.js";
-import "@lightningrodlabs/we-applet/dist/elements/hrl-link.js";
+//import "@theweave/api/dist/elements/we-client-context.js";
+//import "@theweave/api/dist/elements/hrl-link.js";
 
 import {PlaceApp} from "place";
 import {AppletViewInfo} from "@ddd-qc/we-utils";
@@ -17,18 +17,17 @@ import {AppletViewInfo} from "@ddd-qc/we-utils";
 /** */
 export async function createPlaceApplet(
     renderInfo: RenderInfo,
-    weServices: WeServices,
+    weServices: WeaveServices,
 ): Promise<PlaceApp> {
 
-  if (renderInfo.type =="cross-applet-view") {
-    throw Error("cross-applet-view not implemented by Files");
+  if (renderInfo.type =="cross-group-view") {
+    throw Error("cross-group-view not implemented");
   }
 
   const appletViewInfo = renderInfo as AppletViewInfo;
   const mainAppInfo = await appletViewInfo.appletClient.appInfo();
 
-  const mainAppAgentWs = appletViewInfo.appletClient as AppAgentWebsocket;
-  const mainAppWs = mainAppAgentWs.appWebsocket;
+  const mainAppWs = appletViewInfo.appletClient as AppWebsocket;
 
   /** Create PlaceApp */
   const app = await PlaceApp.fromWe(
