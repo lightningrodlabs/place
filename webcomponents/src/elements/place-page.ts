@@ -201,9 +201,10 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
 
     this._viewport = new Viewport({
       passiveWheel: false,                // whether the 'wheel' event is set to passive (note: if false, e.preventDefault() will be called when wheel is used over the viewport)
-      //screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
-      //screenHeight: canvas.offsetHeight            // screen height used by viewport (eg, size of canvas)
+      screenWidth: canvas.offsetWidth,              // screen width used by viewport (eg, size of canvas)
+      screenHeight: canvas.offsetHeight            // screen height used by viewport (eg, size of canvas)
     })
+    console.log("<place-page> initPixiApp() _viewport", this._viewport);
     // TODO: remove this workaround (otherwise we get an error on undefined object)
     //this._viewport.trackedPointers = []
     this._viewport
@@ -789,9 +790,10 @@ export class PlacePage extends ZomeElement<PlacePerspective, PlaceZvm> {
     this.dispatchEvent(new CustomEvent('exit', {detail: this.cell.address.dnaId.b64, bubbles: true, composed: true}));
   }
 
+
   /** Render for real-time editing of frame */
   renderNormal() {
-    //console.log("<place-page> renderNormal()");
+    //console.log("<place-page> renderNormal() _viewport", this._viewport);
     /** Frame consts */
     const maybeProperties = this._zvm.getMaybeProperties()
     const nowMs: number = Date.now()
