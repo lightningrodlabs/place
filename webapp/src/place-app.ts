@@ -254,7 +254,7 @@ export class PlaceApp extends HappElement {
   async disableClone(cloneId: CloneId): Promise<void> {
     const request = {app_id: this.hvm.appId, clone_cell_id: cloneId};
     console.log("disableClone()", request);
-    await this.appProxy.disableCloneCell(request);
+    this._weServices? await this._weServices.enableCloneCell(request) : await this.appProxy.disableCloneCell(request);
   }
 
 
@@ -262,7 +262,12 @@ export class PlaceApp extends HappElement {
   async enableClone(cloneId: CloneId/* | CellId*/): Promise<ClonedCell> {
     const request: EnableCloneCellRequest = {/*app_id: this.hvm.appId,*/ clone_cell_id: cloneId};
     console.log("enableClone()", request);
-    const clone = this.appProxy.enableCloneCell(request);
+    let clone;
+    if (this._weServices) {
+      clone = this._weServices.enableCloneCell(request);
+    } else {
+      clone = this.appProxy.enableCloneCell(request);
+    }
     /** Done */
     return clone;
   }
