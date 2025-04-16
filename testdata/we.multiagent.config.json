@@ -1,0 +1,67 @@
+{
+  "groups": [
+    {
+      "name": "Cdric",
+      "networkSeed": "test",
+      "icon": {
+        "type": "filesystem",
+        "path": "testdata/cdric.png"
+      },
+      "creatingAgent": {
+        "agentIdx": 1,
+        "agentProfile": {
+          "nickname": "Alex",
+          "avatar": {
+            "type": "filesystem",
+            "path": "testdata/alex.jpg"
+          }
+        }
+      },
+      "joiningAgents": [
+      {
+        "agentIdx": 2,
+        "agentProfile": {
+          "nickname": "Billy",
+          "avatar": {
+            "type": "filesystem",
+            "path": "testdata/billy.png"
+            }
+          }
+        },
+        {
+          "agentIdx": 3,
+          "agentProfile": {
+            "nickname": "Camille",
+            "avatar": {
+              "type": "filesystem",
+              "path": "testdata/camille.jpg"
+            }
+          }
+        }
+      ],
+      "applets": [
+        {
+          "name": "Place",
+          "instanceName": "Place",
+          "registeringAgent": 1,
+          "joiningAgents": [2,3]
+        }
+      ]
+    }
+  ],
+  "applets": [
+    {
+      "name": "Place",
+      "subtitle": "Creative pixel canvas",
+      "description": "...",
+      "icon": {
+        "type": "filesystem",
+        "path": "./webapp/logo.svg"
+      },
+      "source": {
+        "type": "filesystem",
+        "path": "./artifacts/place-we_applet.webhapp"
+      }
+    }
+  ]
+}

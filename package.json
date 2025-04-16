@@ -57,6 +57,12 @@
 
     "prodtestfull:we"    : "npm run build:devtest && npm run dist:we && npm run prodtest:we",
 
+    "multiagent"           : "cross-env AGENT_NUM=1 concurrently \"npm run multiagent:we-launch\"",
+    "multiagent2"          : "cross-env AGENT_NUM=2 concurrently \"npm run multiagent:we-launch\"",
+    "multiagent3"          : "cross-env AGENT_NUM=3 concurrently \"npm run multiagent:we-launch\"",
+    "multiagentall"        : "concurrently \"npm run multiagent\" \"sleep 5 && npm run multiagent2\" \"sleep 7 && npm run multiagent3\"",
+    "multiagent:we-launch" : "weave --disable-os-notifications --dev-config testdata/we.multiagent.config.json --dev-data-dir \"D:\\ddd_temp\" --agent-idx $AGENT_NUM",
+    
 
     "dist:electron"      : "bash submodules/hc-prebuilt/copy-binaries.sh electron/bin && npm run dist:build -w electron",
 
